@@ -10,9 +10,13 @@
 	},
 
 	"host_permissions": ["<all_urls>"],
-	"background": {
-		"service_worker": "dist/background.js"
-	},
+	"content_scripts": [
+		{
+			"js": ["dist/content.js"],
+			"matches": ["<all_urls>"],
+			"run_at": "document_end"
+		}
+	],
 	"web_accessible_resources": [
 		{
 			"resources": ["src/assets/models/*"],
