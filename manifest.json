@@ -1,0 +1,22 @@
+{
+	"manifest_version": 3,
+	"name": "Face Detection",
+	"version": "1.0",
+	"permissions": ["activeTab", "scripting"],
+
+	"icons": {
+		"16": "icon16.png",
+		"48": "icon48.png"
+	},
+
+	"host_permissions": ["<all_urls>"],
+	"background": {
+		"service_worker": "dist/background.js"
+	},
+	"web_accessible_resources": [
+		{
+			"resources": ["src/assets/models/*"],
+			"matches": ["<all_urls>"]
+		}
+	]
+}
