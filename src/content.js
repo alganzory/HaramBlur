@@ -1,10 +1,10 @@
 import Human from "@vladmandic/human";
 import plimit from "p-limit";
 
+const modelsUrl = chrome.runtime.getURL("src/assets/models");
 const limit = plimit(5);
 
-const modelsUrl = chrome.runtime.getURL("src/assets/models");
-const human = new Human({
+const config = {
 	modelBasePath: modelsUrl,
 	face: {
 		enabled: true,
@@ -28,25 +28,52 @@ const human = new Human({
 	object: {
 		enabled: false,
 	},
-});
+};
 
-const observer = new IntersectionObserver(
-	(entries) => {
-		const promises = entries.map((entry) =>
-			limit(async () => {
-				if (entry.isIntersecting) {
-					const img = entry.target;
-					observer.unobserve(img);
-					return detectFace(img);
-				}
-			})
-		);
-		Promise.allSettled(promises);
-	}
-	// { threshold: 0.5 }
-);
-// let faceApiImage = new Image();
-// faceApiImage.crossOrigin = "anonymous";
+var human; // global variable to hold human object
+var intersectionObserver, mutationObserver;
+
+const initHuman = async () => {
+	human = new Human(config);
+};
+
+const initIntersectionObserver = async () => {
+	intersectionObserver = new IntersectionObserver(
+		(entries) => {
+			const promises = entries.map((entry) =>
+				limit(async () => {
+					if (entry.isIntersecting) {
+						const img = entry.target;
+						intersectionObserver.unobserve(img);
+						return detectFace(img);
+					}
+				})
+			);
+			Promise.allSettled(promises);
+		}
+		// { threshold: 0.5 }
+	);
+};
+
+const initMutationObserver = async () => {
+	mutationObserver = new MutationObserver((mutations) => {
+		mutations.forEach((mutation) => {
+			if (mutation.type === "childList") {
+				const addedNodes = mutation.addedNodes;
+
+				addedNodes.forEach((node) => {
+					// if node has no children, return
+					if (!node?.querySelectorAll) return;
+
+					const imgs = node?.querySelectorAll("img");
+					Array.from(imgs).forEach((img) => {
+						observeImage(img);
+					});
+				});
+			}
+		});
+	});
+};
 
 const isImageTooSmall = (img) => {
 	return img.width < 100 || img.height < 100;
@@ -55,7 +82,7 @@ const isImageTooSmall = (img) => {
 const observeImage = (img) => {
 	if (isImageTooSmall(img)) return;
 
-	observer.observe(img);
+	intersectionObserver.observe(img);
 };
 
 const loadImage = (img) => {
@@ -64,7 +91,10 @@ const loadImage = (img) => {
 			resolve(img);
 		} else {
 			img.onload = () => resolve(img);
-			img.onerror = reject;
+			img.onerror = (e) => {
+				console.error("Failed to load image", img);
+				reject(e);
+			};
 		}
 	});
 };
@@ -99,8 +129,6 @@ const processImage = async (img) => {
 		return;
 	}
 
-	// console.log(":smiley: blurring ", img);
-
 	img.style.filter = "blur(10px) grayscale(100%)";
 	img.style.transition = "all 0.5s ease";
 };
@@ -115,32 +143,22 @@ const detectFace = async (img) => {
 };
 
 const init = async () => {
+
+	console.log ("INIT");
+	await initHuman();
+	await initIntersectionObserver();
+	await initMutationObserver();
+
 	// wait for human to load
 	await human.load();
 	await human.warmup();
+	
+	
 	// observe all images on the page
-
 	const images = document.getElementsByTagName("img");
 
 	Array.from(images).forEach((img) => {
 		observeImage(img);
-	});
-	const mutationObserver = new MutationObserver((mutations) => {
-		mutations.forEach((mutation) => {
-			if (mutation.type === "childList") {
-				const addedNodes = mutation.addedNodes;
-
-				addedNodes.forEach((node) => {
-					// if node has no children, return
-					if (!node?.querySelectorAll) return;
-
-					const imgs = node?.querySelectorAll("img");
-					Array.from(imgs).forEach((img) => {
-						observeImage(img);
-					});
-				});
-			}
-		});
 	});
 
 	mutationObserver.observe(document.body, { childList: true, subtree: true });
