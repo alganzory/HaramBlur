@@ -1,15 +1,16 @@
 import Human from "@vladmandic/human";
+import plimit from "p-limit";
+
+const limit = plimit(5);
+
 const modelsUrl = chrome.runtime.getURL("src/assets/models");
 const human = new Human({
 	modelBasePath: modelsUrl,
 	face: {
 		enabled: true,
-		mesh: { enabled: false },
-		// modelPath: "mobileface.json",
+		modelPath: "blazeface.json",
 		iris: { enabled: false },
-		description: { 
-			modelPath: "faceres.json"
-		 },
+		// description: { enabled: false },
 	},
 
 	// disable all other models
@@ -29,21 +30,21 @@ const human = new Human({
 	},
 });
 
-var counter = 0;
 const observer = new IntersectionObserver(
 	(entries) => {
-		const promises = entries.map(async (entry) => {
-			if (entry.isIntersecting) {
-				const img = entry.target;
-				observer.unobserve(img);
-				return detectFace(img);
-			}
-		});
+		const promises = entries.map((entry) =>
+			limit(async () => {
+				if (entry.isIntersecting) {
+					const img = entry.target;
+					observer.unobserve(img);
+					return detectFace(img);
+				}
+			})
+		);
 		Promise.allSettled(promises);
 	}
 	// { threshold: 0.5 }
 );
-
 // let faceApiImage = new Image();
 // faceApiImage.crossOrigin = "anonymous";
 
@@ -57,11 +58,25 @@ const observeImage = (img) => {
 	observer.observe(img);
 };
 
+const loadImage = (img) => {
+	return new Promise((resolve, reject) => {
+		if (img.complete) {
+			resolve(img);
+		} else {
+			img.onload = () => resolve(img);
+			img.onerror = reject;
+		}
+	});
+};
+
 const processImage = async (img) => {
 	if (isImageTooSmall(img)) return;
 
-	let detections = await human.detect(img);
-	console.log("detections", detections);
+	// check if image is loaded, print error if not
+	const loadedImage = await loadImage(img);
+
+	let detections = await human.detect(loadedImage);
+	// console.log("detections", detections);
 	// return;
 
 	if (!detections?.face?.length) {
@@ -84,8 +99,8 @@ const processImage = async (img) => {
 		return;
 	}
 
-	// print counter and current scroll position
-	print (counter++, window.scrollY);
+	// console.log(":smiley: blurring ", img);
+
 	img.style.filter = "blur(10px) grayscale(100%)";
 	img.style.transition = "all 0.5s ease";
 };
@@ -93,7 +108,7 @@ const processImage = async (img) => {
 const detectFace = async (img) => {
 	img.crossOrigin = "anonymous";
 
-	img.onload = processImage(img);
+	await processImage(img);
 	img.onerror = () => {
 		console.error("Failed to load image", img);
 	};
@@ -102,7 +117,7 @@ const detectFace = async (img) => {
 const init = async () => {
 	// wait for human to load
 	await human.load();
-
+	await human.warmup();
 	// observe all images on the page
 
 	const images = document.getElementsByTagName("img");
