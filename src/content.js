@@ -1,7 +1,35 @@
-import * as faceapi from "face-api.js";
-
+import Human from "@vladmandic/human";
 const modelsUrl = chrome.runtime.getURL("src/assets/models");
+const human = new Human({
+	modelBasePath: modelsUrl,
+	face: {
+		enabled: true,
+		mesh: { enabled: false },
+		// modelPath: "mobileface.json",
+		iris: { enabled: false },
+		description: { 
+			modelPath: "faceres.json"
+		 },
+	},
 
+	// disable all other models
+	// except face
+	// to save resources
+	body: {
+		enabled: false,
+	},
+	hand: {
+		enabled: false,
+	},
+	gesture: {
+		enabled: false,
+	},
+	object: {
+		enabled: false,
+	},
+});
+
+var counter = 0;
 const observer = new IntersectionObserver(
 	(entries) => {
 		const promises = entries.map(async (entry) => {
@@ -32,19 +60,17 @@ const observeImage = (img) => {
 const processImage = async (img) => {
 	if (isImageTooSmall(img)) return;
 
-	const detections = await faceapi
-		.detectAllFaces(img, new faceapi.TinyFaceDetectorOptions(
-			{
-				
-			}
-		))
-		.withAgeAndGender();
+	let detections = await human.detect(img);
+	console.log("detections", detections);
+	// return;
 
-	if (detections.length === 0) {
-		console.log ("skipping cause no faces", img)
+	if (!detections?.face?.length) {
+		console.log("skipping cause no faces", img);
 
 		return;
 	}
+
+	detections = detections.face;
 
 	let containsWoman = false;
 	detections.forEach((detection) => {
@@ -54,10 +80,12 @@ const processImage = async (img) => {
 	});
 
 	if (!containsWoman) {
-		console.log ("skipping cause not a woman", img)
+		console.log("skipping cause not a woman", img);
 		return;
 	}
 
+	// print counter and current scroll position
+	print (counter++, window.scrollY);
 	img.style.filter = "blur(10px) grayscale(100%)";
 	img.style.transition = "all 0.5s ease";
 };
@@ -65,17 +93,17 @@ const processImage = async (img) => {
 const detectFace = async (img) => {
 	img.crossOrigin = "anonymous";
 
-	img.onload = processImage( img);
+	img.onload = processImage(img);
 	img.onerror = () => {
 		console.error("Failed to load image", img);
 	};
 };
 
 const init = async () => {
-	const [tinyFaceDetector, ageGenderNet] = await Promise.all([
-		faceapi.nets.tinyFaceDetector.loadFromUri(modelsUrl),
-		faceapi.nets.ageGenderNet.loadFromUri(modelsUrl),
-	]);
+	// wait for human to load
+	await human.load();
+
+	// observe all images on the page
 
 	const images = document.getElementsByTagName("img");
 

@@ -4,6 +4,6 @@
     "webpack-cli": "^5.1.4"
   },
   "dependencies": {
-    "face-api.js": "^0.22.2"
+    "@vladmandic/human": "^3.1.2"
   }
 }
