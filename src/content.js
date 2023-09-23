@@ -4,7 +4,7 @@ import plimit from "p-limit";
 const modelsUrl = chrome.runtime.getURL("src/assets/models");
 const limit = plimit(10);
 
-var count = 0;
+// var count = 0;
 const config = {
 	modelBasePath: modelsUrl,
 	// backend: "webgpu",
@@ -36,7 +36,7 @@ const config = {
 };
 
 var human; // global variable to hold human object
-var intersectionObserver, mutationObserver;
+var mutationObserver;
 
 const MAX_HEIGHT = 300;
 const MAX_WIDTH = 500;
@@ -44,6 +44,7 @@ const MIN_WIDTH = 100;
 const MIN_HEIGHT = 100;
 
 const initHuman = async () => {
+	console.log("INIT HUMAN", document.readyState);
 	human = new Human(config);
 	await human.load();
 };
@@ -51,29 +52,6 @@ const initHuman = async () => {
 initHuman().catch((error) => {
 	console.error("Error initializing Human:", error);
 });
-
-const imageQueue = new Set();
-
-const initIntersectionObserver = async () => {
-	intersectionObserver = new IntersectionObserver((entries) => {
-		const intersectingEntries = [];
-		entries.forEach((entry) => {
-			if (entry.isIntersecting) {
-				// If the image is in view, check if it's in the queue
-				imageQueue.delete(entry.target);
-				// Process the image immediately
-				intersectingEntries.push(entry.target);
-			} else {
-				// If the image is not in view, add it to the queue
-				imageQueue.add(entry.target);
-			}
-		});
-		const promises = intersectingEntries.map((img) =>
-			limit(() => detectFace(img))
-		);
-		Promise.allSettled(promises);
-	});
-};
 
 const processNode = (node) => {
 	if (node.tagName === "IMG") {
@@ -89,6 +67,7 @@ const initMutationObserver = async () => {
 	mutationObserver = new MutationObserver((mutations) => {
 		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
+				// console.log("mutation", mutation.target, mutation.addedNodes);
 				mutation.addedNodes.forEach((node) => {
 					processNode(node);
 				});
@@ -98,21 +77,23 @@ const initMutationObserver = async () => {
 };
 
 const isImageTooSmall = (img) => {
-	return img.width < MIN_WIDTH || img.height < MIN_HEIGHT;
+	const isSmall = img.width < MIN_WIDTH || img.height < MIN_HEIGHT;
+	if (isSmall) {
+		img.dataset.isSmall = true;
+		return true;
+	}
 };
-
-// const observeImage = (img) => {
-// 	if (isImageTooSmall(img)) return;
-
-// 	intersectionObserver.observe(img);
-// };
 
 const loadImage = (img) => {
 	return new Promise((resolve, reject) => {
 		if (img.complete) {
+			img.dataset.complete = true;
 			resolve(img);
 		} else {
-			img.onload = () => resolve(img);
+			img.onload = () => {
+				img.dataset.onload = true;
+				resolve(img);
+			};
 			img.onerror = (e) => {
 				console.error("Failed to load image", img);
 				reject(e);
@@ -125,34 +106,38 @@ const canvas = document.createElement("canvas");
 const ctx = canvas.getContext("2d");
 // resize image if it's too big
 const resizeImage = (img) => {
-	let resizedImage = img;
+	if (img.height <= MAX_HEIGHT && img.width <= MAX_WIDTH) return img;
+
 	// resize image if it's too big using canvas
-	if (img.height > MAX_HEIGHT || img.width > MAX_WIDTH) {
-		// reset canvas
-		const ratio = Math.min(MAX_WIDTH / img.width, MAX_HEIGHT / img.height);
-		canvas.width = img.width * ratio;
-		canvas.height = img.height * ratio;
 
-		ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+	console.log("resizing");
+	// reset canvas
+	const ratio = Math.min(MAX_WIDTH / img.width, MAX_HEIGHT / img.height);
+	canvas.width = img.width * ratio;
+	canvas.height = img.height * ratio;
 
-		// Create a new image element
-		resizedImage = new Image();
-		resizedImage.src = canvas.toDataURL();
-	}
+	ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+	// Create a new image element
+	let resizedImage = new Image();
+	resizedImage.src = canvas.toDataURL();
+
+	img.dataset.resized = true;
+
 	return resizedImage;
 };
 
 const processImage = async (img) => {
-	if (isImageTooSmall(img)) return;
-
+	
 	// resize image if it's too big
-
+	
 	// check if image is loaded, print error if not
 	let loadedImage = await loadImage(img);
 	if (!loadedImage) {
 		console.error("Failed to load image", img);
 		return;
 	}
+	if (isImageTooSmall(loadedImage)) return;
 
 	// resize image if it's too big
 	loadedImage = resizeImage(loadedImage);
@@ -163,6 +148,7 @@ const processImage = async (img) => {
 
 	if (!detections?.face?.length) {
 		console.log("skipping cause no faces", img);
+		img.dataset.blurred = false;
 
 		return;
 	}
@@ -174,82 +160,59 @@ const processImage = async (img) => {
 	);
 	if (!containsWoman) {
 		console.log("skipping cause not a woman", img);
+		img.dataset.blurred = false;
 		return;
 	}
+
+	console.log("blurring image", img);
 
 	img.style.filter = "blur(10px) grayscale(100%)";
 	img.style.transition = "all 0.1s ease";
 	img.style.opacity = "unset";
+
+	img.dataset.blurred = true;
 	// console.log("count ", count++);
-	// scroll to image
-	// img.scrollIntoView({ behavior: "smooth", block: "center" });
+};
+
+const shouldProcessImage = (img) => {
+	if (img.dataset.processed) return false;
+	img.dataset.processed = true;
+	return true;
 };
 
 const detectFace = async (img) => {
+	// somehow mark image as processed
+	// so that it's not processed again
+	if (!shouldProcessImage(img)) return;
+
 	img.crossOrigin = "anonymous";
 
 	await processImage(img);
 };
 
-let processingQueue = [];
-var intervalId;
-
-const processImageQueue = () => {
-	// If a callback is already pending or the queue is empty, do nothing
-	if (!processingQueue.length || imageQueue.size === 0) return;
-
-	window.requestIdleCallback(() => {
-		console.log("idle callback");
-		// run some of the queue
-		const length = Math.min(imageQueue.size, 5);
-
-		// add to processing queue
-		// and when proceesing queue length is min of 5 and image queue size (enough length to parall process)
-		// then  process the queue
-		for (let i = 0; i < length; i++) {
-			processingQueue.push(imageQueue.values().next().value);
-			imageQueue.delete(processingQueue[i]);
-		}
-
-		const promises = processingQueue.map((img) =>
-			limit(() => detectFace(img))
-		);
-		Promise.allSettled(promises).then(() => {
-			processingQueue = [];
-		});
-
-		// Check if there are more images to process
-		if (imageQueue.length > 0) {
-			processImageQueue();
-		}
-	});
-};
-
 const init = async () => {
 	console.log("INITaa");
-	// await initHuman();
-	// await initIntersectionObserver();
+
 	await initMutationObserver();
 
-	// intervalId = setInterval(() => {
-	// 	processImageQueue();
-	// }, 500);
-
-	// observe all images on the page
 	const images = document.getElementsByTagName("img");
-	console.log("images", images);
+	// console.log("images", images);
 
-	Array.from(images).forEach((img) => {
+	// const imagesArray = Array.from(images);
+	for (let img of images) {
+		// console.log("🚀 ~ file: content.js:261 ~ init ~ img:", img);
 		limit(() => detectFace(img));
-	});
-
-	// Array.from(images).forEach((img) => {
-	// 	observeImage(img);
-	// });
+	}
 
 	mutationObserver.observe(document.body, { childList: true, subtree: true });
 };
 
-init().catch((error) => {
-	console.error("Error initializing:", error);
-});
+if (document.readyState === "loading") {
+	// Loading hasn't finished yet
+	document.addEventListener("DOMContentLoaded", init);
+} else {
+	// `DOMContentLoaded` has already fired
+	init().catch((error) => {
+		console.error("Error initializing:", error);
+	});
+}
