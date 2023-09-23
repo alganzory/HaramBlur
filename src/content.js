@@ -1,26 +1,31 @@
-import Human from "@vladmandic/human";
+import Human, { Config } from "@vladmandic/human";
 import plimit from "p-limit";
 
 const modelsUrl = chrome.runtime.getURL("src/assets/models");
 const limit = plimit(10);
 
-// var count = 0;
+var intersectionObserver, mutationObserver;
+const MAX_HEIGHT = 300;
+const MAX_WIDTH = 500;
+const MIN_WIDTH = 100;
+const MIN_HEIGHT = 100;
+
+/**
+ * @type {Config}
+ */
 const config = {
 	modelBasePath: modelsUrl,
-	// backend: "webgpu",
+	debug: false,
+	// warmup: "face",
 	face: {
 		enabled: true,
+		// async: true,
 		modelPath: "blazeface.json",
 		iris: { enabled: false },
 		mesh: { enabled: false },
 		emotion: { enabled: false },
 		detector: { maxDetected: 3 },
-		// description: { enabled: true, modelPath: "faceres.json" },
 	},
-
-	// disable all other models
-	// except face
-	// to save resources
 	body: {
 		enabled: false,
 	},
@@ -35,13 +40,7 @@ const config = {
 	},
 };
 
-var human; // global variable to hold human object
-var mutationObserver;
-
-const MAX_HEIGHT = 300;
-const MAX_WIDTH = 500;
-const MIN_WIDTH = 100;
-const MIN_HEIGHT = 100;
+var human;
 
 const initHuman = async () => {
 	console.log("INIT HUMAN", document.readyState);
@@ -52,29 +51,6 @@ const initHuman = async () => {
 initHuman().catch((error) => {
 	console.error("Error initializing Human:", error);
 });
-
-const processNode = (node) => {
-	if (node.tagName === "IMG") {
-		// console.log("IMG TAG", node);
-		limit(() => detectFace(node));
-		return;
-	}
-
-	node?.childNodes?.forEach((child) => processNode(child));
-};
-
-const initMutationObserver = async () => {
-	mutationObserver = new MutationObserver((mutations) => {
-		mutations.forEach((mutation) => {
-			if (mutation.type === "childList") {
-				// console.log("mutation", mutation.target, mutation.addedNodes);
-				mutation.addedNodes.forEach((node) => {
-					processNode(node);
-				});
-			}
-		});
-	});
-};
 
 const isImageTooSmall = (img) => {
 	const isSmall = img.width < MIN_WIDTH || img.height < MIN_HEIGHT;
@@ -102,36 +78,19 @@ const loadImage = (img) => {
 	});
 };
 
-const canvas = document.createElement("canvas");
-const ctx = canvas.getContext("2d");
-// resize image if it's too big
-const resizeImage = (img) => {
-	if (img.height <= MAX_HEIGHT && img.width <= MAX_WIDTH) return img;
+const calcResize = (img) => {
+	// if image is smaller than max size, return null;
+	if (img.width < MAX_WIDTH && img.height < MAX_HEIGHT) return null;
 
-	// resize image if it's too big using canvas
-
-	console.log("resizing");
-	// reset canvas
+	// calculate new width to resize image to
 	const ratio = Math.min(MAX_WIDTH / img.width, MAX_HEIGHT / img.height);
-	canvas.width = img.width * ratio;
-	canvas.height = img.height * ratio;
+	const newWidth = img.width * ratio;
+	const newHeight = img.height * ratio;
 
-	ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-	// Create a new image element
-	let resizedImage = new Image();
-	resizedImage.src = canvas.toDataURL();
-
-	img.dataset.resized = true;
-
-	return resizedImage;
+	return { newWidth, newHeight };
 };
 
 const processImage = async (img) => {
-	
-	// resize image if it's too big
-	
-	// check if image is loaded, print error if not
 	let loadedImage = await loadImage(img);
 	if (!loadedImage) {
 		console.error("Failed to load image", img);
@@ -139,19 +98,30 @@ const processImage = async (img) => {
 	}
 	if (isImageTooSmall(loadedImage)) return;
 
-	// resize image if it's too big
-	loadedImage = resizeImage(loadedImage);
+	const needToResize = calcResize(loadedImage);
 
-	let detections = await human.detect(loadedImage);
-	// console.log("detections", detections);
-	// return;
+	let detections = needToResize
+		? await human.detect(loadedImage, {
+				filter: {
+					enabled: true,
+					width: needToResize.newWidth,
+					height: needToResize.newHeight,
+					return: true,
+				},
+		  })
+		: await human.detect(loadedImage);
 
+	await processDetections(detections, img);
+};
+
+const processDetections = async (detections, img) => {
 	if (!detections?.face?.length) {
-		console.log("skipping cause no faces", img);
-		img.dataset.blurred = false;
-
+		// console.log("skipping cause no faces", img);
+		img.dataset.blurred = "no face";
 		return;
 	}
+
+	// console.log("detections", detections);
 
 	detections = detections.face;
 
@@ -159,19 +129,20 @@ const processImage = async (img) => {
 		(detection) => detection.gender === "female"
 	);
 	if (!containsWoman) {
-		console.log("skipping cause not a woman", img);
-		img.dataset.blurred = false;
+		// console.log("skipping cause not a woman", img);
+		img.dataset.blurred = " no women";
 		return;
 	}
 
-	console.log("blurring image", img);
-
 	img.style.filter = "blur(10px) grayscale(100%)";
-	img.style.transition = "all 0.1s ease";
+	// filter transition
+	img.style.transition = "filter 0.1s ease";
 	img.style.opacity = "unset";
 
 	img.dataset.blurred = true;
-	// console.log("count ", count++);
+
+	//   scroll to image
+	//   img.scrollIntoView({ behavior: "smooth", block: "center" });
 };
 
 const shouldProcessImage = (img) => {
@@ -181,8 +152,6 @@ const shouldProcessImage = (img) => {
 };
 
 const detectFace = async (img) => {
-	// somehow mark image as processed
-	// so that it's not processed again
 	if (!shouldProcessImage(img)) return;
 
 	img.crossOrigin = "anonymous";
@@ -190,28 +159,72 @@ const detectFace = async (img) => {
 	await processImage(img);
 };
 
-const init = async () => {
-	console.log("INITaa");
+const initIntersectionObserver = async () => {
+	intersectionObserver = new IntersectionObserver(
+		(entries) => {
+			const visibleEntries = entries.filter(
+				(entry) => entry.isIntersecting
+			);
+			const visiblePromises = visibleEntries.map((entry) =>
+				limit(async () => {
+					const img = entry.target;
+					intersectionObserver.unobserve(img);
+					return detectFace(img);
+				})
+			);
 
-	await initMutationObserver();
+			Promise.allSettled(visiblePromises);
+		},
+		{ rootMargin: "100px", threshold: 0 }
+	);
 
 	const images = document.getElementsByTagName("img");
-	// console.log("images", images);
 
-	// const imagesArray = Array.from(images);
 	for (let img of images) {
-		// console.log("🚀 ~ file: content.js:261 ~ init ~ img:", img);
-		limit(() => detectFace(img));
+		intersectionObserver.observe(img);
+	}
+};
+
+const processNode = (node) => {
+	if (node.tagName === "IMG") {
+		// console.log("IMG TAG", node);
+
+		intersectionObserver.observe(node);
+		return;
 	}
 
-	mutationObserver.observe(document.body, { childList: true, subtree: true });
+	node?.childNodes?.forEach((child) => processNode(child));
+};
+
+const initMutationObserver = async () => {
+	mutationObserver = new MutationObserver((mutations) => {
+		// if mutation is childList
+
+		mutations.forEach((mutation) => {
+			if (mutation.type === "childList") {
+				mutation.addedNodes.forEach((node) => {
+					processNode(node);
+				});
+			}
+		});
+	});
+
+	mutationObserver.observe(document.body, {
+		childList: true,
+		subtree: true,
+	});
+};
+
+const init = async () => {
+	console.log("INIT");
+
+	await initIntersectionObserver();
+	await initMutationObserver();
 };
 
 if (document.readyState === "loading") {
-	// Loading hasn't finished yet
 	document.addEventListener("DOMContentLoaded", init);
 } else {
-	// `DOMContentLoaded` has already fired
 	init().catch((error) => {
 		console.error("Error initializing:", error);
 	});
