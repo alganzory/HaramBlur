@@ -20,11 +20,13 @@ const config = {
 	face: {
 		enabled: true,
 		// async: true,
-		modelPath: "blazeface.json",
 		iris: { enabled: false },
 		mesh: { enabled: false },
 		emotion: { enabled: false },
-		detector: { maxDetected: 3 },
+		detector: { modelPath: "blazeface-front.json", maxDetected:2 },
+		// description: {enabled: false},
+		description: {enabled: true, modelPath: "faceres.json"},
+		// gear: { enabled: true, modelPath: "gear.json" },
 	},
 	body: {
 		enabled: false,
@@ -126,7 +128,7 @@ const processDetections = async (detections, img) => {
 	detections = detections.face;
 
 	let containsWoman = detections.some(
-		(detection) => detection.gender === "female"
+		(detection) => detection.gender === "female" || (detection.gender === "male" && detection.genderScore < 0.5) 
 	);
 	if (!containsWoman) {
 		// console.log("skipping cause not a woman", img);
