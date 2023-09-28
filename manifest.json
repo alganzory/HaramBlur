@@ -8,7 +8,10 @@
 		"16": "icon16.png",
 		"48": "icon48.png"
 	},
-
+	"background": {
+		"service_worker": "dist/background.js",
+		"type": "module"
+	},
 	"host_permissions": ["<all_urls>"],
 	"content_scripts": [
 		{

@@ -1,58 +1,10 @@
-import Human, { Config } from "@vladmandic/human";
-import plimit from "p-limit";
-
-const modelsUrl = chrome.runtime.getURL("src/assets/models");
-const limit = plimit(10);
-
 var intersectionObserver, mutationObserver;
 const MAX_HEIGHT = 300;
 const MAX_WIDTH = 500;
 const MIN_WIDTH = 100;
 const MIN_HEIGHT = 100;
-
-/**
- * @type {Config}
- */
-const config = {
-	modelBasePath: modelsUrl,
-	debug: false,
-	// warmup: "face",
-	face: {
-		enabled: true,
-		// async: true,
-		iris: { enabled: false },
-		mesh: { enabled: false },
-		emotion: { enabled: false },
-		detector: { modelPath: "blazeface-front.json", maxDetected:2 },
-		// description: {enabled: false},
-		description: {enabled: true, modelPath: "faceres.json"},
-		// gear: { enabled: true, modelPath: "gear.json" },
-	},
-	body: {
-		enabled: false,
-	},
-	hand: {
-		enabled: false,
-	},
-	gesture: {
-		enabled: false,
-	},
-	object: {
-		enabled: false,
-	},
-};
-
-var human;
-
-const initHuman = async () => {
-	console.log("INIT HUMAN", document.readyState);
-	human = new Human(config);
-	await human.load();
-};
-
-initHuman().catch((error) => {
-	console.error("Error initializing Human:", error);
-});
+var canvas, ctx;
+var port = chrome.runtime.connect({ name: "content" });
 
 const isImageTooSmall = (img) => {
 	const isSmall = img.width < MIN_WIDTH || img.height < MIN_HEIGHT;
@@ -92,6 +44,30 @@ const calcResize = (img) => {
 	return { newWidth, newHeight };
 };
 
+const sendImageToPort = async (img, optionalConfig) => {
+	if (!canvas) return;
+	canvas.width = img.width;
+	canvas.height = img.height;
+	ctx.drawImage(img, 0, 0);
+
+	// get image data
+	const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+	// send message to background script for detection
+	const message = {
+		img: Array.from(imgData.data),
+		width: canvas.width,
+		height: canvas.height,
+		imgSrc: img.src,
+	};
+
+	if (optionalConfig) {
+		message.config = optionalConfig;
+	}
+
+	port.postMessage(message);
+};
+
 const processImage = async (img) => {
 	let loadedImage = await loadImage(img);
 	if (!loadedImage) {
@@ -101,22 +77,27 @@ const processImage = async (img) => {
 	if (isImageTooSmall(loadedImage)) return;
 
 	const needToResize = calcResize(loadedImage);
-
-	let detections = needToResize
-		? await human.detect(loadedImage, {
-				filter: {
-					enabled: true,
-					width: needToResize.newWidth,
-					height: needToResize.newHeight,
-					return: true,
-				},
-		  })
-		: await human.detect(loadedImage);
-
-	await processDetections(detections, img);
+	if (needToResize) {
+		await sendImageToPort(loadedImage, {
+			filter: {
+				enabled: true,
+				width: needToResize.newWidth,
+				height: needToResize.newHeight,
+				return: true,
+			},
+		});
+	} else {
+		// send image to port
+		await sendImageToPort(loadedImage);
+	}
 };
 
-const processDetections = async (detections, img) => {
+const processDetections = async (detections, imgSrc) => {
+	const img = document.querySelector(`img[src="${imgSrc}"]`);
+	if (!img) {
+		console.log("img not found", imgSrc);
+		return;
+	}
 	if (!detections?.face?.length) {
 		// console.log("skipping cause no faces", img);
 		img.dataset.blurred = "no face";
@@ -128,7 +109,9 @@ const processDetections = async (detections, img) => {
 	detections = detections.face;
 
 	let containsWoman = detections.some(
-		(detection) => detection.gender === "female" || (detection.gender === "male" && detection.genderScore < 0.5) 
+		(detection) =>
+			detection.gender === "female" ||
+			(detection.gender === "male" && detection.genderScore < 0.2)
 	);
 	if (!containsWoman) {
 		// console.log("skipping cause not a woman", img);
@@ -148,7 +131,7 @@ const processDetections = async (detections, img) => {
 };
 
 const shouldProcessImage = (img) => {
-	if (img.dataset.processed) return false;
+	if (img.dataset?.processed) return false;
 	img.dataset.processed = true;
 	return true;
 };
@@ -167,13 +150,11 @@ const initIntersectionObserver = async () => {
 			const visibleEntries = entries.filter(
 				(entry) => entry.isIntersecting
 			);
-			const visiblePromises = visibleEntries.map((entry) =>
-				limit(async () => {
-					const img = entry.target;
-					intersectionObserver.unobserve(img);
-					return detectFace(img);
-				})
-			);
+			const visiblePromises = visibleEntries.map(async (entry) => {
+				const img = entry.target;
+				intersectionObserver.unobserve(img);
+				return detectFace(img);
+			});
 
 			Promise.allSettled(visiblePromises);
 		},
@@ -222,6 +203,18 @@ const init = async () => {
 
 	await initIntersectionObserver();
 	await initMutationObserver();
+
+	canvas = document.createElement("canvas");
+	ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+	// listen to messages from background script
+	port.onMessage.addListener((msg) => {
+		console.log("content.js received message", msg);
+
+		if (msg?.type === "detections") {
+			processDetections(msg.detections, msg.imgSrc);
+		}
+	});
 };
 
 if (document.readyState === "loading") {
