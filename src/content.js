@@ -7,19 +7,21 @@ const limit = plimit(10);
 var intersectionObserver, mutationObserver;
 const MAX_IMG_HEIGHT = 300;
 const MAX_IMG_WIDTH = 500;
-const MIN_IMG_WIDTH = 100;
-const MIN_IMG_HEIGHT = 100;
+const MIN_IMG_WIDTH = 50;
+const MIN_IMG_HEIGHT = 80;
 
 // maintain 1920x1080 aspect ratio
-const MAX_VID_HEIGHT = 480;
-const MAX_VID_WIDTH = 640;
+const MAX_VID_WIDTH = 480;
+const MAX_VID_HEIGHT = 270;
 const MIN_VID_WIDTH = 320;
 const MIN_VID_HEIGHT = 240;
+let frameCount = 0;
+const FRAME_LIMIT = 10;
 
 /**
  * @type {import("@vladmandic/human").Config}
  */
-const config = {
+const HUMAN_CONFIG = {
 	modelBasePath: modelsUrl,
 	debug: false,
 	cacheSensitivity: 0,
@@ -52,8 +54,8 @@ const config = {
 var human;
 
 const initHuman = async () => {
-	console.log("INIT HUMAN", document.readyState);
-	human = new Human(config);
+	// console.log("INIT HUMAN", document.readyState);
+	human = new Human(HUMAN_CONFIG);
 	await human.load();
 };
 
@@ -69,58 +71,44 @@ const isImageTooSmall = (img) => {
 	}
 };
 
-const loadImage = (img) => {
-	return new Promise((resolve, reject) => {
-		if (img.complete) {
-			img.dataset.complete = true;
-			resolve(img);
-		} else {
-			img.onload = () => {
-				img.dataset.onload = true;
-				resolve(img);
-			};
-			img.onerror = (e) => {
-				console.error("Failed to load image", img);
-				reject(e);
-			};
-		}
-	});
+const shouldProcessImage = (img) => {
+	if (img.dataset.processed) return false;
+	img.dataset.processed = true;
+	return true;
 };
 
-const calcResize = (element, maxWidth = MAX_IMG_WIDTH, maxHeight = MAX_IMG_HEIGHT) => {
+const calcResize = (
+	element,
+	maxWidth = MAX_IMG_WIDTH,
+	maxHeight = MAX_IMG_HEIGHT
+) => {
 	// if image is smaller than max size, return null;
 	if (element.width < maxWidth && element.height < maxHeight) return null;
 
 	// calculate new width to resize image to
-	const ratio = Math.min(maxWidth / element.width, maxHeight / element.height);
+	const ratio = Math.min(
+		maxWidth / element.width,
+		maxHeight / element.height
+	);
 	const newWidth = element.width * ratio;
 	const newHeight = element.height * ratio;
 
 	return { newWidth, newHeight };
 };
 
-const processImage = async (img) => {
-	let loadedImage = await loadImage(img);
-	if (!loadedImage) {
-		console.error("Failed to load image", img);
-		return;
-	}
-	if (isImageTooSmall(loadedImage)) return;
-
-	const needToResize = calcResize(loadedImage);
-
-	let detections = needToResize
-		? await human.detect(loadedImage, {
-				filter: {
-					enabled: true,
-					width: needToResize.newWidth,
-					height: needToResize.newHeight,
-					return: true,
-				},
-		  })
-		: await human.detect(loadedImage);
-
-	await processDetections(detections, img);
+const loadImage = (img) => {
+	return new Promise((resolve, reject) => {
+		if (img.complete) {
+			resolve();
+		} else {
+			img.onload = () => {
+				resolve();
+			};
+			img.onerror = (e) => {
+				reject(e);
+			};
+		}
+	});
 };
 
 const loadVideo = (video) => {
@@ -134,16 +122,45 @@ const loadVideo = (video) => {
 				resolve(video);
 			};
 			video.onerror = (e) => {
-				console.error("Failed to load video", video);
+				// console.error("Failed to load video", video);
 				reject(e);
 			};
 		}
 	});
 };
 
+const genderPredicates = {
+	maleOnly: (gender, score) =>
+		gender === "male" || (gender.female && score < 0.2),
+	femaleOnly: (gender, score) =>
+		gender === "female" || (gender.male && score < 0.2),
+	maleOrFemale: (gender, score) => gender === "male" || gender === "female",
+};
+
+const processImageDetections = async (detections, img) => {
+	if (!detections?.face?.length) {
+		img.dataset.blurred = "no face";
+		return;
+	}
+
+	detections = detections.face;
+
+	let containsWoman = detections.some((detection) =>
+		genderPredicates.femaleOnly(detection.gender, detection.genderScore)
+	);
+	if (!containsWoman) {
+		img.dataset.blurred = "no women";
+		return;
+	}
+
+	img.dataset.blurred = true;
+
+	// add blur class
+	img.classList.add("fb-blur");
+};
+
 const processVideoDetections = async (detections, video) => {
 	if (!detections?.face?.length) {
-		// console.log("skipping cause no faces", img);
 		video.dataset.blurred = "no face";
 
 		// remove blur class
@@ -151,17 +168,15 @@ const processVideoDetections = async (detections, video) => {
 		return;
 	}
 
-	console.log("detections", detections.face, video);
-
 	detections = detections.face;
 
-	let containsWoman = detections.some(
-		(detection) => detection.gender === "female"
+	let containsWoman = detections.some((detection) =>
+		genderPredicates.femaleOnly(detection.gender, detection.genderScore)
 	);
 	if (!containsWoman) {
 		// remove blur class
 		video.classList.remove("fb-blur");
-
+		video.dataset.blurred = "no women";
 		return;
 	}
 
@@ -173,9 +188,9 @@ const processVideoDetections = async (detections, video) => {
 
 const videoDetectionLoop = async (video) => {
 	const needToResize = calcResize(video, MAX_VID_WIDTH, MAX_VID_HEIGHT);
-	
-	if (!video.paused) {
-		let detections = await human.detect(video,  {
+
+	if (!video.paused && frameCount % FRAME_LIMIT === 0) {
+		let detections = await human.detect(video, {
 			cacheSensitivity: 0.7,
 			filter: {
 				enabled: true,
@@ -184,12 +199,41 @@ const videoDetectionLoop = async (video) => {
 				return: true,
 			},
 		});
-		console.log("video detections", detections);
+		// console.log("video detections", detections);
 
 		await processVideoDetections(detections, video);
 	}
+	frameCount++;
 
 	requestAnimationFrame(() => videoDetectionLoop(video));
+};
+
+const processImage = async (img) => {
+	try {
+		await loadImage(img);
+	} catch (err) {
+		// console.error("Failed to load image", err);
+		img.removeAttribute("crossorigin");
+		return;
+	}
+
+	if (isImageTooSmall(img)) return;
+
+	const needToResize = calcResize(img);
+
+	let detections = needToResize
+		? await human.detect(img, {
+				filter: {
+					enabled: true,
+					width: needToResize.newWidth,
+					height: needToResize.newHeight,
+					return: true,
+				},
+		  })
+		: await human.detect(img);
+
+	img.removeAttribute("crossorigin");
+	await processImageDetections(detections, img);
 };
 
 const processVideo = async (video) => {
@@ -200,38 +244,6 @@ const processVideo = async (video) => {
 	}
 
 	videoDetectionLoop(loadedVideo);
-};
-
-const processDetections = async (detections, img) => {
-	if (!detections?.face?.length) {
-		// console.log("skipping cause no faces", img);
-		img.dataset.blurred = "no face";
-		return;
-	}
-
-	console.log("detections", detections.face, img);
-
-	detections = detections.face;
-
-	let containsWoman = detections.some(
-		(detection) => detection.gender === "female"
-	);
-	if (!containsWoman) {
-		// console.log("skipping cause not a woman", img);
-		img.dataset.blurred = " no women";
-		return;
-	}
-
-	img.dataset.blurred = true;
-
-	// add blur class
-	img.classList.add("fb-blur");
-};
-
-const shouldProcessImage = (img) => {
-	if (img.dataset.processed) return false;
-	img.dataset.processed = true;
-	return true;
 };
 
 const detectFace = async (element) => {
@@ -315,9 +327,15 @@ const initStyles = () => {
 			opacity: unset;
 		}
 
+		// when hovering, gradually remove grayscale for 1 second, then gradually remove blur
 		.fb-blur:hover {
-			filter: blur(0px) grayscale(0%);
-			transition: filter 0.1s ease;
+			filter: grayscale(0%);
+			transition: filter 0.5s ease;
+		}
+		.fb-blur:hover {
+			filter: blur(0px);
+			transition: filter 0.5s ease;
+			transition-delay: 1s;
 		}
 	`;
 	document.head.appendChild(style);
