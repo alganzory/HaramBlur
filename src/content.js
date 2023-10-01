@@ -18,6 +18,85 @@ const MIN_VID_HEIGHT = 240;
 let frameCount = 0;
 const FRAME_LIMIT = 10;
 
+var settings = {};
+var hbStyleSheet;
+var shouldDetectVideos = true;
+var shouldDetectImages = true;
+var shouldDetectMale = false;
+var shouldDetectFemale = false;
+var started = false;
+
+function shouldDetectGender() {
+	return shouldDetectMale || shouldDetectFemale;
+}
+function shouldDetect() {
+	if (!shouldDetectImages && !shouldDetectVideos) return false;
+	return shouldDetectGender();
+}
+
+function toggleStatus(firstTime = false) {
+	if (settings.status !== true) {
+		shouldDetectImages = false;
+		shouldDetectVideos = false;
+	} else {
+		shouldDetectImages = settings.blurImages;
+		shouldDetectVideos = settings.blurVideos;
+		shouldDetectMale = settings.blurMale;
+		shouldDetectFemale = settings.blurFemale;
+	}
+
+	setStyle();
+	if (!started && !firstTime) initDetection(); // in case page loads when status is off and then status is turned on
+}
+
+function initTab() {
+	getSettings().then(function () {
+		console.log("initTab", settings);
+		toggleStatus(true);
+		listenForMessages();
+	});
+}
+
+initTab();
+
+function getSettings() {
+	return new Promise(function (resolve) {
+		chrome.storage.sync.get(["hb-settings"], function (storage) {
+			settings = storage["hb-settings"];
+			resolve();
+		});
+	});
+}
+
+function listenForMessages() {
+	chrome.runtime.onMessage.addListener(function (
+		request,
+		sender,
+		sendResponse
+	) {
+		if (request.message?.type === "updateSettings") {
+			updateSettings(request.message.newSetting);
+		}
+	});
+}
+
+const updateSettings = (newSetting) => {
+	// console.log("updateSettings", newSetting);
+	const { key, value } = newSetting;
+
+	// take action based on key
+	switch (key) {
+		case "status":
+			settings.status = value;
+			toggleStatus();
+			break;
+		case "blurAmount":
+			settings.blurAmount = value;
+			setStyle();
+			break;
+	}
+};
+
 /**
  * @type {import("@vladmandic/human").Config}
  */
@@ -34,7 +113,10 @@ const HUMAN_CONFIG = {
 		emotion: { enabled: false },
 		detector: { modelPath: "blazeface-front.json", maxDetected: 2 },
 		// description: {enabled: false},
-		description: { enabled: true, modelPath: "faceres.json" },
+		description: {
+			enabled: true,
+			modelPath: "faceres.json",
+		},
 		// gear: { enabled: true, modelPath: "gear.json" },
 	},
 	body: {
@@ -59,9 +141,21 @@ const initHuman = async () => {
 	await human.load();
 };
 
-initHuman().catch((error) => {
-	console.error("Error initializing Human:", error);
-});
+initHuman()
+	.then(() => {
+		if (!shouldDetect()) return;
+
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", initDetection);
+		} else {
+			initDetection().catch((error) => {
+				console.error("Error in Init Detection:", error);
+			});
+		}
+	})
+	.catch((error) => {
+		console.error("Error initializing Human:", error);
+	});
 
 const isImageTooSmall = (img) => {
 	const isSmall = img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
@@ -71,9 +165,9 @@ const isImageTooSmall = (img) => {
 	}
 };
 
-const shouldProcessImage = (img) => {
-	if (img.dataset.processed) return false;
-	img.dataset.processed = true;
+const hasBeenProcessed = (element) => {
+	if (element.dataset.processed) return false;
+	element.dataset.processed = true;
 	return true;
 };
 
@@ -129,12 +223,21 @@ const loadVideo = (video) => {
 	});
 };
 
-const genderPredicates = {
-	maleOnly: (gender, score) =>
-		gender === "male" || (gender.female && score < 0.2),
-	femaleOnly: (gender, score) =>
-		gender === "female" || (gender.male && score < 0.2),
-	maleOrFemale: (gender, score) => gender === "male" || gender === "female",
+const genderPredicate = (gender, score) => {
+	const { blurMale, blurFemale } = settings;
+	if (blurMale && blurFemale) return gender !== "unknown";
+
+	if (blurMale && !blurFemale) {
+		return (
+			(gender === "male" && score > 0.3) ||
+			(gender === "female" && score < 0.2)
+		);
+	}
+	if (!blurMale && blurFemale) {
+		return gender === "female" || (gender === "male" && score < 0.2);
+	}
+
+	return false;
 };
 
 const processImageDetections = async (detections, img) => {
@@ -145,18 +248,19 @@ const processImageDetections = async (detections, img) => {
 
 	detections = detections.face;
 
-	let containsWoman = detections.some((detection) =>
-		genderPredicates.femaleOnly(detection.gender, detection.genderScore)
-	);
-	if (!containsWoman) {
-		img.dataset.blurred = "no women";
-		return;
+	if (shouldDetectGender()) {
+		let containsGender = detections.some((detection) =>
+			genderPredicate(detection.gender, detection.genderScore)
+		);
+		if (!containsGender) {
+			img.dataset.blurred = "no gender";
+			return;
+		}
 	}
-
 	img.dataset.blurred = true;
 
 	// add blur class
-	img.classList.add("fb-blur");
+	img.classList.add("hb-blur");
 };
 
 const processVideoDetections = async (detections, video) => {
@@ -164,26 +268,30 @@ const processVideoDetections = async (detections, video) => {
 		video.dataset.blurred = "no face";
 
 		// remove blur class
-		video.classList.remove("fb-blur");
+		video.classList.remove("hb-blur");
 		return;
 	}
 
 	detections = detections.face;
 
-	let containsWoman = detections.some((detection) =>
-		genderPredicates.femaleOnly(detection.gender, detection.genderScore)
-	);
-	if (!containsWoman) {
-		// remove blur class
-		video.classList.remove("fb-blur");
-		video.dataset.blurred = "no women";
-		return;
+	if (shouldDetectGender()) {
+		let containsGender = detections.some((detection) =>
+			genderPredicate(detection.gender, detection.genderScore)
+		);
+		if (!containsGender) {
+			// remove blur class
+			video.classList.remove("hb-blur");
+			video.dataset.blurred = "no gender";
+			return;
+		}
 	}
 
 	video.dataset.blurred = true;
 
+	// console.log("blurring video", detections);
+
 	// blur current frame
-	video.classList.add("fb-blur");
+	video.classList.add("hb-blur");
 };
 
 const videoDetectionLoop = async (video) => {
@@ -247,13 +355,14 @@ const processVideo = async (video) => {
 };
 
 const detectFace = async (element) => {
-	if (!shouldProcessImage(element)) return;
+	if (!shouldDetect()) return; // safe guard
+	if (!hasBeenProcessed(element)) return;
 
 	element.crossOrigin = "anonymous";
 
-	if (element.tagName === "IMG") {
+	if (element.tagName === "IMG" && shouldDetectImages) {
 		await processImage(element);
-	} else if (element.tagName === "VIDEO") {
+	} else if (element.tagName === "VIDEO" && shouldDetectVideos) {
 		await processVideo(element);
 	}
 };
@@ -277,8 +386,12 @@ const initIntersectionObserver = async () => {
 		{ rootMargin: "100px", threshold: 0 }
 	);
 
-	const images = document.getElementsByTagName("img");
-	const videos = document.getElementsByTagName("video");
+	const images = shouldDetectImages
+		? document.getElementsByTagName("img")
+		: [];
+	const videos = shouldDetectVideos
+		? document.getElementsByTagName("video")
+		: [];
 	for (let img of images) {
 		intersectionObserver.observe(img);
 	}
@@ -299,9 +412,7 @@ const processNode = (node, callBack) => {
 
 const initMutationObserver = async () => {
 	mutationObserver = new MutationObserver((mutations) => {
-		// if mutation is childList
-
-		mutations.forEach((mutation) => {
+	mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
 				mutation.addedNodes.forEach((node) => {
 					processNode(node, (node) =>
@@ -319,40 +430,59 @@ const initMutationObserver = async () => {
 };
 
 const initStyles = () => {
-	const style = document.createElement("style");
-	style.innerHTML = `
-		.fb-blur {
-			filter: blur(10px) grayscale(100%);
+	hbStyleSheet = document.createElement("style");
+	hbStyleSheet.id = "hb-stylesheet";
+	setStyle();
+	document.head.appendChild(hbStyleSheet);
+};
+
+const setStyle = () => {
+	if (!hbStyleSheet) return;
+	if (!shouldDetect()) {
+		hbStyleSheet.innerHTML = "";
+		return;
+	}
+	const shouldBlurImages = settings.blurImages;
+	const shouldBlurVideos = settings.blurVideos;
+	const shouldUnblurImagesOnHover = settings.unblurImages;
+	const shouldUnblurVideosOnHover = settings.unblurVideos;
+
+	let blurSelectors = [];
+	if (shouldBlurImages) blurSelectors.push("img" + ".hb-blur");
+	if (shouldBlurVideos) blurSelectors.push("video" + ".hb-blur");
+	blurSelectors = blurSelectors.join(", ");
+
+	let unblurSelectors = [];
+	if (shouldUnblurImagesOnHover)
+		unblurSelectors.push("img" + ".hb-blur:hover");
+	if (shouldUnblurVideosOnHover)
+		unblurSelectors.push("video" + ".hb-blur:hover");
+	unblurSelectors = unblurSelectors.join(", ");
+	hbStyleSheet.innerHTML = `
+		${blurSelectors} {
+			filter: blur(${settings.blurAmount}px) grayscale(100%);
 			transition: filter 0.1s ease;
 			opacity: unset;
 		}
 
 		// when hovering, gradually remove grayscale for 1 second, then gradually remove blur
-		.fb-blur:hover {
+		${unblurSelectors} {
 			filter: grayscale(0%);
 			transition: filter 0.5s ease;
 		}
-		.fb-blur:hover {
+		${unblurSelectors} {
 			filter: blur(0px);
 			transition: filter 0.5s ease;
 			transition-delay: 1s;
 		}
 	`;
-	document.head.appendChild(style);
 };
 
-const init = async () => {
+const initDetection = async () => {
 	console.log("INIT");
-
+	if (started) return;
+	started = true;
 	await initIntersectionObserver();
 	await initMutationObserver();
 	initStyles();
 };
-
-if (document.readyState === "loading") {
-	document.addEventListener("DOMContentLoaded", init);
-} else {
-	init().catch((error) => {
-		console.error("Error initializing:", error);
-	});
-}
