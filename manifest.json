@@ -1,10 +1,10 @@
 {
 	"manifest_version": 3,
-	"name": "Human Blur",
+	"name": "HumanBlur",
 	"version": "1.0",
 	"permissions": ["activeTab", "storage", "scripting"],
 	"action": {
-		"default_title": "Human Blur",
+		"default_title": "HumanBlur",
 		"default_popup": "src/popup.html"
 	},
 	"background": {
