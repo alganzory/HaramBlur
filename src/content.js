@@ -11,12 +11,10 @@ const MIN_IMG_WIDTH = 50;
 const MIN_IMG_HEIGHT = 80;
 
 // maintain 1920x1080 aspect ratio
-const MAX_VID_WIDTH = 480;
-const MAX_VID_HEIGHT = 270;
-const MIN_VID_WIDTH = 320;
-const MIN_VID_HEIGHT = 240;
-let frameCount = 0;
-const FRAME_LIMIT = 10;
+const MAX_VID_WIDTH = 1920 / 4;
+const MAX_VID_HEIGHT = 1080 / 4;
+
+const FRAME_LIMIT = 1000 / 30; // 30 fps
 
 var settings = {};
 var hbStyleSheet;
@@ -51,7 +49,7 @@ function toggleStatus(firstTime = false) {
 
 function initTab() {
 	getSettings().then(function () {
-		console.log("initTab", settings);
+		console.log("HB==initTab", settings);
 		toggleStatus(true);
 		listenForMessages();
 	});
@@ -81,7 +79,7 @@ function listenForMessages() {
 }
 
 const updateSettings = (newSetting) => {
-	// console.log("updateSettings", newSetting);
+	// console.log("HB==updateSettings", newSetting);
 	const { key, value } = newSetting;
 
 	// take action based on key
@@ -136,7 +134,7 @@ const HUMAN_CONFIG = {
 var human;
 
 const initHuman = async () => {
-	// console.log("INIT HUMAN", document.readyState);
+	// console.log("HB==INIT HUMAN", document.readyState);
 	human = new Human(HUMAN_CONFIG);
 	await human.load();
 };
@@ -176,44 +174,57 @@ const calcResize = (
 	maxWidth = MAX_IMG_WIDTH,
 	maxHeight = MAX_IMG_HEIGHT
 ) => {
+	let actualMaxWidth = maxWidth;
+	let actualMaxHeight = maxHeight;
+
+	let elementWidth =
+		element.tagName === "VIDEO" ? element.videoWidth : element.naturalWidth;
+	let elementHeight =
+		element.tagName === "VIDEO"
+			? element.videoHeight
+			: element.naturalHeight;
+
+	// if the aspect ratio is reversed (portrait image/video), swap max width and max height
+	if (elementWidth < elementHeight) {
+		actualMaxWidth = maxHeight;
+		actualMaxHeight = maxWidth;
+	}
+
 	// if image is smaller than max size, return null;
-	if (element.width < maxWidth && element.height < maxHeight) return null;
+	if (elementWidth < actualMaxWidth && elementHeight < actualMaxHeight)
+		return null;
 
 	// calculate new width to resize image to
 	const ratio = Math.min(
-		maxWidth / element.width,
-		maxHeight / element.height
+		actualMaxWidth / elementWidth,
+		actualMaxHeight / elementHeight
 	);
-	const newWidth = element.width * ratio;
-	const newHeight = element.height * ratio;
+	const newWidth = elementWidth * ratio;
+	const newHeight = elementHeight * ratio;
 
 	return { newWidth, newHeight };
 };
 
 const loadImage = (img) => {
 	return new Promise((resolve, reject) => {
-		if (img.complete) {
+		if (img.complete && img.naturalHeight) {
 			resolve();
 		} else {
-			img.onload = () => {
-				resolve();
-			};
-			img.onerror = (e) => {
-				reject(e);
-			};
+			img.onload = resolve;
+			img.onerror = reject;
 		}
 	});
 };
 
 const loadVideo = (video) => {
 	return new Promise((resolve, reject) => {
-		if (video.readyState >= 3) {
+		if (video.readyState >= 3 && video.videoHeight) {
 			video.dataset.readyState = video.readyState;
-			resolve(video);
+			resolve();
 		} else {
 			video.onloadeddata = () => {
 				video.dataset.onloadeddata = true;
-				resolve(video);
+				resolve();
 			};
 			video.onerror = (e) => {
 				// console.error("Failed to load video", video);
@@ -234,7 +245,7 @@ const genderPredicate = (gender, score) => {
 		);
 	}
 	if (!blurMale && blurFemale) {
-		return gender === "female" || (gender === "male" && score < 0.2);
+		return gender === "female";
 	}
 
 	return false;
@@ -242,6 +253,14 @@ const genderPredicate = (gender, score) => {
 
 const processImageDetections = async (detections, img) => {
 	if (!detections?.face?.length) {
+		// console.log(
+		// 	"HB== no face detected",
+		// 	detections,
+		// 	img,
+		// 	img.complete,
+		// 	img.naturalWidth,
+		// 	img.naturalHeight
+		// );
 		img.dataset.blurred = "no face";
 		return;
 	}
@@ -258,6 +277,15 @@ const processImageDetections = async (detections, img) => {
 		}
 	}
 	img.dataset.blurred = true;
+
+	// console.log(
+	// 	"HB== yes face detected",
+	// 	detections,
+	// 	img,
+	// 	img.complete,
+	// 	img.naturalWidth,
+	// 	img.naturalHeight
+	// );
 
 	// add blur class
 	img.classList.add("hb-blur");
@@ -288,16 +316,30 @@ const processVideoDetections = async (detections, video) => {
 
 	video.dataset.blurred = true;
 
-	// console.log("blurring video", detections);
+	// console.log("HB==blurring video", detections);
 
 	// blur current frame
 	video.classList.add("hb-blur");
 };
 
-const videoDetectionLoop = async (video) => {
-	const needToResize = calcResize(video, MAX_VID_WIDTH, MAX_VID_HEIGHT);
+const videoDetectionLoop = async (video, needToResize) => {
+	// get the current timestamp
+	const currTime = performance.now();
 
-	if (!video.paused && frameCount % FRAME_LIMIT === 0) {
+	// calculate the time difference
+	const diffTime = currTime - video.dataset.HBprevTime;
+
+	if (!video.paused && diffTime >= FRAME_LIMIT) {
+		// console.log(
+		// 	"HB===video previous time",
+		// 	video.dataset.HBprevTime,
+		// 	"currTime",
+		// 	currTime,
+		// 	"diffTime",
+		// 	diffTime,
+		// 	"height",
+		// 	video.videoHeight
+		// );
 		let detections = await human.detect(video, {
 			cacheSensitivity: 0.7,
 			filter: {
@@ -307,20 +349,24 @@ const videoDetectionLoop = async (video) => {
 				return: true,
 			},
 		});
-		// console.log("video detections", detections);
+		// console.log("HB==video detections", detections);
 
-		await processVideoDetections(detections, video);
+
+		// interpolate the new detections
+		const interpolated = human.next(detections);
+		await processVideoDetections(interpolated, video);
+		// store the current timestamp
+		video.dataset.HBprevTime = currTime;
 	}
-	frameCount++;
 
-	requestAnimationFrame(() => videoDetectionLoop(video));
+	requestAnimationFrame(() => videoDetectionLoop(video, needToResize));
 };
 
 const processImage = async (img) => {
 	try {
 		await loadImage(img);
 	} catch (err) {
-		// console.error("Failed to load image", err);
+		console.error("Failed to load image", img);
 		img.removeAttribute("crossorigin");
 		return;
 	}
@@ -328,6 +374,7 @@ const processImage = async (img) => {
 	if (isImageTooSmall(img)) return;
 
 	const needToResize = calcResize(img);
+
 
 	let detections = needToResize
 		? await human.detect(img, {
@@ -345,13 +392,17 @@ const processImage = async (img) => {
 };
 
 const processVideo = async (video) => {
-	let loadedVideo = await loadVideo(video);
-	if (!loadedVideo) {
+	try {
+		await loadVideo(video);
+	} catch (err) {
 		console.error("Failed to load video", video);
+		video.removeAttribute("crossorigin");
 		return;
 	}
 
-	videoDetectionLoop(loadedVideo);
+	const needToResize = calcResize(video, MAX_VID_WIDTH, MAX_VID_HEIGHT);
+	video.dataset.HBprevTime = 0;
+	videoDetectionLoop(video, needToResize);
 };
 
 const detectFace = async (element) => {
@@ -386,12 +437,8 @@ const initIntersectionObserver = async () => {
 		{ rootMargin: "100px", threshold: 0 }
 	);
 
-	const images = shouldDetectImages
-		? document.getElementsByTagName("img")
-		: [];
-	const videos = shouldDetectVideos
-		? document.getElementsByTagName("video")
-		: [];
+	const images = shouldDetectImages ? document.querySelectorAll("img") : [];
+	const videos = shouldDetectVideos ? document.querySelectorAll("video") : [];
 	for (let img of images) {
 		intersectionObserver.observe(img);
 	}
@@ -402,7 +449,7 @@ const initIntersectionObserver = async () => {
 
 const processNode = (node, callBack) => {
 	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
-		// console.log("IMG TAG", node);
+		// console.log("HB==IMG TAG", node);
 		callBack(node);
 		return;
 	}
@@ -412,7 +459,7 @@ const processNode = (node, callBack) => {
 
 const initMutationObserver = async () => {
 	mutationObserver = new MutationObserver((mutations) => {
-	mutations.forEach((mutation) => {
+		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
 				mutation.addedNodes.forEach((node) => {
 					processNode(node, (node) =>
@@ -479,7 +526,7 @@ const setStyle = () => {
 };
 
 const initDetection = async () => {
-	console.log("INIT");
+	console.log("HB==INIT");
 	if (started) return;
 	started = true;
 	await initIntersectionObserver();
