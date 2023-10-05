@@ -1,9 +1,15 @@
 {
 	"manifest_version": 3,
-	"name": "Face Detection",
+	"name": "HumanBlur",
 	"version": "1.0",
-	"permissions": ["activeTab", "scripting"],
-
+	"permissions": ["activeTab", "storage", "scripting"],
+	"action": {
+		"default_title": "HumanBlur",
+		"default_popup": "src/popup.html"
+	},
+	"background": {
+		"service_worker": "src/background.js"
+	},
 	"icons": {
 		"16": "icon16.png",
 		"48": "icon48.png"
