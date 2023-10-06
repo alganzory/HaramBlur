@@ -156,7 +156,7 @@ initHuman()
 	});
 
 const isImageTooSmall = (img) => {
-	const isSmall = img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
+	const isSmall = img.naturalWidth < MIN_IMG_WIDTH || img.naturalHeight < MIN_IMG_HEIGHT;
 	if (isSmall) {
 		img.dataset.isSmall = true;
 		return true;
@@ -205,16 +205,6 @@ const calcResize = (
 	return { newWidth, newHeight };
 };
 
-const loadImage = (img) => {
-	return new Promise((resolve, reject) => {
-		if (img.complete && img.naturalHeight) {
-			resolve();
-		} else {
-			img.onload = resolve;
-			img.onerror = reject;
-		}
-	});
-};
 
 const loadVideo = (video) => {
 	return new Promise((resolve, reject) => {

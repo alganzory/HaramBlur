@@ -18,7 +18,7 @@
 	"host_permissions": ["<all_urls>"],
 	"content_scripts": [
 		{
-			"js": ["dist/content.js"],
+			"js": ["dist/content2.js"],
 			"matches": ["<all_urls>"],
 			"run_at": "document_start"
 		}
