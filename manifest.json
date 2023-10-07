@@ -1,8 +1,9 @@
 {
 	"manifest_version": 3,
 	"name": "HumanBlur",
-	"version": "1.0",
-	"permissions": ["activeTab", "storage", "scripting"],
+	"description": "HumanBlur utilizes face detection technology with privacy controls that allow you to uphold the Islamic gaze protection principle and tailor your online experience by automatically blurring images and videos that contain unwanted or impermissible content.",
+	"version": "0.0.1",
+	"permissions": ["activeTab", "storage"],
 	"action": {
 		"default_title": "HumanBlur",
 		"default_popup": "src/popup.html"
@@ -11,10 +12,9 @@
 		"service_worker": "src/background.js"
 	},
 	"icons": {
-		"16": "icon16.png",
-		"48": "icon48.png"
+		"48": "src/assets/hb-icon-48.png",
+		"128": "src/assets/hb-icon-128.png"
 	},
-
 	"host_permissions": ["<all_urls>"],
 	"content_scripts": [
 		{
