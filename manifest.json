@@ -1,7 +1,7 @@
 {
 	"manifest_version": 3,
 	"name": "HumanBlur",
-	"description": "HumanBlur utilizes face detection technology with privacy controls that allow you to uphold the Islamic gaze protection principle and tailor your online experience by automatically blurring images and videos that contain unwanted or impermissible content.",
+	"description": "Protect your privacy and uphold Islamic values by auto detecting & blurring images and videos of unwanted or impermissible content.",
 	"version": "0.0.1",
 	"permissions": ["activeTab", "storage"],
 	"action": {
