@@ -60,7 +60,7 @@ const initMutationObserver = async () => {
 
 const attachObserversListener = () => {
 	listenToEvent("toggleOnOffStatus", async () => {
-		console.log("HB== Observers Listener", shouldDetect());
+		// console.log("HB== Observers Listener", shouldDetect());
 		if (shouldDetect()) {
 			initIntersectionObserver();
 			initMutationObserver();

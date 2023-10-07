@@ -38,14 +38,6 @@ const genderPredicate = (gender, score) => {
 
 const processImageDetections = async (detections, img) => {
 	if (!detections?.face?.length) {
-		console.log(
-			"HB== no face detected",
-			detections,
-			img,
-			img.complete,
-			img.naturalWidth,
-			img.naturalHeight
-		);
 		img.dataset.blurred = "no face";
 		return;
 	}
@@ -114,16 +106,6 @@ const videoDetectionLoop = async (video, needToResize) => {
 	const diffTime = currTime - video.dataset.HBprevTime;
 
 	if (!video.paused && diffTime >= FRAME_LIMIT) {
-		// console.log(
-		// 	"HB===video previous time",
-		// 	video.dataset.HBprevTime,
-		// 	"currTime",
-		// 	currTime,
-		// 	"diffTime",
-		// 	diffTime,
-		// 	"height",
-		// 	video.videoHeight
-		// );
 		let detections = await human.detect(video, {
 			cacheSensitivity: 0.7,
 			filter: {
@@ -192,7 +174,7 @@ const processVideo = async (video) => {
 };
 
 const detectFace = async (element) => {
-	console.log("HB==detectFace", element, shouldDetect());
+	// console.log("HB==detectFace", element, shouldDetect());
 	if (!shouldDetect()) return; // safe guard
 	if (!hasBeenProcessed(element)) return;
 

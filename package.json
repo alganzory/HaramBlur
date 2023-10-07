@@ -1,9 +1,11 @@
 {
+  "scripts": {
+    "build": "vite build"
+  },
   "devDependencies": {
     "vite": "^4.4.9"
   },
   "dependencies": {
-    "@vladmandic/human": "^3.1.2",
-    "p-limit": "^4.0.0"
+    "@vladmandic/human": "^3.1.2"
   }
 }

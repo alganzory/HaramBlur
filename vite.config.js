@@ -1,10 +1,10 @@
 export default {
 	build: {
 		rollupOptions: {
-			input: "src/content2.js",
+			input: "src/content.js",
 			output: {
 				format: "iife",
-				name: "content2",
+				name: "content",
 				dir: "dist",
 				entryFileNames: "[name].js",
 			},

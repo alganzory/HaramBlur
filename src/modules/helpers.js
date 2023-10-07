@@ -14,7 +14,6 @@ const loadImage = (img) => {
 			img.onload = () => img.naturalHeight && resolve();
 
 			img.onerror = (e) => {
-				console.log("ERRORED", img, e);
 				reject(e);
 			}
 		}
@@ -87,7 +86,6 @@ const hasBeenProcessed = (element) => {
 
 const processNode = (node, callBack) => {
 	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
-		// console.log("HB==IMG TAG", node);
 		callBack(node);
 		return;
 	}

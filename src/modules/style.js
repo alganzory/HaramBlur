@@ -13,7 +13,7 @@ const initStylesheet = () => {
 };
 
 const setStyle = () => {
-	console.log("HB==SET STYLE")
+	// console.log("HB==SET STYLE")
 	if (!hbStyleSheet) {
 		initStylesheet();
 	}

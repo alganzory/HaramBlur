@@ -16,7 +16,7 @@ const allSettings = ["status", "blurAmount", ...refreshableSettings];
 var refreshMessage, container;
 
 function initPopup() {
-	console.log("HB==initPopup");
+	// console.log("HB==initPopup");
 	loadLocalSettings().then(function () {
 		if (document.readyState === "complete" || "interactive") {
 			displaySettings(settings);
@@ -33,7 +33,6 @@ function initPopup() {
 function loadLocalSettings() {
 	return new Promise(function (resolve) {
 		chrome.storage.sync.get(["hb-settings"], function (storage) {
-			console.log("HB==🚀 ~ file: popup.js:26 ~ storage:", storage);
 			settings = storage["hb-settings"];
 			resolve();
 		});
