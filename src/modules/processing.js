@@ -38,7 +38,7 @@ const genderPredicate = (gender, score) => {
 
 const processImageDetections = async (detections, img) => {
 	if (!detections?.face?.length) {
-		img.dataset.blurred = "no face";
+		// img.dataset.blurred = "no face";
 		return;
 	}
 
@@ -49,11 +49,11 @@ const processImageDetections = async (detections, img) => {
 			genderPredicate(detection.gender, detection.genderScore)
 		);
 		if (!containsGender) {
-			img.dataset.blurred = "no gender";
+			// img.dataset.blurred = "no gender";
 			return;
 		}
 	}
-	img.dataset.blurred = true;
+	// img.dataset.blurred = true;
 
 	// console.log(
 	// 	"HB== yes face detected",
@@ -69,7 +69,7 @@ const processImageDetections = async (detections, img) => {
 };
 const processVideoDetections = async (detections, video) => {
 	if (!detections?.face?.length) {
-		video.dataset.blurred = "no face";
+		// video.dataset.blurred = "no face";
 
 		// remove blur class
 		video.classList.remove("hb-blur");
@@ -85,12 +85,12 @@ const processVideoDetections = async (detections, video) => {
 		if (!containsGender) {
 			// remove blur class
 			video.classList.remove("hb-blur");
-			video.dataset.blurred = "no gender";
+			// video.dataset.blurred = "no gender";
 			return;
 		}
 	}
 
-	video.dataset.blurred = true;
+	// video.dataset.blurred = true;
 
 	// console.log("HB==blurring video", detections);
 

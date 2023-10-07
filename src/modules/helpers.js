@@ -23,11 +23,11 @@ const loadImage = (img) => {
 const loadVideo = (video) => {
 	return new Promise((resolve, reject) => {
 		if (video.readyState >= 3 && video.videoHeight) {
-			video.dataset.readyState = video.readyState;
+			// video.dataset.readyState = video.readyState;
 			resolve();
 		} else {
 			video.onloadeddata = () => {
-				video.dataset.onloadeddata = true;
+				// video.dataset.onloadeddata = true;
 				resolve();
 			};
 			video.onerror = (e) => {
@@ -42,7 +42,6 @@ const isImageTooSmall = (img) => {
 	const isSmall =
 		img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
 	if (isSmall) {
-		img.dataset.isSmall = true;
 		return true;
 	}
 };
