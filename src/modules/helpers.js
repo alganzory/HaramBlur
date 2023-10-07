@@ -11,8 +11,12 @@ const loadImage = (img) => {
 		if (img.complete && img.naturalHeight) {
 			resolve();
 		} else {
-			img.onload = resolve;
-			img.onerror = reject;
+			img.onload = () => img.naturalHeight && resolve();
+
+			img.onerror = (e) => {
+				console.log("ERRORED", img, e);
+				reject(e);
+			}
 		}
 	});
 };
@@ -37,7 +41,7 @@ const loadVideo = (video) => {
 
 const isImageTooSmall = (img) => {
 	const isSmall =
-		img.naturalWidth < MIN_IMG_WIDTH || img.naturalHeight < MIN_IMG_HEIGHT;
+		img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
 	if (isSmall) {
 		img.dataset.isSmall = true;
 		return true;

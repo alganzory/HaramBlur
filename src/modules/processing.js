@@ -149,7 +149,7 @@ const processImage = async (img) => {
 	try {
 		await loadImage(img);
 	} catch (err) {
-		console.error("Failed to load image", img);
+		// console.error("Failed to load image", img);
 		img.removeAttribute("crossorigin");
 		return;
 	}
@@ -197,14 +197,6 @@ const detectFace = async (element) => {
 	if (!hasBeenProcessed(element)) return;
 
 	element.crossOrigin = "anonymous";
-
-	console.log(
-		"HB==detectFace",
-		element.tagName,
-		shouldDetectImages,
-		shouldDetectVideos
-	);
-
 	if (element.tagName === "IMG" && shouldDetectImages) {
 		await processImage(element);
 	} else if (element.tagName === "VIDEO" && shouldDetectVideos) {

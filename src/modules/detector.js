@@ -10,6 +10,7 @@ const modelsUrl = chrome.runtime.getURL("src/assets/models");
  */
 const HUMAN_CONFIG = {
 	modelBasePath: modelsUrl,
+	backend:"humangl",
 	debug: false,
 	cacheSensitivity: 0,
 	warmup: "none",
@@ -42,9 +43,10 @@ const HUMAN_CONFIG = {
 };
 
 
-let human = new Human(HUMAN_CONFIG);
+let human;
 
 const initHuman = async () => {
+	human =  new Human(HUMAN_CONFIG);
 	await human.load();
 };
 

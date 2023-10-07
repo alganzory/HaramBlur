@@ -20,12 +20,11 @@ Promise.all([initHuman(), getSettings()])
 				toggleOnOffStatus();
 			});
 		} else {
-			console.log("HB==DOM ALREADY LOADED");
+			console.log("HB==DOM ALREADY LOADED", document.readyState);
 			attachAllListeners();
 
 			// turn on/off the extension
 			toggleOnOffStatus();
-
 		}
 	})
 	.catch((err) => {

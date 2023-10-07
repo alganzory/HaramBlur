@@ -23,7 +23,6 @@ const initIntersectionObserver = async () => {
 				intersectionObserver.unobserve(imgOrVideo);
 				return detectFace(imgOrVideo);
 			});
-
 			Promise.allSettled(visiblePromises);
 		},
 		{ rootMargin: "100px", threshold: 0 }
@@ -66,6 +65,7 @@ const attachObserversListener = () => {
 			initIntersectionObserver();
 			initMutationObserver();
 		} else {
+			console.log("HB== Observers Listener", "disconnecting");
 			intersectionObserver?.disconnect();
 			mutationObserver?.disconnect();
 		}
