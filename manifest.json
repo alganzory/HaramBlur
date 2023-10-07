@@ -15,7 +15,6 @@
 		"48": "src/assets/hb-icon-48.png",
 		"128": "src/assets/hb-icon-128.png"
 	},
-	"host_permissions": ["<all_urls>"],
 	"content_scripts": [
 		{
 			"js": ["dist/content.js"],
