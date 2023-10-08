@@ -1,8 +1,10 @@
 {
   "scripts": {
-    "build": "vite build"
+    "build": "vite build",
+    "release": "bestzip extension.zip dist manifest.json src/assets src/background.js src/popup.html src/popup.js"
   },
   "devDependencies": {
+    "bestzip": "^2.2.1",
     "vite": "^4.4.9"
   },
   "dependencies": {
