@@ -1,4 +1,4 @@
-import { emitEvent } from "./helpers";
+import { emitEvent, listenToEvent } from "./helpers";
 
 let settings = {};
 
@@ -15,8 +15,11 @@ function shouldDetect() {
 	return shouldDetectGender();
 }
 
-function toggleOnOffStatus() {
-	console.log("HB==toggleOnOffStatus", settings.status)
+function isBlurryStartMode() {
+	return settings.blurryStartMode;
+}
+
+function setSettings() {
 	if (settings.status !== true) {
 		shouldDetectImages = false;
 		shouldDetectVideos = false;
@@ -26,7 +29,12 @@ function toggleOnOffStatus() {
 		shouldDetectMale = settings.blurMale;
 		shouldDetectFemale = settings.blurFemale;
 	}
+}
 
+function toggleOnOffStatus() {
+	// console.log("HB==toggleOnOffStatus", settings.status)
+
+	setSettings();
 	// console.log("HB==toggleOnOffStatus", settings.status);
 	emitEvent("toggleOnOffStatus", settings.status);
 }
@@ -41,6 +49,7 @@ function getSettings() {
 }
 
 function listenForMessages() {
+	listenToEvent("settingsLoaded", setSettings)
 	chrome.runtime.onMessage.addListener(function (
 		request,
 		sender,
@@ -74,4 +83,4 @@ const changeBlurAmount = () => {
 	emitEvent("changeBlurAmount", settings.blurAmount);
 };
 
-export { settings, getSettings, toggleOnOffStatus, listenForMessages, shouldDetect, shouldDetectGender, shouldDetectImages, shouldDetectVideos, shouldDetectMale, shouldDetectFemale};
+export { settings, isBlurryStartMode, getSettings, toggleOnOffStatus, listenForMessages, shouldDetect, shouldDetectGender, shouldDetectImages, shouldDetectVideos, shouldDetectMale, shouldDetectFemale};

@@ -1,21 +1,23 @@
 const MAX_IMG_HEIGHT = 300;
 const MAX_IMG_WIDTH = 500;
-const MIN_IMG_WIDTH = 50;
-const MIN_IMG_HEIGHT = 80;
+const MIN_IMG_WIDTH = 64;
+const MIN_IMG_HEIGHT = 64;
 // maintain 1920x1080 aspect ratio
-const MAX_VIDEO_WIDTH = 1920 / 4;
-const MAX_VIDEO_HEIGHT = 1080 / 4;
+const MAX_VIDEO_WIDTH = 1920 / 3.5;
+const MAX_VIDEO_HEIGHT = 1080 / 3.5;
 
 const loadImage = (img) => {
 	return new Promise((resolve, reject) => {
 		if (img.complete && img.naturalHeight) {
-			resolve();
+			isImageTooSmall(img) ? reject() : resolve();
 		} else {
-			img.onload = () => img.naturalHeight && resolve();
-
-			img.onerror = (e) => {
-				reject(e);
-			}
+			img.onload = () =>
+				img.naturalHeight
+					? isImageTooSmall(img)
+						? reject()
+						: resolve()
+					: reject();
+			img.onerror = (e) => reject(e);
 		}
 	});
 };
@@ -39,11 +41,7 @@ const loadVideo = (video) => {
 };
 
 const isImageTooSmall = (img) => {
-	const isSmall =
-		img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
-	if (isSmall) {
-		return true;
-	}
+	return img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
 };
 
 const calcResize = (element, type = "image") => {
@@ -92,7 +90,7 @@ const processNode = (node, callBack) => {
 	node?.childNodes?.forEach((child) => processNode(child, callBack));
 };
 
-const emitEvent = (eventName, detail) => {
+const emitEvent = (eventName, detail = "") => {
 	const event = new CustomEvent(eventName, { detail });
 	document.dispatchEvent(event);
 };
@@ -104,7 +102,6 @@ const listenToEvent = (eventName, callBack) => {
 export {
 	loadImage,
 	loadVideo,
-	isImageTooSmall,
 	calcResize,
 	hasBeenProcessed,
 	processNode,
