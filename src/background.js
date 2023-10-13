@@ -2,6 +2,7 @@
 
 const defaultSettings = {
 	status: true,
+	blurryStartMode: false,
 	blurAmount: 15,
 	blurImages: true,
 	blurVideos: true,
@@ -18,6 +19,11 @@ chrome.runtime.onInstalled.addListener(function () {
 			result["hb-settings"] === null
 		) {
 			chrome.storage.sync.set({ "hb-settings": defaultSettings });
+		} else {
+			// if there are any new settings, add them to the settings object
+			chrome.storage.sync.set({
+				"hb-settings": { ...defaultSettings, ...result["hb-settings"] },
+			});
 		}
 	});
 });

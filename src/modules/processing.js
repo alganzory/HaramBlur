@@ -5,9 +5,9 @@ import { human } from "./detector.js"; // import the human variable from detecto
 import {
 	loadImage,
 	loadVideo,
-	isImageTooSmall,
 	calcResize,
 	hasBeenProcessed,
+	emitEvent,
 } from "./helpers.js";
 import {
 	shouldDetect,
@@ -19,6 +19,8 @@ import {
 } from "./settings.js";
 
 const FRAME_LIMIT = 1000 / 30; // 30 fps
+
+let detectionStarted = false;
 
 const genderPredicate = (gender, score) => {
 	if (shouldDetectMale && shouldDetectFemale) return gender !== "unknown";
@@ -37,6 +39,10 @@ const genderPredicate = (gender, score) => {
 };
 
 const processImageDetections = async (detections, img) => {
+	if (!detectionStarted) {
+		detectionStarted = true;
+		emitEvent("detectionStarted");
+	}
 	if (!detections?.face?.length) {
 		// img.dataset.blurred = "no face";
 		return;
@@ -68,6 +74,10 @@ const processImageDetections = async (detections, img) => {
 	img.classList.add("hb-blur");
 };
 const processVideoDetections = async (detections, video) => {
+	if (!detectionStarted) {
+		detectionStarted = true;
+		emitEvent("detectionStarted");
+	}
 	if (!detections?.face?.length) {
 		// video.dataset.blurred = "no face";
 
@@ -137,7 +147,6 @@ const processImage = async (img) => {
 	}
 
 	try {
-		if (isImageTooSmall(img)) return;
 		const needToResize = calcResize(img, "image");
 		let detections = needToResize
 			? await human.detect(img, {

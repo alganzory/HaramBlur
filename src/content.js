@@ -1,4 +1,5 @@
 import { human, initHuman } from "./modules/detector";
+import { emitEvent } from "./modules/helpers";
 import { attachObserversListener } from "./modules/observers";
 import {
 	getSettings,
@@ -7,33 +8,39 @@ import {
 } from "./modules/settings";
 import { attachStyleListener } from "./modules/style";
 
-Promise.all([initHuman(), getSettings()])
+const attachAllListeners = () => {
+	// Listen for more settings
+	listenForMessages();
+	attachStyleListener();
+	attachObserversListener();
+};
+
+attachAllListeners();
+getSettings()
 	.then(() => {
-		// console.log("HB==HUMAN LOADED", "HB==SETTINGS LOADED", human);
+		// console.log("HB==SETTINGS LOADED");
+		emitEvent("settingsLoaded");
+
+		// init human
+		return initHuman();
+	})
+	.then(() => {
+		// console.log("HB==HUMAN INITIALIZED", human);
 
 		// wait for the dom to load
 		if (document.readyState === "loading") {
 			document.addEventListener("DOMContentLoaded", () => {
 				// console.log("HB==DOM LOADED");
 				// turn on/off the extension
-				attachAllListeners();
 				toggleOnOffStatus();
 			});
 		} else {
 			// console.log("HB==DOM ALREADY LOADED", document.readyState);
-			attachAllListeners();
 
 			// turn on/off the extension
 			toggleOnOffStatus();
 		}
 	})
-	.catch((err) => {
-		console.error("HB==ERROR", err);
+	.catch((e) => {
+		console.log("HB==INITIALIZATION ERROR", e);
 	});
-
-const attachAllListeners = () => {
-	attachStyleListener();
-	attachObserversListener();
-	// Listen for more settings
-	listenForMessages();
-};

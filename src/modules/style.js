@@ -1,21 +1,51 @@
 // style.js
 // This module exports the style sheet and blur effect functions
 
-import { listenToEvent } from "./helpers.js";
-import { settings, shouldDetect } from "./settings.js";
+import { emitEvent, listenToEvent } from "./helpers.js";
+import { settings, shouldDetect, isBlurryStartMode } from "./settings.js";
 
-let hbStyleSheet;
+const BLURRY_START_MODE_TIMEOUT = 4000; // TODO: make this a setting maybe?
+let hbStyleSheet, blurryStartStyleSheet;
 
-const initStylesheet = () => {
+const initStylesheets = () => {
+	// console.log("HB==INIT STYLESHEETS")
 	hbStyleSheet = document.createElement("style");
 	hbStyleSheet.id = "hb-stylesheet";
 	document.head.appendChild(hbStyleSheet);
+	initBlurryMode();
+};
+
+const initBlurryMode = () => {
+	if (!shouldDetect() || !isBlurryStartMode()) return;
+	blurryStartStyleSheet = document.createElement("style");
+	blurryStartStyleSheet.id = "hb-blurry-start-stylesheet";
+	blurryStartStyleSheet.innerHTML = `
+	  img, video{
+		filter: blur(${settings.blurAmount}px) grayscale(100%) !important;
+		transition: filter 0.1s ease !important;
+		opacity: unset !important;
+	  }
+
+	  img:hover, video:hover{
+		filter: blur(0px) grayscale(0%) !important;
+		transition: filter 0.5s ease !important;
+		transition-delay: 0.5s !important;
+	  }
+	`;
+
+	document.head.appendChild(blurryStartStyleSheet);
+
+	// issue event turn off blurry start mode after 1 second
+	setTimeout(() => {
+		if (!blurryStartStyleSheet?.innerHTML) return; // if blurryStartStyleSheet wasn't instantiated/was removed, return
+		emitEvent("blurryStartModeTimeout", "timeout");
+	}, BLURRY_START_MODE_TIMEOUT);
 };
 
 const setStyle = () => {
 	// console.log("HB==SET STYLE")
 	if (!hbStyleSheet) {
-		initStylesheet();
+		initStylesheets();
 	}
 	if (!shouldDetect()) {
 		hbStyleSheet.innerHTML = "";
@@ -57,9 +87,17 @@ const setStyle = () => {
   `;
 };
 
+const turnOffBlurryStart = (e) => {
+	if (!blurryStartStyleSheet?.innerHTML) return; // if blurryStartStyleSheet wasn't instantiated/was removed, return
+	blurryStartStyleSheet.innerHTML = "";
+};
+
 const attachStyleListener = () => {
+	listenToEvent("settingsLoaded", initStylesheets);
 	listenToEvent("toggleOnOffStatus", setStyle);
 	listenToEvent("changeBlurAmount", setStyle);
+	listenToEvent("detectionStarted", turnOffBlurryStart);
+	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
 export { attachStyleListener };

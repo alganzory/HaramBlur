@@ -2,8 +2,9 @@
 	"manifest_version": 3,
 	"name": "HumanBlur",
 	"description": "Protect your privacy and uphold Islamic values by auto detecting & blurring images and videos of unwanted or impermissible content.",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"permissions": ["activeTab", "storage"],
+	"author": "md.alganzory@gmail.com",
 	"action": {
 		"default_title": "HumanBlur",
 		"default_popup": "src/popup.html"
@@ -18,14 +19,14 @@
 	"content_scripts": [
 		{
 			"js": ["dist/content.js"],
-			"matches": ["<all_urls>"],
+			"matches": ["https://*/*", "http://*/*"],
 			"run_at": "document_start"
 		}
 	],
 	"web_accessible_resources": [
 		{
 			"resources": ["src/assets/models/*"],
-			"matches": ["<all_urls>"]
+			"matches": ["https://*/*", "http://*/*"]
 		}
 	]
 }

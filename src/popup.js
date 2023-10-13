@@ -9,6 +9,7 @@ const refreshableSettings = [
 	"blurFemale",
 	"unblurImages",
 	"unblurVideos",
+	"blurryStartMode"
 ];
 
 const allSettings = ["status", "blurAmount", ...refreshableSettings];
@@ -53,6 +54,8 @@ function toggleAllInputs() {
 
 function displaySettings(settings) {
 	document.querySelector("input[name=status]").checked = settings.status;
+	document.querySelector("input[name=blurryStartMode]").checked =
+		settings.blurryStartMode;
 	document.querySelector("input[name=blurAmount]").value =
 		settings.blurAmount;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
@@ -77,6 +80,9 @@ function addListeners() {
 	document
 		.querySelector("input[name=status]")
 		.addEventListener("change", updateStatus);
+	document
+		.querySelector("input[name=blurryStartMode]")
+		.addEventListener("change", updateCheckbox("blurryStartMode"));
 	document
 		.querySelector("input[name=blurImages]")
 		.addEventListener("change", updateCheckbox("blurImages"));
