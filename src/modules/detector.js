@@ -20,9 +20,8 @@ const HUMAN_CONFIG = {
 		mesh: { enabled: false},
 		emotion: { enabled: false },
 		detector: {
-			modelPath: "blazeface-front.json",
+			modelPath: "blazeface.json",
 			maxDetected: 2,
-			rotation: true,
 		},
 		description: {
 			enabled: true,
@@ -45,9 +44,9 @@ const HUMAN_CONFIG = {
 
 let human;
 
-const initHuman = async () => {
+const initHuman = () => {
 	human = new Human(HUMAN_CONFIG);
-	await human.load();
+	return human.load();
 };
 
 // export the human variable and the HUMAN_CONFIG object
