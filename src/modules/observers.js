@@ -65,7 +65,7 @@ const attachObserversListener = () => {
 			initIntersectionObserver();
 			initMutationObserver();
 		} else {
-			console.log("HB== Observers Listener", "disconnecting");
+			// console.log("HB== Observers Listener", "disconnecting");
 			intersectionObserver?.disconnect();
 			mutationObserver?.disconnect();
 		}
