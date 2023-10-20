@@ -74,6 +74,10 @@ const setStyle = () => {
       opacity: unset;
     }
 
+	img[data-hb-nsfw="true"] {
+		border: 5px solid red;
+	}
+
     // when hovering, gradually remove grayscale for 1 second, then gradually remove blur
     ${unblurSelectors} {
       filter: grayscale(0%);

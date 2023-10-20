@@ -99,6 +99,10 @@ const listenToEvent = (eventName, callBack) => {
 	document.addEventListener(eventName, callBack);
 };
 
+const now = () => {
+	return performance?.now?.() || Date.now();
+};
+
 export {
 	loadImage,
 	loadVideo,
@@ -107,4 +111,5 @@ export {
 	processNode,
 	emitEvent,
 	listenToEvent,
+	now,
 };
