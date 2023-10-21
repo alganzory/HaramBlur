@@ -30,7 +30,8 @@ const loadVideo = (video) => {
 		} else {
 			video.onloadeddata = () => {
 				// video.dataset.onloadeddata = true;
-				resolve();
+
+				video.videoHeight ? resolve() : reject();
 			};
 			video.onerror = (e) => {
 				// console.error("Failed to load video", video);
@@ -76,18 +77,15 @@ const calcResize = (element, type = "image") => {
 };
 
 const hasBeenProcessed = (element) => {
-	if (element.dataset.processed) return false;
+	if (!element) throw new Error("No element provided");
+	if (element?.dataset.processed) return false;
 	element.dataset.processed = true;
 	return true;
 };
 
 const processNode = (node, callBack) => {
-	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
-		callBack(node);
-		return;
-	}
-
-	node?.childNodes?.forEach((child) => processNode(child, callBack));
+	const nodes = node?.querySelectorAll? node.querySelectorAll("img, video") : [];
+	nodes?.forEach(callBack);
 };
 
 const emitEvent = (eventName, detail = "") => {
@@ -103,6 +101,13 @@ const now = () => {
 	return performance?.now?.() || Date.now();
 };
 
+const timeTaken = (fnToRun) =>  {
+	const beforeRun = now();
+	fnToRun();
+	const afterRun = now();
+	return afterRun - beforeRun;
+}
+
 export {
 	loadImage,
 	loadVideo,
@@ -112,4 +117,5 @@ export {
 	emitEvent,
 	listenToEvent,
 	now,
+	timeTaken,
 };

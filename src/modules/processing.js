@@ -1,13 +1,20 @@
 // processing.js
 // This module exports the image and video processing functions
 
-import { NSFW_CLASSES, human, nsfwModelClassify } from "./detector.js"; // import the human variable from detector.js
+import {
+	getNsfwClasses,
+	human,
+	humanModelClassify,
+	nsfwModelClassify,
+} from "./detector.js"; // import the human variable from detector.js
 import {
 	loadImage,
 	loadVideo,
 	calcResize,
 	hasBeenProcessed,
 	emitEvent,
+	now,
+	timeTaken,
 } from "./helpers.js";
 import {
 	shouldDetect,
@@ -38,21 +45,22 @@ const genderPredicate = (gender, score) => {
 	return false;
 };
 
-const containsNsfw = (nsfwDetections) => {
+const containsNsfw = (nsfwDetections, nsfwFactor = 0) => {
 	if (!nsfwDetections?.length) return false;
 	let highestNsfwDelta = 0;
 	let highestSfwDelta = 0;
 
+	const nsfwClasses = getNsfwClasses(nsfwFactor);
 	nsfwDetections.forEach((det) => {
-		if (NSFW_CLASSES[det.id].nsfw) {
+		if (nsfwClasses?.[det.id].nsfw) {
 			highestNsfwDelta = Math.max(
 				highestNsfwDelta,
-				det.probability - NSFW_CLASSES[det.id].thresh
+				det.probability - nsfwClasses[det.id].thresh
 			);
 		} else {
 			highestSfwDelta = Math.max(
 				highestSfwDelta,
-				det.probability - NSFW_CLASSES[det.id].thresh
+				det.probability - nsfwClasses[det.id].thresh
 			);
 		}
 	});
@@ -82,81 +90,76 @@ const processImageDetections = async (detections, nsfwDetections, img) => {
 	}
 
 	// Not or-ing the two conditions because we may want to add different classes in the future
-	if (containsNsfw(nsfwDetections)) {
+	if (nsfwDetections && containsNsfw(nsfwDetections, 1)) {
 		img.dataset["HBblurred"] = "nsfw";
 		img.classList.add("hb-blur");
-		return;
+		return true;
 	}
-	if (containsGenderFace(detections)) {
+	if (detections && containsGenderFace(detections)) {
 		img.dataset["HBblurred"] = "face";
 		img.classList.add("hb-blur");
-		return;
+		return true;
 	}
 
 	img.dataset["HBblurred"] = "no face";
+	return false;
 };
 const processVideoDetections = async (
 	detections,
 	nsfwDetections = null,
 	video
 ) => {
-	detectionStarted = true;
-	emitEvent("detectionStarted");
-
-	if (containsNsfw(nsfwDetections)) {
-		video.pause();
-
-		console.log("nsfwDetections:", nsfwDetections);
+	if (!detectionStarted) {
+		detectionStarted = true;
+		emitEvent("detectionStarted");
+	}
+	if (nsfwDetections && containsNsfw(nsfwDetections, 1)) {
 		video.dataset["HBblurred"] = "nsfw";
 		video.classList.add("hb-blur");
-		return;
+		return true;
 	}
-	if (containsGenderFace(detections)) {
+
+	if (detections && containsGenderFace(detections)) {
 		video.dataset["HBblurred"] = "face";
 		video.classList.add("hb-blur");
-		return;
+		return true;
 	}
 
 	video.classList.remove("hb-blur");
 	video.dataset["HBblurred"] = "no face";
+	return false;
 };
 
 const videoDetectionLoop = async (video, needToResize) => {
 	// get the current timestamp
-	const currTime = performance.now();
+	const currTime = now();
 
 	// calculate the time difference
 	const diffTime = currTime - video.dataset.HBprevTime;
 
 	if (!video.paused && diffTime >= FRAME_LIMIT) {
 		let processed = await human.image(video, true);
-		const detectionPromises = [
-			nsfwModelClassify(processed.tensor, human.tf),
-			human.detect(processed.tensor, {
-				cacheSensitivity: 0.7,
-				filter: {
-					enabled: true,
-					width: needToResize?.newWidth,
-					height: needToResize?.newHeight,
-					return: true,
-				},
-			}),
-		];
-		let [nsfwDet, detections] = await Promise.allSettled(detectionPromises);
 
-		nsfwDet = nsfwDet.value;
-		detections = detections.value;
+		let nsfwDet = await nsfwModelClassify(processed.tensor);
+		const positiveDet = await processVideoDetections(null, nsfwDet, video);
+		// console.log("nsfwDet:", nsfwDet);
 
-		console.log("nsfwDet:", nsfwDet);
+		if (!positiveDet) {
+			// only run human detection if nsfw detection is negative
+			let detections = await humanModelClassify(
+				processed.tensor,
+				needToResize
+			);
+			// console.log("HB==video detections", detections);
+			// interpolate the new detections
+			const interpolated = human.next(detections);
+			await processVideoDetections(interpolated, null, video);
+		}
 
-		// console.log("HB==video detections", detections);
-
-		// interpolate the new detections
-		const interpolated = human.next(detections);
+		// console.log("HB==Detection time", duration);
 
 		// dispose the tensor to free memory
 		human.tf.dispose(processed.tensor);
-		await processVideoDetections(interpolated, nsfwDet, video);
 		// store the current timestamp
 		video.dataset.HBprevTime = currTime;
 	}
@@ -176,30 +179,23 @@ const processImage = async (img) => {
 	try {
 		const needToResize = calcResize(img, "image");
 		let processed = await human.image(img, true);
-		const detectionPromises = [
-			nsfwModelClassify(processed.tensor, human.tf, human.config),
-			human.detect(processed.tensor),
-		];
-		let [nsfwDet, detections] = await Promise.allSettled(detectionPromises);
 
-		nsfwDet = nsfwDet.value;
-		detections = detections.value;
+		let nsfwDet = await nsfwModelClassify(processed.tensor);
+		const positiveDet = await processImageDetections(null, nsfwDet, img);
 
-		console.log(
-			"HB==NSFW detections",
-			nsfwDet
-				?.map((det) => det.className + " " + det.probability.toFixed(3))
-				.join(", "),
-			img
-		);
+		if (!positiveDet) {
+			let detections = await humanModelClassify(
+				processed.tensor,
+				needToResize
+			);
+			// console.log("HB==Human detections", detections, img);
 
-		// console.log("HB==Human detections", detections);
+			await processImageDetections(detections, null, img);
+		}
 
 		// dispose the tensor to free memory
 		human.tf.dispose(processed.tensor);
-
 		img.removeAttribute("crossorigin");
-		await processImageDetections(detections, nsfwDet, img);
 	} catch (error) {
 		console.error("HB==Failed to run detection", img, error);
 		img.removeAttribute("crossorigin");
@@ -216,17 +212,26 @@ const processVideo = async (video) => {
 		return;
 	}
 
-	const needToResize = calcResize(video, "video");
-	video.dataset.HBprevTime = 0;
-	videoDetectionLoop(video, needToResize);
+	try {
+		const needToResize = calcResize(video, "video");
+		video.dataset.HBprevTime = 0;
+		videoDetectionLoop(video, needToResize);
+	} catch (error) {
+		console.error("HB==Failed to run detection", video, error);
+		video.removeAttribute("crossorigin");
+		return;
+	}
 };
 
-const detectFace = async (element) => {
-	// console.log("HB==detectFace", element, shouldDetect());
+const runDetection = async (element) => {
+	// console.log("HB==runDetection", element, shouldDetect());
 	if (!shouldDetect()) return; // safe guard
-	if (!hasBeenProcessed(element)) return;
-
-	element.crossOrigin = "anonymous";
+	try {
+		if (!hasBeenProcessed(element)) return;
+		element.crossOrigin = "anonymous";
+	} catch (error) {
+		// to prevent showing the error in the console
+	}
 	if (element.tagName === "IMG" && shouldDetectImages) {
 		await processImage(element);
 	} else if (element.tagName === "VIDEO" && shouldDetectVideos) {
@@ -235,4 +240,4 @@ const detectFace = async (element) => {
 };
 
 // export the image and video processing functions
-export { detectFace };
+export { runDetection };
