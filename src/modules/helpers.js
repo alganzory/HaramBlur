@@ -11,13 +11,16 @@ const loadImage = (img) => {
 		if (img.complete && img.naturalHeight) {
 			isImageTooSmall(img) ? reject() : resolve();
 		} else {
-			img.onload = () =>
+			img.onload = () => {
 				img.naturalHeight
 					? isImageTooSmall(img)
 						? reject()
 						: resolve()
 					: reject();
-			img.onerror = (e) => reject(e);
+			};
+			img.onerror = (e) => {
+				reject(e);
+			};
 		}
 	});
 };
@@ -30,7 +33,8 @@ const loadVideo = (video) => {
 		} else {
 			video.onloadeddata = () => {
 				// video.dataset.onloadeddata = true;
-				resolve();
+
+				video.videoHeight ? resolve() : reject();
 			};
 			video.onerror = (e) => {
 				// console.error("Failed to load video", video);
@@ -76,18 +80,22 @@ const calcResize = (element, type = "image") => {
 };
 
 const hasBeenProcessed = (element) => {
-	if (element.dataset.processed) return false;
+	if (!element) throw new Error("No element provided");
+	if (element?.dataset.processed) return true;
 	element.dataset.processed = true;
-	return true;
+	return false;
 };
 
 const processNode = (node, callBack) => {
+	// if the node itself is an image or video, process it
+	let nodes = [];
 	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
-		callBack(node);
-		return;
+		nodes.push(node);
 	}
-
-	node?.childNodes?.forEach((child) => processNode(child, callBack));
+	node?.querySelectorAll
+		? nodes.push(...node.querySelectorAll("img, video"))
+		: null;
+	nodes?.forEach(callBack);
 };
 
 const emitEvent = (eventName, detail = "") => {
@@ -99,6 +107,17 @@ const listenToEvent = (eventName, callBack) => {
 	document.addEventListener(eventName, callBack);
 };
 
+const now = () => {
+	return performance?.now?.() || Date.now();
+};
+
+const timeTaken = (fnToRun) => {
+	const beforeRun = now();
+	fnToRun();
+	const afterRun = now();
+	return afterRun - beforeRun;
+};
+
 export {
 	loadImage,
 	loadVideo,
@@ -107,4 +126,6 @@ export {
 	processNode,
 	emitEvent,
 	listenToEvent,
+	now,
+	timeTaken,
 };

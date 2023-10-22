@@ -1,4 +1,4 @@
-import { human, initHuman } from "./modules/detector";
+import { human, initHuman, initNsfwModel, nsfwModel } from "./modules/detector";
 import { emitEvent } from "./modules/helpers";
 import { attachObserversListener } from "./modules/observers";
 import {
@@ -22,10 +22,10 @@ getSettings()
 		emitEvent("settingsLoaded");
 
 		// init human
-		return initHuman();
+		return Promise.all([initHuman(), initNsfwModel()]);
 	})
 	.then(() => {
-		// console.log("HB==HUMAN INITIALIZED", human);
+		console.log("HB==NSFW MODEL INITIALIZED", nsfwModel);
 
 		// wait for the dom to load
 		if (document.readyState === "loading") {

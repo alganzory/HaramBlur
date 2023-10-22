@@ -73,8 +73,7 @@ const setStyle = () => {
       transition: filter 0.1s ease;
       opacity: unset;
     }
-
-    // when hovering, gradually remove grayscale for 1 second, then gradually remove blur
+	
     ${unblurSelectors} {
       filter: grayscale(0%);
       transition: filter 0.5s ease;

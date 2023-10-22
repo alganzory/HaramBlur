@@ -1,7 +1,7 @@
 // observers.js
 // This module exports the intersection observer and mutation observer functions
 
-import { detectFace } from "./processing.js"; // import the detectFace function from processing.js
+import { runDetection } from "./processing.js"; // import the runDetection function from processing.js
 import { listenToEvent, processNode } from "./helpers.js";
 import {
 	shouldDetect,
@@ -21,7 +21,7 @@ const initIntersectionObserver = async () => {
 			const visiblePromises = visibleEntries.map(async (entry) => {
 				const imgOrVideo = entry.target;
 				intersectionObserver.unobserve(imgOrVideo);
-				return detectFace(imgOrVideo);
+				return runDetection(imgOrVideo);
 			});
 			Promise.allSettled(visiblePromises);
 		},
