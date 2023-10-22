@@ -11,13 +11,16 @@ const loadImage = (img) => {
 		if (img.complete && img.naturalHeight) {
 			isImageTooSmall(img) ? reject() : resolve();
 		} else {
-			img.onload = () =>
+			img.onload = () => {
 				img.naturalHeight
 					? isImageTooSmall(img)
 						? reject()
 						: resolve()
 					: reject();
-			img.onerror = (e) => reject(e);
+			};
+			img.onerror = (e) => {
+				reject(e);
+			};
 		}
 	});
 };
@@ -78,13 +81,20 @@ const calcResize = (element, type = "image") => {
 
 const hasBeenProcessed = (element) => {
 	if (!element) throw new Error("No element provided");
-	if (element?.dataset.processed) return false;
+	if (element?.dataset.processed) return true;
 	element.dataset.processed = true;
-	return true;
+	return false;
 };
 
 const processNode = (node, callBack) => {
-	const nodes = node?.querySelectorAll? node.querySelectorAll("img, video") : [];
+	// if the node itself is an image or video, process it
+	let nodes = [];
+	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
+		nodes.push(node);
+	}
+	node?.querySelectorAll
+		? nodes.push(...node.querySelectorAll("img, video"))
+		: null;
 	nodes?.forEach(callBack);
 };
 
@@ -101,12 +111,12 @@ const now = () => {
 	return performance?.now?.() || Date.now();
 };
 
-const timeTaken = (fnToRun) =>  {
+const timeTaken = (fnToRun) => {
 	const beforeRun = now();
 	fnToRun();
 	const afterRun = now();
 	return afterRun - beforeRun;
-}
+};
 
 export {
 	loadImage,
