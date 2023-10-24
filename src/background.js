@@ -2,7 +2,7 @@
 
 const defaultSettings = {
 	status: true,
-	blurryStartMode: false,
+	blurryStartMode: true,
 	blurAmount: 15,
 	blurImages: true,
 	blurVideos: true,
