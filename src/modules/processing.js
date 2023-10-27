@@ -23,6 +23,7 @@ import {
 	shouldDetectVideos,
 	shouldDetectMale,
 	shouldDetectFemale,
+	strictness,
 } from "./settings.js";
 
 const FRAME_LIMIT = 1000 / 30; // 30 fps
@@ -45,12 +46,12 @@ const genderPredicate = (gender, score) => {
 	return false;
 };
 
-const containsNsfw = (nsfwDetections, nsfwFactor = 0) => {
+const containsNsfw = (nsfwDetections) => {
 	if (!nsfwDetections?.length) return false;
 	let highestNsfwDelta = 0;
 	let highestSfwDelta = 0;
 
-	const nsfwClasses = getNsfwClasses(nsfwFactor);
+	const nsfwClasses = getNsfwClasses(strictness);
 	nsfwDetections.forEach((det) => {
 		if (nsfwClasses?.[det.id].nsfw) {
 			highestNsfwDelta = Math.max(
@@ -85,6 +86,7 @@ const containsGenderFace = (detections) => {
 
 const processImageDetections = async (detections, nsfwDetections, img) => {
 	if (!detectionStarted) {
+		console.log ("HB==detectionStarted", strictness)
 		detectionStarted = true;
 		emitEvent("detectionStarted");
 	}

@@ -6,6 +6,7 @@ let shouldDetectVideos = true;
 let shouldDetectImages = true;
 let shouldDetectMale = false;
 let shouldDetectFemale = false;
+let strictness = 0.3;
 
 function shouldDetectGender() {
 	return shouldDetectMale || shouldDetectFemale;
@@ -28,6 +29,7 @@ function setSettings() {
 		shouldDetectVideos = settings.blurVideos;
 		shouldDetectMale = settings.blurMale;
 		shouldDetectFemale = settings.blurFemale;
+		strictness = settings.strictness;
 	}
 }
 
@@ -49,13 +51,14 @@ function getSettings() {
 }
 
 function listenForMessages() {
-	listenToEvent("settingsLoaded", setSettings)
+	listenToEvent("settingsLoaded", setSettings);
 	chrome.runtime.onMessage.addListener(function (
 		request,
 		sender,
 		sendResponse
 	) {
 		if (request.message?.type === "updateSettings") {
+			console.log ("HB==updateSettings", settings, request.message.newSetting);
 			updateSettings(request.message.newSetting);
 		}
 	});
@@ -83,4 +86,17 @@ const changeBlurAmount = () => {
 	emitEvent("changeBlurAmount", settings.blurAmount);
 };
 
-export { settings, isBlurryStartMode, getSettings, toggleOnOffStatus, listenForMessages, shouldDetect, shouldDetectGender, shouldDetectImages, shouldDetectVideos, shouldDetectMale, shouldDetectFemale};
+export {
+	settings,
+	isBlurryStartMode,
+	getSettings,
+	toggleOnOffStatus,
+	listenForMessages,
+	shouldDetect,
+	shouldDetectGender,
+	shouldDetectImages,
+	shouldDetectVideos,
+	shouldDetectMale,
+	shouldDetectFemale,
+	strictness,
+};
