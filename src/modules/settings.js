@@ -39,17 +39,13 @@ function toggleOnOffStatus() {
 	emitEvent("toggleOnOffStatus", settings.status);
 }
 
-function getSettings() {
-	return new Promise(function (resolve) {
-		chrome.storage.sync.get(["hb-settings"], function (storage) {
-			settings = storage["hb-settings"];
-			resolve();
-		});
-	});
+async function getSettings() {
+	const storage = await browser.storage.sync.get(["hb-settings"]);
+	settings = storage["hb-settings"];
 }
 
 function listenForMessages() {
-	listenToEvent("settingsLoaded", setSettings)
+	listenToEvent("settingsLoaded", setSettings);
 	chrome.runtime.onMessage.addListener(function (
 		request,
 		sender,
@@ -83,4 +79,16 @@ const changeBlurAmount = () => {
 	emitEvent("changeBlurAmount", settings.blurAmount);
 };
 
-export { settings, isBlurryStartMode, getSettings, toggleOnOffStatus, listenForMessages, shouldDetect, shouldDetectGender, shouldDetectImages, shouldDetectVideos, shouldDetectMale, shouldDetectFemale};
+export {
+	settings,
+	isBlurryStartMode,
+	getSettings,
+	toggleOnOffStatus,
+	listenForMessages,
+	shouldDetect,
+	shouldDetectGender,
+	shouldDetectImages,
+	shouldDetectVideos,
+	shouldDetectMale,
+	shouldDetectFemale,
+};

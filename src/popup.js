@@ -9,7 +9,7 @@ const refreshableSettings = [
 	"blurFemale",
 	"unblurImages",
 	"unblurVideos",
-	"blurryStartMode"
+	"blurryStartMode",
 ];
 
 const allSettings = ["status", "blurAmount", ...refreshableSettings];
@@ -31,13 +31,10 @@ function initPopup() {
 	});
 }
 
-function loadLocalSettings() {
-	return new Promise(function (resolve) {
-		chrome.storage.sync.get(["hb-settings"], function (storage) {
-			settings = storage["hb-settings"];
-			resolve();
-		});
-	});
+async function loadLocalSettings() {
+	const storage = await browser.storage.sync.get(["hb-settings"]);
+
+	settings = storage["hb-settings"];
 }
 
 function toggleAllInputs() {
@@ -111,7 +108,7 @@ function addListeners() {
 
 function updateStatus() {
 	settings.status = document.querySelector("input[name=status]").checked;
-	chrome.storage.sync.set({ "hb-settings": settings });
+	browser.storage.sync.set({ "hb-settings": settings });
 	toggleAllInputs();
 	sendUpdatedSettings("status");
 }
@@ -122,7 +119,7 @@ function updateBlurAmount() {
 	).value;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
 		settings.blurAmount + "px";
-	chrome.storage.sync.set({ "hb-settings": settings });
+	browser.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("blurAmount");
 }
 
@@ -131,7 +128,7 @@ function updateCheckbox(key) {
 		settings[key] = document.querySelector(
 			"input[name=" + key + "]"
 		).checked;
-		chrome.storage.sync.set({ "hb-settings": settings });
+		browser.storage.sync.set({ "hb-settings": settings });
 		sendUpdatedSettings(key);
 	};
 }

@@ -10,7 +10,7 @@
 		"default_popup": "src/popup.html"
 	},
 	"background": {
-		"service_worker": "src/background.js"
+		"scripts": ["src/background.js"]
 	},
 	"icons": {
 		"48": "src/assets/hb-icon-48.png",
@@ -23,6 +23,11 @@
 			"run_at": "document_start"
 		}
 	],
+	"browser_specific_settings": {
+		"gecko": {
+			"id":  "addon@example.com"
+		}
+	},
 	"web_accessible_resources": [
 		{
 			"resources": ["src/assets/models/*"],

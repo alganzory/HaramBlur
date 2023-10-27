@@ -12,18 +12,21 @@ const defaultSettings = {
 	unblurVideos: false,
 };
 
-chrome.runtime.onInstalled.addListener(function () {
-	chrome.storage.sync.get(["hb-settings"], function (result) {
+chrome.runtime.onInstalled.addListener(async function () {
+	try {
+		const result = await browser.storage.sync.get(["hb-settings"]);
 		if (
-			result["hb-settings"] === undefined ||
-			result["hb-settings"] === null
+			result?.["hb-settings"] === undefined ||
+			result?.["hb-settings"] === null
 		) {
-			chrome.storage.sync.set({ "hb-settings": defaultSettings });
+			await browser.storage.sync.set({ "hb-settings": defaultSettings });
 		} else {
 			// if there are any new settings, add them to the settings object
-			chrome.storage.sync.set({
+			await browser.storage.sync.set({
 				"hb-settings": { ...defaultSettings, ...result["hb-settings"] },
 			});
 		}
-	});
+	} catch (error) {
+		console.error(error);
+	}
 });
