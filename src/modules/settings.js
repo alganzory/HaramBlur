@@ -58,7 +58,6 @@ function listenForMessages() {
 		sendResponse
 	) {
 		if (request.message?.type === "updateSettings") {
-			console.log ("HB==updateSettings", settings, request.message.newSetting);
 			updateSettings(request.message.newSetting);
 		}
 	});

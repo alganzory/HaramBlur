@@ -9,34 +9,67 @@ import {
 	shouldDetectVideos,
 } from "./settings.js";
 
+const BATCH_SIZE = 10;
+
 let intersectionObserver;
 let mutationObserver;
+let highPriorityQueue = new Set();
+let lowPriorityQueue = new Set();
+
+const processNextImage = async () => {
+	let batch = [];
+
+	// Fill the batch with high-priority images first
+	while (batch.length < BATCH_SIZE && highPriorityQueue.size > 0) {
+		const nextImage = highPriorityQueue.entries().next();
+		batch.push(nextImage.value[0]);
+		highPriorityQueue.delete(nextImage.value[0]);
+	}
+
+	// If there's still room in the batch, fill the rest with low-priority images
+	while (batch.length < BATCH_SIZE && lowPriorityQueue.size > 0) {
+		const nextImage = lowPriorityQueue.entries().next();
+		batch.push(nextImage.value[0]);
+		lowPriorityQueue.delete(nextImage.value[0]);
+	}
+
+	if (batch.length > 0) {
+		await Promise.allSettled(
+			batch.map((imgOrVideo) => {
+				// intersectionObserver.unobserve(imgOrVideo);
+				return runDetection(imgOrVideo);
+			})
+		);
+
+		if (lowPriorityQueue.size > 0 || highPriorityQueue.size > 0)
+			processNextImage(); // Call processNextImage again after all images in the batch have been processed
+	}
+};
+
+const increasePriority = (node) => {
+	lowPriorityQueue.delete(node);
+	highPriorityQueue.add(node);
+};
+
+const decreasePriority = (node) => {
+	highPriorityQueue.delete(node);
+	lowPriorityQueue.add(node);
+};
 
 const initIntersectionObserver = async () => {
 	intersectionObserver = new IntersectionObserver(
 		(entries) => {
-			const visibleEntries = entries.filter(
-				(entry) => entry.isIntersecting
-			);
-			const visiblePromises = visibleEntries.map(async (entry) => {
-				const imgOrVideo = entry.target;
-				intersectionObserver.unobserve(imgOrVideo);
-				return runDetection(imgOrVideo);
+			entries.forEach((entry) => {
+				const node = entry.target;
+				const changePriority = entry.isIntersecting
+					? increasePriority
+					: decreasePriority;
+
+				changePriority(node);
 			});
-			Promise.allSettled(visiblePromises);
 		},
 		{ rootMargin: "100px", threshold: 0 }
 	);
-
-	// use querySelectorAll to get all images and videos
-	const images = shouldDetectImages ? document.querySelectorAll("img") : [];
-	const videos = shouldDetectVideos ? document.querySelectorAll("video") : [];
-	for (let img of images) {
-		intersectionObserver.observe(img);
-	}
-	for (let video of videos) {
-		intersectionObserver.observe(video);
-	}
 };
 
 const initMutationObserver = async () => {
@@ -50,12 +83,17 @@ const initMutationObserver = async () => {
 				});
 			}
 		});
+
+		processNextImage();
 	});
 
 	mutationObserver.observe(document.body, {
 		childList: true,
 		subtree: true,
 	});
+
+	// process all images and videos that are already in the DOM
+	processNode(document.body, (node) => intersectionObserver.observe(node));
 };
 
 const attachObserversListener = () => {

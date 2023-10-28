@@ -86,7 +86,6 @@ const containsGenderFace = (detections) => {
 
 const processImageDetections = async (detections, nsfwDetections, img) => {
 	if (!detectionStarted) {
-		console.log ("HB==detectionStarted", strictness)
 		detectionStarted = true;
 		emitEvent("detectionStarted");
 	}
