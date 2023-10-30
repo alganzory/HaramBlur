@@ -6,7 +6,7 @@
 		<script src="popup.js"></script>
 		<script async defer src="./assets/github-button.js"></script>
 		<style>
-			body {
+		body {
 				background-color: #f7fafc;
 				color: #374151;
 				font-family: sans-serif;
@@ -17,11 +17,8 @@
 			}
 
 			.container {
-				width: 20vw;
-				min-width: 300px;
-				margin: 0 auto;
-				padding: 0.5rem 2rem;
-				/* overflow-y: scroll; */
+				min-width: 350px;
+				padding:3.75rem 2rem 0.5rem 2rem;
 			}
 
 			.header {
@@ -31,8 +28,10 @@
 				background-color: royalblue;
 				color: #fff;
 				padding: 1rem;
-				position: sticky;
+				position: fixed;
 				top: 0;
+				left: 0;
+				right: 0;
 			}
 
 			.header h1 {
@@ -57,7 +56,6 @@
 				width: 0;
 				height: 0;
 			}
-
 			.slider {
 				position: absolute;
 				cursor: pointer;
@@ -283,7 +281,7 @@
 				bottom: 0;
 				left: 0;
 				width: 100%;
-				padding: 1rem 0 0.5rem 0;
+				padding: 0.5rem 0 0.5rem 0;
 			}
 
 			.bmc-btn {
@@ -342,6 +340,17 @@
 				color: #4299e1;
 			}
 
+			.feedback {
+				text-align: center;
+				font-size: 0.8rem;
+				color: #4299e1;
+			}
+
+			.feedback a {
+				color: royalblue;
+				text-decoration: none;
+			}
+
 			.mt-2 {
 				margin-top: 0.5rem;
 			}
@@ -352,7 +361,7 @@
 				margin-top: 1rem;
 			}
 
-			.mt--4{ 
+			.mt--4 {
 				margin-top: -1.5rem;
 			}
 			.mb-4 {
@@ -372,7 +381,7 @@
 			<div class="mb-4">
 				<h2>Settings</h2>
 				<!-- refresh to see changes -->
-				<div class="hidden mt--4  refresh" id="refresh-message">
+				<div class="hidden mt--4 refresh" id="refresh-message">
 					Refresh the page to see changes.
 				</div>
 			</div>
@@ -522,7 +531,7 @@
 		</div>
 		<div class="footer">
 			<!-- 3 buttons/links 1- share 2- github 3- support -->
-			<div class="row mb-4">
+			<div class="row mb-2">
 				<script
 					type="text/javascript"
 					src="./assets/buymeacoffee.min.js"
@@ -601,6 +610,11 @@
 						style="background-color: royalblue"
 				/></a>
 			</div>
-		</div>
+
+			<div class="feedback">
+				We'd love to hear your feedback through our	<a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
+				<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
+			
+			</div>
 	</body>
 </html>
