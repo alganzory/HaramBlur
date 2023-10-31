@@ -4,12 +4,10 @@
 import { runDetection } from "./processing.js"; // import the runDetection function from processing.js
 import { listenToEvent, processNode } from "./helpers.js";
 import {
-	shouldDetect,
-	shouldDetectImages,
-	shouldDetectVideos,
+	shouldDetect
 } from "./settings.js";
 
-const BATCH_SIZE = 10;
+const BATCH_SIZE = 20; //TODO: make this a setting/calculated based on the device's performance
 
 let intersectionObserver;
 let mutationObserver;
@@ -21,25 +19,49 @@ const processNextImage = async () => {
 
 	// Fill the batch with high-priority images first
 	while (batch.length < BATCH_SIZE && highPriorityQueue.size > 0) {
-		const nextImage = highPriorityQueue.entries().next();
-		batch.push(nextImage.value[0]);
-		highPriorityQueue.delete(nextImage.value[0]);
+		const nextImage = highPriorityQueue.entries().next()?.value?.[0];
+		nextImage.dataset.processed
+			? null
+			: batch.push(
+					runDetection(nextImage).then(() => {
+						// cancel the requestIdleCallback so it doesn't run after the image has been processed
+						if (nextImage.dataset.ribId) {
+							cancelIdleCallback(nextImage.dataset.ribId);
+
+							// remove the id from the dataset
+							delete nextImage.dataset.ribId;
+						}
+					})
+			  );
+		highPriorityQueue.delete(nextImage);
 	}
 
 	// If there's still room in the batch, fill the rest with low-priority images
 	while (batch.length < BATCH_SIZE && lowPriorityQueue.size > 0) {
-		const nextImage = lowPriorityQueue.entries().next();
-		batch.push(nextImage.value[0]);
-		lowPriorityQueue.delete(nextImage.value[0]);
+		const nextImage = lowPriorityQueue.entries().next()?.value?.[0];
+
+		// push a promise that runs the runDetection function through requestIdleCallback, we also wanna store
+		// the id of the requestIdleCallback in the image object so we can cancel it if the image is moved to the
+		// high-priority queue
+		batch.push(
+			new Promise((resolve) => {
+				const id = requestIdleCallback(() => {
+					runDetection(nextImage).then(() => {
+						// remove the id from the dataset
+						delete nextImage.dataset.ribId;
+
+						resolve();
+					});
+				});
+				nextImage.dataset.ribId = id;
+			})
+		);
+
+		lowPriorityQueue.delete(nextImage);
 	}
 
 	if (batch.length > 0) {
-		await Promise.allSettled(
-			batch.map((imgOrVideo) => {
-				// intersectionObserver.unobserve(imgOrVideo);
-				return runDetection(imgOrVideo);
-			})
-		);
+		await Promise.allSettled(batch);
 
 		if (lowPriorityQueue.size > 0 || highPriorityQueue.size > 0)
 			processNextImage(); // Call processNextImage again after all images in the batch have been processed
