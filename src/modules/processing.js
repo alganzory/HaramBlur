@@ -31,9 +31,15 @@ const FRAME_RATE = 1000 / 30; // 30 fps
 // threshold for number of consecutive frames that need to be positive for the image to be considered positive
 const POSITIVE_THRESHOLD = 1; //at 30 fps, this is 0.03 seconds of consecutive positive detections
 // threshold for number of consecutive frames that need to be negative for the image to be considered negative
-const NEGATIVE_THRESHOLD = 9 //at 30 fps, this is 0.3 seconds of consecutive negative detections
+const NEGATIVE_THRESHOLD = 9; //at 30 fps, this is 0.3 seconds of consecutive negative detections
 
 let detectionStarted = false;
+
+const flagDetectionStart = () => {
+	if (detectionStarted) return;
+	detectionStarted = true;
+	emitEvent("detectionStarted");
+};
 
 const genderPredicate = (gender, score) => {
 	if (shouldDetectMale && shouldDetectFemale) return gender !== "unknown";
@@ -81,20 +87,17 @@ const containsGenderFace = (detections) => {
 	const faces = detections.face;
 
 	if (shouldDetectGender()) {
-		return faces.some((face) =>
-			face.age > 16 &&
-			genderPredicate(face.gender, face.genderScore)
+		return faces.some(
+			(face) =>
+				face.age > 18 && genderPredicate(face.gender, face.genderScore)
 		);
-	} // only detect faces
+	}
 
 	return true;
 };
 
 const processImageDetections = async (detections, nsfwDetections, img) => {
-	if (!detectionStarted) {
-		detectionStarted = true;
-		emitEvent("detectionStarted");
-	}
+	flagDetectionStart();
 
 	// Not or-ing the two conditions because we may want to add different classes in the future
 	if (nsfwDetections) {
@@ -115,16 +118,12 @@ const processImageDetections = async (detections, nsfwDetections, img) => {
 	return false;
 };
 
-
 const processVideoDetections = async (
 	detections,
 	nsfwDetections = null,
 	video
 ) => {
-	if (!detectionStarted) {
-		detectionStarted = true;
-		emitEvent("detectionStarted");
-	}
+	flagDetectionStart();
 	const prevResult = video.dataset.HBblurred;
 	const isPrevResultClear = prevResult === "clear" ? 1 : 0;
 	const currentPositiveCount = parseInt(video.dataset.positiveCount ?? 0);
@@ -132,26 +131,27 @@ const processVideoDetections = async (
 
 	if (nsfwDetections) {
 		if (containsNsfw(nsfwDetections)) {
-
 			video.dataset["HBblurred"] = "nsfw";
-			video.dataset.positiveCount = (currentPositiveCount + !isPrevResultClear)
+			video.dataset.positiveCount =
+				currentPositiveCount + !isPrevResultClear;
 			video.dataset.negativeCount = 0;
 			// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
-			if (currentPositiveCount + !isPrevResultClear >= POSITIVE_THRESHOLD) {
+			if (
+				currentPositiveCount + !isPrevResultClear >=
+				POSITIVE_THRESHOLD
+			) {
 				// video.pause()
 
 				video.classList.add("hb-blur");
 				video.dataset.positiveCount = 0;
 			}
 			return true;
-
 		} else return false;
 	}
 
 	if (detections && containsGenderFace(detections)) {
-
 		video.dataset["HBblurred"] = "face";
-		video.dataset.positiveCount = (currentPositiveCount + !isPrevResultClear)
+		video.dataset.positiveCount = currentPositiveCount + !isPrevResultClear;
 		video.dataset.negativeCount = 0;
 		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
 		if (currentPositiveCount + !isPrevResultClear >= POSITIVE_THRESHOLD) {
@@ -164,12 +164,12 @@ const processVideoDetections = async (
 	}
 
 	video.dataset["HBblurred"] = "clear";
-	video.dataset.negativeCount = (currentNegativeCount + isPrevResultClear)
+	video.dataset.negativeCount = currentNegativeCount + isPrevResultClear;
 	video.dataset.positiveCount = 0;
 	// if the negative count is greater than the threshold (i.e it's not a momentary blip), remove the blur
-	if (currentNegativeCount + isPrevResultClear >= NEGATIVE_THRESHOLD) {	 
+	if (currentNegativeCount + isPrevResultClear >= NEGATIVE_THRESHOLD) {
 		// video.pause()
-		video.classList.remove("hb-blur")
+		video.classList.remove("hb-blur");
 		video.dataset.negativeCount = 0;
 	}
 	video.dataset["HBblurred"] = "clear";

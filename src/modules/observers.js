@@ -124,6 +124,7 @@ const initMutationObserver = async () => {
 
 	// process all images and videos that are already in the DOM
 	processNode(document.body, (node) => {
+		startObservation();
 		applyBlurryStartMode(node);
 		return intersectionObserver.observe(node);
 	});

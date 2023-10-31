@@ -93,11 +93,6 @@ const turnOffBlurryStart = (e) => {
 
 const applyBlurryStartMode = (node) => {
 	isBlurryStartMode() && node.classList.add("hb-blur");
-	// if it's not processed within some time, remove the blur 
-	setTimeout(() => {
-		if (node.dataset.processed) return;
-		node.classList.remove("hb-blur");
-	}, BLURRY_START_MODE_TIMEOUT);
 };
 
 
