@@ -2,10 +2,9 @@
 // This module exports the intersection observer and mutation observer functions
 
 import { runDetection } from "./processing.js"; // import the runDetection function from processing.js
-import { listenToEvent, processNode } from "./helpers.js";
-import {
-	shouldDetect
-} from "./settings.js";
+import { emitEvent, listenToEvent, processNode } from "./helpers.js";
+import { shouldDetect } from "./settings.js";
+import { applyBlurryStartMode } from "./style.js";
 
 const BATCH_SIZE = 20; //TODO: make this a setting/calculated based on the device's performance
 
@@ -13,6 +12,7 @@ let intersectionObserver;
 let mutationObserver;
 let highPriorityQueue = new Set();
 let lowPriorityQueue = new Set();
+let observationStarted = false;
 
 const processNextImage = async () => {
 	let batch = [];
@@ -78,6 +78,12 @@ const decreasePriority = (node) => {
 	lowPriorityQueue.add(node);
 };
 
+const startObservation = () => {
+	if (observationStarted) return;
+	observationStarted = true;
+	emitEvent("observationStarted");
+};
+
 const initIntersectionObserver = async () => {
 	intersectionObserver = new IntersectionObserver(
 		(entries) => {
@@ -99,14 +105,16 @@ const initMutationObserver = async () => {
 		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
 				mutation.addedNodes.forEach((node) => {
-					processNode(node, (node) =>
-						intersectionObserver.observe(node)
-					);
+					processNode(node, (node) => {
+						startObservation();
+						applyBlurryStartMode(node);
+						return intersectionObserver.observe(node);
+					});
 				});
 			}
 		});
 
-		processNextImage();
+		shouldDetect() && processNextImage();
 	});
 
 	mutationObserver.observe(document.body, {
@@ -115,7 +123,10 @@ const initMutationObserver = async () => {
 	});
 
 	// process all images and videos that are already in the DOM
-	processNode(document.body, (node) => intersectionObserver.observe(node));
+	processNode(document.body, (node) => {
+		applyBlurryStartMode(node);
+		return intersectionObserver.observe(node);
+	});
 };
 
 const attachObserversListener = () => {

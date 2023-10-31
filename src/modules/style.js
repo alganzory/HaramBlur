@@ -91,12 +91,23 @@ const turnOffBlurryStart = (e) => {
 	blurryStartStyleSheet.innerHTML = "";
 };
 
+const applyBlurryStartMode = (node) => {
+	isBlurryStartMode() && node.classList.add("hb-blur");
+	// if it's not processed within some time, remove the blur 
+	setTimeout(() => {
+		if (node.dataset.processed) return;
+		node.classList.remove("hb-blur");
+	}, BLURRY_START_MODE_TIMEOUT);
+};
+
+
 const attachStyleListener = () => {
 	listenToEvent("settingsLoaded", initStylesheets);
 	listenToEvent("toggleOnOffStatus", setStyle);
 	listenToEvent("changeBlurAmount", setStyle);
+	listenToEvent("observationStarted", turnOffBlurryStart);
 	listenToEvent("detectionStarted", turnOffBlurryStart);
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener };
+export { attachStyleListener, applyBlurryStartMode}

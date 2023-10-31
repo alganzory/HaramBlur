@@ -93,7 +93,7 @@ const processImageDetections = async (detections, nsfwDetections, img) => {
 
 	// Not or-ing the two conditions because we may want to add different classes in the future
 	if (nsfwDetections) {
-		if (containsNsfw(nsfwDetections, 1)) {
+		if (containsNsfw(nsfwDetections)) {
 			img.dataset["HBblurred"] = "nsfw";
 			img.classList.add("hb-blur");
 			return true;
@@ -106,6 +106,7 @@ const processImageDetections = async (detections, nsfwDetections, img) => {
 	}
 
 	img.dataset["HBblurred"] = "no face";
+	img.classList.remove("hb-blur");
 	return false;
 };
 const processVideoDetections = async (
@@ -118,7 +119,7 @@ const processVideoDetections = async (
 		emitEvent("detectionStarted");
 	}
 	if (nsfwDetections) {
-		if (containsNsfw(nsfwDetections, 1)) {
+		if (containsNsfw(nsfwDetections)) {
 			video.dataset["HBblurred"] = "nsfw";
 			video.classList.add("hb-blur");
 			return true;
