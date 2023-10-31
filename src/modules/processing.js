@@ -77,6 +77,7 @@ const containsGenderFace = (detections) => {
 
 	if (shouldDetectGender()) {
 		return faces.some((face) =>
+			face.age > 16 &&
 			genderPredicate(face.gender, face.genderScore)
 		);
 	} // only detect faces
