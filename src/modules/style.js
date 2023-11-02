@@ -4,7 +4,7 @@
 import { emitEvent, listenToEvent } from "./helpers.js";
 import { settings, shouldDetect, isBlurryStartMode } from "./settings.js";
 
-const BLURRY_START_MODE_TIMEOUT = 5000; // TODO: make this a setting maybe?
+const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
 let hbStyleSheet, blurryStartStyleSheet;
 
 const initStylesheets = () => {
@@ -91,12 +91,18 @@ const turnOffBlurryStart = (e) => {
 	blurryStartStyleSheet.innerHTML = "";
 };
 
+const applyBlurryStartMode = (node) => {
+	isBlurryStartMode() && node.classList.add("hb-blur");
+};
+
+
 const attachStyleListener = () => {
 	listenToEvent("settingsLoaded", initStylesheets);
 	listenToEvent("toggleOnOffStatus", setStyle);
 	listenToEvent("changeBlurAmount", setStyle);
+	listenToEvent("observationStarted", turnOffBlurryStart);
 	listenToEvent("detectionStarted", turnOffBlurryStart);
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener };
+export { attachStyleListener, applyBlurryStartMode}

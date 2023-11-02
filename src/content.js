@@ -25,7 +25,7 @@ getSettings()
 		return Promise.all([initHuman(), initNsfwModel()]);
 	})
 	.then(() => {
-		console.log("HB==NSFW MODEL INITIALIZED", nsfwModel);
+		console.log("HB== models initialized");
 
 		// wait for the dom to load
 		if (document.readyState === "loading") {

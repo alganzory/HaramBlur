@@ -23,11 +23,23 @@ import {
 	shouldDetectVideos,
 	shouldDetectMale,
 	shouldDetectFemale,
+	strictness,
 } from "./settings.js";
 
-const FRAME_LIMIT = 1000 / 30; // 30 fps
+const FRAME_RATE = 1000 / 30; // 30 fps
+
+// threshold for number of consecutive frames that need to be positive for the image to be considered positive
+const POSITIVE_THRESHOLD = 1; //at 30 fps, this is 0.03 seconds of consecutive positive detections
+// threshold for number of consecutive frames that need to be negative for the image to be considered negative
+const NEGATIVE_THRESHOLD = 9; //at 30 fps, this is 0.3 seconds of consecutive negative detections
 
 let detectionStarted = false;
+
+const flagDetectionStart = () => {
+	if (detectionStarted) return;
+	detectionStarted = true;
+	emitEvent("detectionStarted");
+};
 
 const genderPredicate = (gender, score) => {
 	if (shouldDetectMale && shouldDetectFemale) return gender !== "unknown";
@@ -45,12 +57,12 @@ const genderPredicate = (gender, score) => {
 	return false;
 };
 
-const containsNsfw = (nsfwDetections, nsfwFactor = 0) => {
+const containsNsfw = (nsfwDetections) => {
 	if (!nsfwDetections?.length) return false;
 	let highestNsfwDelta = 0;
 	let highestSfwDelta = 0;
 
-	const nsfwClasses = getNsfwClasses(nsfwFactor);
+	const nsfwClasses = getNsfwClasses(strictness);
 	nsfwDetections.forEach((det) => {
 		if (nsfwClasses?.[det.id].nsfw) {
 			highestNsfwDelta = Math.max(
@@ -75,23 +87,21 @@ const containsGenderFace = (detections) => {
 	const faces = detections.face;
 
 	if (shouldDetectGender()) {
-		return faces.some((face) =>
-			genderPredicate(face.gender, face.genderScore)
+		return faces.some(
+			(face) =>
+				face.age > 18 && genderPredicate(face.gender, face.genderScore)
 		);
-	} // only detect faces
+	}
 
 	return true;
 };
 
 const processImageDetections = async (detections, nsfwDetections, img) => {
-	if (!detectionStarted) {
-		detectionStarted = true;
-		emitEvent("detectionStarted");
-	}
+	flagDetectionStart();
 
 	// Not or-ing the two conditions because we may want to add different classes in the future
 	if (nsfwDetections) {
-		if (containsNsfw(nsfwDetections, 1)) {
+		if (containsNsfw(nsfwDetections)) {
 			img.dataset["HBblurred"] = "nsfw";
 			img.classList.add("hb-blur");
 			return true;
@@ -103,34 +113,66 @@ const processImageDetections = async (detections, nsfwDetections, img) => {
 		return true;
 	}
 
-	img.dataset["HBblurred"] = "no face";
+	img.dataset["HBblurred"] = "clear";
+	img.classList.remove("hb-blur");
 	return false;
 };
+
 const processVideoDetections = async (
 	detections,
 	nsfwDetections = null,
 	video
 ) => {
-	if (!detectionStarted) {
-		detectionStarted = true;
-		emitEvent("detectionStarted");
-	}
+	flagDetectionStart();
+	const prevResult = video.dataset.HBblurred;
+	const isPrevResultClear = prevResult === "clear" ? 1 : 0;
+	const currentPositiveCount = parseInt(video.dataset.positiveCount ?? 0);
+	const currentNegativeCount = parseInt(video.dataset.negativeCount ?? 0);
+
 	if (nsfwDetections) {
-		if (containsNsfw(nsfwDetections, 1)) {
+		if (containsNsfw(nsfwDetections)) {
 			video.dataset["HBblurred"] = "nsfw";
-			video.classList.add("hb-blur");
+			video.dataset.positiveCount =
+				currentPositiveCount + !isPrevResultClear;
+			video.dataset.negativeCount = 0;
+			// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
+			if (
+				currentPositiveCount + !isPrevResultClear >=
+				POSITIVE_THRESHOLD
+			) {
+				// video.pause()
+
+				video.classList.add("hb-blur");
+				video.dataset.positiveCount = 0;
+			}
 			return true;
 		} else return false;
 	}
 
 	if (detections && containsGenderFace(detections)) {
 		video.dataset["HBblurred"] = "face";
-		video.classList.add("hb-blur");
+		video.dataset.positiveCount = currentPositiveCount + !isPrevResultClear;
+		video.dataset.negativeCount = 0;
+		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
+		if (currentPositiveCount + !isPrevResultClear >= POSITIVE_THRESHOLD) {
+			// video.pause()
+			video.classList.add("hb-blur");
+			video.dataset.positiveCount = 0;
+		}
+
 		return true;
 	}
 
-	video.classList.remove("hb-blur");
-	video.dataset["HBblurred"] = "no face";
+	video.dataset["HBblurred"] = "clear";
+	video.dataset.negativeCount = currentNegativeCount + isPrevResultClear;
+	video.dataset.positiveCount = 0;
+	// if the negative count is greater than the threshold (i.e it's not a momentary blip), remove the blur
+	if (currentNegativeCount + isPrevResultClear >= NEGATIVE_THRESHOLD) {
+		// video.pause()
+		video.classList.remove("hb-blur");
+		video.dataset.negativeCount = 0;
+	}
+	video.dataset["HBblurred"] = "clear";
 	return false;
 };
 
@@ -143,7 +185,7 @@ const videoDetectionLoop = async (video, needToResize) => {
 
 	if (!video.paused) {
 		try {
-			if (diffTime >= FRAME_LIMIT) {
+			if (diffTime >= FRAME_RATE) {
 				let processed = await human.image(video, true);
 
 				let nsfwDet = await nsfwModelClassify(processed.tensor);

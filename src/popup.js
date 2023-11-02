@@ -9,7 +9,8 @@ const refreshableSettings = [
 	"blurFemale",
 	"unblurImages",
 	"unblurVideos",
-	"blurryStartMode"
+	"blurryStartMode",
+	"strictness",
 ];
 
 const allSettings = ["status", "blurAmount", ...refreshableSettings];
@@ -60,6 +61,10 @@ function displaySettings(settings) {
 		settings.blurAmount;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
 		settings.blurAmount + "px";
+	document.querySelector("input[name=strictness]").value =
+		+settings.strictness;
+	document.querySelector("span[id=strictness-value]").innerHTML =
+		+settings.strictness * 100 + "%";
 	document.querySelector("input[name=blurImages]").checked =
 		settings.blurImages;
 	document.querySelector("input[name=blurVideos]").checked =
@@ -99,6 +104,9 @@ function addListeners() {
 		.querySelector("input[name=blurAmount]")
 		.addEventListener("change", updateBlurAmount);
 	document
+		.querySelector("input[name=strictness]")
+		.addEventListener("change", updateStrictness);
+	document
 		.querySelector("input[name=unblurImages]")
 		.addEventListener("change", updateCheckbox("unblurImages"));
 	document
@@ -124,6 +132,18 @@ function updateBlurAmount() {
 		settings.blurAmount + "px";
 	chrome.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("blurAmount");
+}
+
+function updateStrictness() {
+	settings.strictness = document.querySelector(
+		"input[name=strictness]"
+	).value;
+
+	document.querySelector("span[id=strictness-value]").innerHTML =
+		+settings.strictness * 100 + "%";
+
+	chrome.storage.sync.set({ "hb-settings": settings });
+	sendUpdatedSettings("strictness");
 }
 
 function updateCheckbox(key) {

@@ -4,7 +4,7 @@ HaramBlur is a browser extension that allows you to navigate the web with respec
 
 HaramBlur utilizes face detection and NSFW content detection and provides controls that allow you to uphold the Islamic gaze protection principle and tailor your online experience by automatically blurring images and videos that contain unwanted or impermissible content. 
 
-You can configure the type of detection you want and the amount of blur, hover to unblur, choose a specific gender to blur, or turn the extension on and off via the interactive pop-up 😄
+You can configure the type of detection you want and the amount of blur, the level of strictness, hover to unblur, choose a specific gender to blur, or turn the extension on and off via the interactive pop-up 😄
 
 ![HaramBlur Demo](demos/demo1.png)
 
@@ -16,7 +16,7 @@ You can configure the type of detection you want and the amount of blur, hover t
 - Configurable detection settings to tailor your browsing experience
 - Interactive pop-up for easy on/off toggling 
 - Customizable hover to unblur feature
-- Decent speed and accuracy (can be improved)
+- Decent speed and accuracy (continously improved)
 
 ## How it Works
 
@@ -26,7 +26,7 @@ HaramBlur currently used face detection and recognition features provided by [Hu
 1. Clone the repository
 2. run `npm install`
 3. code your magic
-4. run `npm run build` to build the extension, then load the extension in Chrome by going to `chrome://extensions/` and clicking on `Load unpacked`  (developer mode has  to be on) and selecting the project folder.
+4. run `npm run build` to build the extension, then load the extension in Chrome by going to `chrome://extensions/` and clicking on `Load unpacked` (developer mode has  to be on) and selecting the project folder.
 5. Or run `npm run release` to generate a zip file for the extension to be uploaded to the browser/store.
 
 
