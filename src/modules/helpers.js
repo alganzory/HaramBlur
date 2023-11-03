@@ -89,13 +89,23 @@ const hasBeenProcessed = (element) => {
 const processNode = (node, callBack) => {
 	// if the node itself is an image or video, process it
 	let nodes = [];
-	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
+	if (node.tagName === "IMG") {
+		!isImageTooSmall(node) && nodes.push(node);
+	}
+	if (node.tagName === "VIDEO") {
 		nodes.push(node);
 	}
+
 	node?.querySelectorAll
 		? nodes.push(...node.querySelectorAll("img, video"))
 		: null;
-	nodes?.forEach(callBack);
+	nodes?.forEach((node) => {
+		return node.tagName === "VIDEO"
+			? callBack(node)
+			: !isImageTooSmall(node)
+			? callBack(node)
+			: null;
+	});
 };
 
 const emitEvent = (eventName, detail = "") => {

@@ -10,6 +10,7 @@ const defaultSettings = {
 	blurFemale: true,
 	unblurImages: true,
 	unblurVideos: false,
+	strictness: 0.3, // goes from 0 to 1
 };
 
 chrome.runtime.onInstalled.addListener(function () {

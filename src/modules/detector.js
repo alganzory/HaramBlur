@@ -65,25 +65,25 @@ const getNsfwClasses = (factor = 0) => {
 			nsfw: false,
 			thresh: 0.5,
 		},
-		1: {
+		1: {  
 			className: "Hentai",
 			nsfw: true,
-			thresh: 0.3 + factor * 0.7, // highest it can go is 1
+			thresh: 0.5 + (1-factor) * 0.9,  // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 		2: {
 			className: "Neutral",
 			nsfw: false,
-			thresh: 0.8,
+			thresh: 0.5 + factor * 0.5,  // the higher the factor, the higher the thresh, the less "strict" the filter
 		},
 		3: {
 			className: "Porn",
 			nsfw: true,
-			thresh: 0.1 + factor * 0.35, // highest it can go is 0.4
+			thresh: 0.1 + (1-factor) * 0.9,  // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 		4: {
 			className: "Sexy",
 			nsfw: true,
-			thresh: 0.1 + factor * 0.35, // highest it can go is 0.4
+			thresh: 0.1 + (1-factor) * 0.9,  // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 	};
 };

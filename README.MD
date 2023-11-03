@@ -4,7 +4,7 @@ HaramBlur is a browser extension that allows you to navigate the web with respec
 
 HaramBlur utilizes face detection and NSFW content detection and provides controls that allow you to uphold the Islamic gaze protection principle and tailor your online experience by automatically blurring images and videos that contain unwanted or impermissible content.
 
-You can configure the type of detection you want and the amount of blur, hover to unblur, choose a specific gender to blur, or turn the extension on and off via the interactive pop-up 😄
+You can configure the type of detection you want and the amount of blur, the level of strictness, hover to unblur, choose a specific gender to blur, or turn the extension on and off via the interactive pop-up 😄
 
 ![HaramBlur Demo](demos/demo1.png)
 
@@ -15,7 +15,7 @@ You can configure the type of detection you want and the amount of blur, hover t
 - Configurable detection settings to tailor your browsing experience
 - Interactive pop-up for easy on/off toggling
 - Customizable hover to unblur feature
-- Decent speed and accuracy (can be improved)
+- Decent speed and accuracy (continously improved)
 
 ## How it Works
 
