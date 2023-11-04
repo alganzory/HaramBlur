@@ -25,7 +25,7 @@ HaramBlur currently used face detection and recognition features provided by [Hu
 
 ## Option 1: Using the Plugin from the extensions store
 
-1. Visit the [Haramblur extension on the Chrome Web Store](chrome.google.com/webstore/detail/haramblur/pbcoegikffnadpahojjhgdladmmddeji).
+1. Visit the [Haramblur extension on the Chrome Web Store](https://chrome.google.com/webstore/detail/haramblur/pbcoegikffnadpahojjhgdladmmddeji).
 2. Follow the installation instructions on the page.
 
 ## Option 2: Compiling it On Your Own
