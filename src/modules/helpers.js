@@ -15,14 +15,16 @@ const MAX_VIDEO_HEIGHT = 1080 / 3.5;
  */
 const loadImage = (img) => {
 	return new Promise((resolve, reject) => {
+		// set crossorigin attribute to anonymous to avoid CORS issues
+		img.setAttribute("crossorigin", "anonymous");
 		if (img.complete && img.naturalHeight) {
-			isImageTooSmall(img) ? resolve(false) : resolve(true);
+			isImageTooSmall(img) ? resolve(false) : resolve(img);
 		} else {
 			img.onload = () => {
 				img.naturalHeight
 					? isImageTooSmall(img)
 						? resolve(false)
-						: resolve(true)
+						: resolve(img)
 					: reject("Image failed to load, no height");
 			};
 			img.onerror = (e) => {

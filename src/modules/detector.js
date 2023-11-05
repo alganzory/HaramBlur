@@ -25,7 +25,7 @@ const HUMAN_CONFIG = {
 		emotion: { enabled: false },
 		detector: {
 			modelPath: "blazeface.json",
-			maxDetected: 2,
+			maxDetected: 3,
 		},
 		description: {
 			enabled: true,

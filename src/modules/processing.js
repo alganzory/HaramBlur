@@ -343,7 +343,7 @@ const runDetection = async (element) => {
 			resetElement(element);
 		}
 	} catch (error) {
-		console.error("HumanBlur ==> Detection error: ", error, element);
+		// console.error("HumanBlur ==> Detection error: ", error, element);
 		element.dataset.HBstatus = STATUSES.ERROR;
 		resetElement(element);
 	}
