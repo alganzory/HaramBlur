@@ -338,6 +338,10 @@ const runDetection = async (element) => {
 		// if the element was successfully processed, set its status to processed
 		if (processed) {
 			element.dataset.HBstatus = STATUSES.PROCESSED;
+			if (element.dataset.HBtimeoutId) { 
+				clearTimeout(element.dataset.HBtimeoutId);
+				delete element.dataset.HBtimeoutId;
+			}
 		} else {
 			element.dataset.HBstatus = STATUSES.INVALID;
 			resetElement(element);
@@ -350,4 +354,4 @@ const runDetection = async (element) => {
 };
 
 // export the image and video processing functions
-export { runDetection };
+export { runDetection, RESULTS };

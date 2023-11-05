@@ -2,9 +2,11 @@
 // This module exports the style sheet and blur effect functions
 
 import { emitEvent, listenToEvent } from "./helpers.js";
+import { RESULTS } from "./processing.js";
 import { settings, shouldDetect, isBlurryStartMode } from "./settings.js";
 
 const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
+const BLURRY_START_IMG_TIMEOUT = 2000; // TODO: make this a setting maybe?
 let hbStyleSheet, blurryStartStyleSheet;
 
 const initStylesheets = () => {
@@ -92,9 +94,23 @@ const turnOffBlurryStart = (e) => {
 };
 
 const applyBlurryStart = (node) => {
-	isBlurryStartMode() && node.classList.add("hb-blur");
-};
+	if (!isBlurryStartMode()) return;
+	node.classList.add("hb-blur");
+	// add timeout to images to remove blurry start mode
 
+	if (node.tagName === "IMG") {
+		const timeoutId = setTimeout(() => {
+			// if the node has no negative result, && has not been processed yet, remove blurry start mode
+			if (
+				node.dataset.HBresult === RESULTS.CLEAR
+			) {
+				node.classList.remove("hb-blur");
+			}
+		}, BLURRY_START_IMG_TIMEOUT);
+		// add timeout id to node
+		node.dataset.HBtimeoutId = timeoutId; //to clear timeout when node is processed
+	}
+};
 
 const attachStyleListener = () => {
 	listenToEvent("settingsLoaded", initStylesheets);
@@ -105,4 +121,4 @@ const attachStyleListener = () => {
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener, applyBlurryStart}
+export { attachStyleListener, applyBlurryStart };

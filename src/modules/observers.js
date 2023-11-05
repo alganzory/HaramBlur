@@ -87,7 +87,7 @@ const processNextImage = async () => {
 
 const increasePriority = (node) => {
 	if (node.dataset.HBstatus && node.dataset.HBstatus >= STATUSES.PROCESSING)
-		return; // if the image is already being processed, return
+		return; // if the element is already being processed, return
 	lowPriorityQueue.delete(node);
 	highPriorityQueue.add(node);
 	node.dataset.HBstatus = STATUSES.QUEUED;
@@ -95,7 +95,7 @@ const increasePriority = (node) => {
 
 const decreasePriority = (node) => {
 	if (node.dataset.HBstatus && node.dataset.HBstatus >= STATUSES.PROCESSING)
-		return; // if the image is already being processed, return
+		return; // if the element is already being processed, return
 	highPriorityQueue.delete(node);
 	lowPriorityQueue.add(node);
 	node.dataset.HBstatus = STATUSES.QUEUED;
@@ -170,7 +170,7 @@ const attachObserversListener = () => {
 
 function observeNode(node) {
 	startObservation();
-	applyBlurryStart(node);
+	applyBlurryStart(node); 
 
 	node.dataset.HBstatus = STATUSES.OBSERVED;
 	if (node.src) {
