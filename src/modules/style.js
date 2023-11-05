@@ -91,7 +91,7 @@ const turnOffBlurryStart = (e) => {
 	blurryStartStyleSheet.innerHTML = "";
 };
 
-const applyBlurryStartMode = (node) => {
+const applyBlurryStart = (node) => {
 	isBlurryStartMode() && node.classList.add("hb-blur");
 };
 
@@ -105,4 +105,4 @@ const attachStyleListener = () => {
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener, applyBlurryStartMode}
+export { attachStyleListener, applyBlurryStart}

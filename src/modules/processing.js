@@ -15,7 +15,9 @@ import {
 	emitEvent,
 	now,
 	timeTaken,
+	resetElement,
 } from "./helpers.js";
+import { STATUSES } from "./observers.js";
 import {
 	shouldDetect,
 	shouldDetectGender,
@@ -32,6 +34,21 @@ const FRAME_RATE = 1000 / 30; // 30 fps
 const POSITIVE_THRESHOLD = 1; //at 30 fps, this is 0.03 seconds of consecutive positive detections
 // threshold for number of consecutive frames that need to be negative for the image to be considered negative
 const NEGATIVE_THRESHOLD = 9; //at 30 fps, this is 0.3 seconds of consecutive negative detections
+
+/**
+ * Object containing the possible results of image processing.
+ * @typedef {Object} RESULTS
+ * @property {string} CLEAR - Indicates that the image is clear and safe to display.
+ * @property {string} NSFW - Indicates that the image contains NSFW content and should be blurred.
+ * @property {string} FACE - Indicates that the image contains a face and should be blurred.
+ * @property {string} ERROR - Indicates that an error occurred during processing.
+ */
+const RESULTS = {
+	CLEAR: "CLEAR",
+	NSFW: "NSFW",
+	FACE: "FACE",
+	ERROR: "ERROR",
+};
 
 let detectionStarted = false;
 
@@ -102,18 +119,18 @@ const processImageDetections = async (detections, nsfwDetections, img) => {
 	// Not or-ing the two conditions because we may want to add different classes in the future
 	if (nsfwDetections) {
 		if (containsNsfw(nsfwDetections)) {
-			img.dataset["HBblurred"] = "nsfw";
+			img.dataset.HBresult = RESULTS.NSFW;
 			img.classList.add("hb-blur");
 			return true;
 		} else return false;
 	}
 	if (detections && containsGenderFace(detections)) {
-		img.dataset["HBblurred"] = "face";
+		img.dataset.HBresult = RESULTS.FACE;
 		img.classList.add("hb-blur");
 		return true;
 	}
 
-	img.dataset["HBblurred"] = "clear";
+	img.dataset.HBresult = RESULTS.CLEAR;
 	img.classList.remove("hb-blur");
 	return false;
 };
@@ -124,14 +141,14 @@ const processVideoDetections = async (
 	video
 ) => {
 	flagDetectionStart();
-	const prevResult = video.dataset.HBblurred;
+	const prevResult = video.dataset.HBresult;
 	const isPrevResultClear = prevResult === "clear" ? 1 : 0;
 	const currentPositiveCount = parseInt(video.dataset.positiveCount ?? 0);
 	const currentNegativeCount = parseInt(video.dataset.negativeCount ?? 0);
 
 	if (nsfwDetections) {
 		if (containsNsfw(nsfwDetections)) {
-			video.dataset["HBblurred"] = "nsfw";
+			video.dataset.HBresult = "nsfw";
 			video.dataset.positiveCount =
 				currentPositiveCount + !isPrevResultClear;
 			video.dataset.negativeCount = 0;
@@ -150,7 +167,7 @@ const processVideoDetections = async (
 	}
 
 	if (detections && containsGenderFace(detections)) {
-		video.dataset["HBblurred"] = "face";
+		video.dataset.HBresult = "face";
 		video.dataset.positiveCount = currentPositiveCount + !isPrevResultClear;
 		video.dataset.negativeCount = 0;
 		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
@@ -163,7 +180,7 @@ const processVideoDetections = async (
 		return true;
 	}
 
-	video.dataset["HBblurred"] = "clear";
+	video.dataset.HBresult = "clear";
 	video.dataset.negativeCount = currentNegativeCount + isPrevResultClear;
 	video.dataset.positiveCount = 0;
 	// if the negative count is greater than the threshold (i.e it's not a momentary blip), remove the blur
@@ -172,7 +189,7 @@ const processVideoDetections = async (
 		video.classList.remove("hb-blur");
 		video.dataset.negativeCount = 0;
 	}
-	video.dataset["HBblurred"] = "clear";
+	video.dataset.HBresult = "clear";
 	return false;
 };
 
@@ -239,13 +256,22 @@ const videoDetectionLoop = async (video, needToResize) => {
 	}
 };
 
+/**
+ * Processes an image by loading it, resizing it if necessary, and running it through a human and NSFW model for classification.
+ * @async
+ * @function
+ * @param {HTMLImageElement} img - The image element to process.
+ * @returns {Promise<boolean>} - A Promise that resolves to true if the image was successfully processed, or false if it was not a valid image.
+ * @throws {Error} - If there was an error processing the image.
+ */
 const processImage = async (img) => {
 	try {
-		await loadImage(img);
+		img.dataset.HBstatus = STATUSES.LOADING;
+		const validImage = await loadImage(img);
+		if (!validImage) return false;
+		img.dataset.HBstatus = STATUSES.LOADED;
 	} catch (err) {
-		// console.error("Failed to load image", img);
-		img.removeAttribute("crossorigin");
-		return;
+		throw err;
 	}
 
 	try {
@@ -268,20 +294,20 @@ const processImage = async (img) => {
 		// dispose the tensor to free memory
 		human.tf.dispose(processed.tensor);
 		img.removeAttribute("crossorigin");
+
+		return true;
 	} catch (error) {
-		console.error("HB==Failed to process img", img, error);
-		img.removeAttribute("crossorigin");
-		return;
+		throw new Error("Failed to process image", img, error);
 	}
 };
 
 const processVideo = async (video) => {
 	try {
+		video.dataset.HBstatus = STATUSES.LOADING;
 		await loadVideo(video);
+		video.dataset.HBstatus = STATUSES.LOADED;
 	} catch (err) {
-		console.error("Failed to load video", video);
-		video.removeAttribute("crossorigin");
-		return;
+		throw new Error("Failed to load video", video, err);
 	}
 
 	try {
@@ -289,9 +315,7 @@ const processVideo = async (video) => {
 		video.dataset.HBprevTime = 0;
 		await videoDetectionLoop(video, needToResize);
 	} catch (error) {
-		console.error("HB==Failed to process video", video, error);
-		video.removeAttribute("crossorigin");
-		return;
+		throw new Error("Failed to process video", video, error);
 	}
 };
 
@@ -299,18 +323,29 @@ const runDetection = async (element) => {
 	// console.log("HB==runDetection", element, shouldDetect());
 	if (!shouldDetect()) return; // safe guard
 	try {
-		if (hasBeenProcessed(element)) return;
+		if (hasBeenProcessed(element)) return; // if the element has already been processed, return
+		element.dataset.HBstatus = STATUSES.PROCESSING;
+		let processed = false;
 
 		// set crossorigin attribute to anonymous to avoid CORS issues
 		element.setAttribute("crossorigin", "anonymous");
-
 		if (element.tagName === "IMG" && shouldDetectImages) {
-			await processImage(element);
+			processed = await processImage(element);
 		} else if (element.tagName === "VIDEO" && shouldDetectVideos) {
-			await processVideo(element);
+			processed = await processVideo(element);
+		}
+
+		// if the element was successfully processed, set its status to processed
+		if (processed) {
+			element.dataset.HBstatus = STATUSES.PROCESSED;
+		} else {
+			element.dataset.HBstatus = STATUSES.INVALID;
+			resetElement(element);
 		}
 	} catch (error) {
-		console.error("HB==Failed to run detection", element, error);
+		console.error("HumanBlur ==> Detection error: ", error, element);
+		element.dataset.HBstatus = STATUSES.ERROR;
+		resetElement(element);
 	}
 };
 
