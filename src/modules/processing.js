@@ -142,13 +142,13 @@ const processVideoDetections = async (
 ) => {
 	flagDetectionStart();
 	const prevResult = video.dataset.HBresult;
-	const isPrevResultClear = prevResult === "clear" ? 1 : 0;
+	const isPrevResultClear = prevResult === RESULTS.CLEAR ? 1 : 0;
 	const currentPositiveCount = parseInt(video.dataset.positiveCount ?? 0);
 	const currentNegativeCount = parseInt(video.dataset.negativeCount ?? 0);
 
 	if (nsfwDetections) {
 		if (containsNsfw(nsfwDetections)) {
-			video.dataset.HBresult = "nsfw";
+			video.dataset.HBresult = RESULTS.NSFW;
 			video.dataset.positiveCount =
 				currentPositiveCount + !isPrevResultClear;
 			video.dataset.negativeCount = 0;
@@ -167,7 +167,7 @@ const processVideoDetections = async (
 	}
 
 	if (detections && containsGenderFace(detections)) {
-		video.dataset.HBresult = "face";
+		video.dataset.HBresult = RESULTS.FACE;
 		video.dataset.positiveCount = currentPositiveCount + !isPrevResultClear;
 		video.dataset.negativeCount = 0;
 		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
@@ -180,7 +180,7 @@ const processVideoDetections = async (
 		return true;
 	}
 
-	video.dataset.HBresult = "clear";
+	video.dataset.HBresult = RESULTS.CLEAR;
 	video.dataset.negativeCount = currentNegativeCount + isPrevResultClear;
 	video.dataset.positiveCount = 0;
 	// if the negative count is greater than the threshold (i.e it's not a momentary blip), remove the blur
@@ -189,7 +189,7 @@ const processVideoDetections = async (
 		video.classList.remove("hb-blur");
 		video.dataset.negativeCount = 0;
 	}
-	video.dataset.HBresult = "clear";
+	video.dataset.HBresult = RESULTS.CLEAR;
 	return false;
 };
 
