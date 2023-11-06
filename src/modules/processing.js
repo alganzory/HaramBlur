@@ -113,29 +113,32 @@ const containsGenderFace = (detections) => {
 	return true;
 };
 
-const processImageDetections = async (detections, nsfwDetections, img) => {
+const processImageDetections =  (detections, nsfwDetections, img) => {
 	flagDetectionStart();
 
 	// Not or-ing the two conditions because we may want to add different classes in the future
 	if (nsfwDetections) {
 		if (containsNsfw(nsfwDetections)) {
 			img.dataset.HBresult = RESULTS.NSFW;
+			img.classList.remove("hb-blur-temp");
 			img.classList.add("hb-blur");
 			return true;
 		} else return false;
 	}
 	if (detections && containsGenderFace(detections)) {
 		img.dataset.HBresult = RESULTS.FACE;
+		img.classList.remove("hb-blur-temp");
 		img.classList.add("hb-blur");
 		return true;
 	}
 
 	img.dataset.HBresult = RESULTS.CLEAR;
 	img.classList.remove("hb-blur");
+	img.classList.remove("hb-blur-temp");
 	return false;
 };
 
-const processVideoDetections = async (
+const processVideoDetections =  (
 	detections,
 	nsfwDetections = null,
 	video
@@ -159,6 +162,7 @@ const processVideoDetections = async (
 			) {
 				// video.pause()
 
+				video.classList.remove("hb-blur-temp");
 				video.classList.add("hb-blur");
 				video.dataset.positiveCount = 0;
 			}
@@ -173,6 +177,7 @@ const processVideoDetections = async (
 		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
 		if (currentPositiveCount + !isPrevResultClear >= POSITIVE_THRESHOLD) {
 			// video.pause()
+			video.classList.remove("hb-blur-temp");
 			video.classList.add("hb-blur");
 			video.dataset.positiveCount = 0;
 		}
@@ -187,6 +192,7 @@ const processVideoDetections = async (
 	if (currentNegativeCount + isPrevResultClear >= NEGATIVE_THRESHOLD) {
 		// video.pause()
 		video.classList.remove("hb-blur");
+		video.classList.remove("hb-blur-temp");
 		video.dataset.negativeCount = 0;
 	}
 	video.dataset.HBresult = RESULTS.CLEAR;
@@ -206,7 +212,7 @@ const videoDetectionLoop = async (video, needToResize) => {
 				let processed = await human.image(video, true);
 
 				let nsfwDet = await nsfwModelClassify(processed.tensor);
-				const positiveDet = await processVideoDetections(
+				const positiveDet =  processVideoDetections(
 					null,
 					nsfwDet,
 					video
@@ -222,7 +228,7 @@ const videoDetectionLoop = async (video, needToResize) => {
 					// console.log("HB==video detections", detections);
 					// interpolate the new detections
 					const interpolated = human.next(detections);
-					await processVideoDetections(interpolated, null, video);
+					 processVideoDetections(interpolated, null, video);
 				}
 
 				// dispose the tensor to free memory
@@ -279,7 +285,7 @@ const processImage = async (img) => {
 		let processed = await human.image(img, true);
 
 		let nsfwDet = await nsfwModelClassify(processed.tensor);
-		const positiveDet = await processImageDetections(null, nsfwDet, img);
+		const positiveDet =  processImageDetections(null, nsfwDet, img);
 
 		if (!positiveDet) {
 			let detections = await humanModelClassify(
@@ -288,7 +294,7 @@ const processImage = async (img) => {
 			);
 			// console.log("HB==Human detections", detections, img);
 
-			await processImageDetections(detections, null, img);
+			 processImageDetections(detections, null, img);
 		}
 
 		// dispose the tensor to free memory
@@ -320,9 +326,8 @@ const processVideo = async (video) => {
 };
 
 const runDetection = async (element) => {
-	// console.log("HB==runDetection", element, shouldDetect());
-	if (!shouldDetect()) return; // safe guard
 	try {
+		if (!shouldDetect()) return; // safe guard
 		if (hasBeenProcessed(element)) return; // if the element has already been processed, return
 		element.dataset.HBstatus = STATUSES.PROCESSING;
 		let processed = false;
@@ -338,10 +343,6 @@ const runDetection = async (element) => {
 		// if the element was successfully processed, set its status to processed
 		if (processed) {
 			element.dataset.HBstatus = STATUSES.PROCESSED;
-			if (element.dataset.HBtimeoutId) { 
-				clearTimeout(element.dataset.HBtimeoutId);
-				delete element.dataset.HBtimeoutId;
-			}
 		} else {
 			element.dataset.HBstatus = STATUSES.INVALID;
 			resetElement(element);
@@ -350,6 +351,7 @@ const runDetection = async (element) => {
 		// console.error("HumanBlur ==> Detection error: ", error, element);
 		element.dataset.HBstatus = STATUSES.ERROR;
 		resetElement(element);
+		throw error;
 	}
 };
 

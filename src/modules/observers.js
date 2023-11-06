@@ -29,8 +29,14 @@ const STATUSES = {
 
 const handleImage = async (img, lowPriority) => {
 	try {
+		let thePromise;
+		let timeoutId;
+		const timeoutPromise = new Promise((_, reject) => {
+			timeoutId = setTimeout(() => reject(new Error("Timeout")), 2000);
+		});
+
 		if (lowPriority) {
-			await new Promise((resolve) => {
+			thePromise = new Promise((resolve) => {
 				const id = requestIdleCallback(() => {
 					runDetection(img).then(() => {
 						// cancel the requestIdleCallback so it doesn't run after the image has been processed
@@ -46,19 +52,22 @@ const handleImage = async (img, lowPriority) => {
 				img.dataset.ribId = id;
 			});
 		} else {
-			await runDetection(img);
-			// cancel the requestIdleCallback so it doesn't run after the image has been processed
-			if (img.dataset.ribId) {
-				cancelIdleCallback(img.dataset.ribId);
-
-				// remove the id from the dataset
-				delete img.dataset.ribId;
-			}
+			thePromise = runDetection(img);
 		}
+
+		await Promise.race([thePromise, timeoutPromise]);
+		clearTimeout(timeoutId);
 	} catch (err) {
-		console.error(err);
+		// console.error(err, img); //TODO: enable logging in debug mode
 	} finally {
 		activePromises--;
+		// cancel the requestIdleCallback so it doesn't run after the image has been processed
+		if (img.dataset.ribId) {
+			cancelIdleCallback(img.dataset.ribId);
+
+			// remove the id from the dataset
+			delete img.dataset.ribId;
+		}
 		processNextImage(); // Start processing the next image
 	}
 };
@@ -75,7 +84,6 @@ const processNextImage = async () => {
 			lowPriority = true;
 			lowPriorityQueue.delete(nextImage);
 		}
-
 		if (nextImage) {
 			activePromises++;
 			handleImage(nextImage, lowPriority);
@@ -169,13 +177,22 @@ const attachObserversListener = () => {
 };
 
 function observeNode(node) {
+	// if the node is already being processed, return
+	if (node.dataset.HBstatus && node.dataset.HBstatus >= STATUSES.QUEUED)
+		return;
+
 	startObservation();
-	applyBlurryStart(node); 
+
+	// apply blurry start if the node wasn't already processed
+	applyBlurryStart(node);
 
 	node.dataset.HBstatus = STATUSES.OBSERVED;
 	if (node.src) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
 		return intersectionObserver.observe(node);
+	} else {
+		// remove the HBstatus if the node has no src attribute
+		delete node.dataset?.HBstatus;
 	}
 }
 export { attachObserversListener, STATUSES };

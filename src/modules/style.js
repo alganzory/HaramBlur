@@ -2,11 +2,9 @@
 // This module exports the style sheet and blur effect functions
 
 import { emitEvent, listenToEvent } from "./helpers.js";
-import { RESULTS } from "./processing.js";
 import { settings, shouldDetect, isBlurryStartMode } from "./settings.js";
 
 const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
-const BLURRY_START_IMG_TIMEOUT = 2000; // TODO: make this a setting maybe?
 let hbStyleSheet, blurryStartStyleSheet;
 
 const initStylesheets = () => {
@@ -71,20 +69,26 @@ const setStyle = () => {
 	unblurSelectors = unblurSelectors.join(", ");
 	hbStyleSheet.innerHTML = `
     ${blurSelectors} {
-      filter: blur(${settings.blurAmount}px) grayscale(100%);
-      transition: filter 0.1s ease;
-      opacity: unset;
+      filter: blur(${settings.blurAmount}px) grayscale(100%) !important;
+      transition: filter 0.1s ease !important;
+      opacity: unset !important;
     }
 	
-    ${unblurSelectors} {
-      filter: grayscale(0%);
-      transition: filter 0.5s ease;
+${unblurSelectors} {
+      filter: blur(0px) grayscale(0%) !important;
+      transition: filter 0.5s ease !important;
+      transition-delay: 1s !important;
     }
-    ${unblurSelectors} {
-      filter: blur(0px);
-      transition: filter 0.5s ease;
-      transition-delay: 1s;
-    }
+
+	.hb-blur-temp { 
+		animation: hb-blur-temp ${BLURRY_START_MODE_TIMEOUT}ms ease-in-out forwards !important;
+	}
+
+	@keyframes hb-blur-temp {
+		0% { filter: blur(${settings.blurAmount}px) grayscale(100%); }
+		95% { filter: blur(${settings.blurAmount}px) grayscale(100%); }
+		100% { filter: blur(0px) grayscale(0%); }
+	}
   `;
 };
 
@@ -95,21 +99,7 @@ const turnOffBlurryStart = (e) => {
 
 const applyBlurryStart = (node) => {
 	if (!isBlurryStartMode()) return;
-	node.classList.add("hb-blur");
-	// add timeout to images to remove blurry start mode
-
-	if (node.tagName === "IMG") {
-		const timeoutId = setTimeout(() => {
-			// if the node has no negative result, && has not been processed yet, remove blurry start mode
-			if (
-				node.dataset.HBresult === RESULTS.CLEAR
-			) {
-				node.classList.remove("hb-blur");
-			}
-		}, BLURRY_START_IMG_TIMEOUT);
-		// add timeout id to node
-		node.dataset.HBtimeoutId = timeoutId; //to clear timeout when node is processed
-	}
+	node.classList.add("hb-blur-temp");
 };
 
 const attachStyleListener = () => {

@@ -90,7 +90,7 @@ const hasBeenProcessed = (element) => {
 	if (!element) throw new Error("No element provided");
 	if (
 		element.dataset.HBstatus &&
-		element?.dataset.HBstatus >= STATUSES.PROCESSING
+		element.dataset.HBstatus >= STATUSES.PROCESSING
 	)
 		return true;
 	return false;
@@ -138,6 +138,7 @@ const resetElement = (element) => {
 	// remove crossOrigin attribute
 	element.removeAttribute("crossOrigin");
 	// remove blur class
+	element.classList.remove("hb-blur-temp");
 	element.classList.remove("hb-blur");
 };
 
