@@ -4,7 +4,7 @@
 import { runDetection } from "./processing.js"; // import the runDetection function from processing.js
 import { emitEvent, listenToEvent, processNode } from "./helpers.js";
 import { shouldDetect } from "./settings.js";
-import { applyBlurryStartMode } from "./style.js";
+import { applyBlurryStart } from "./style.js";
 
 const BATCH_SIZE = 20; //TODO: make this a setting/calculated based on the device's performance
 
@@ -13,69 +13,100 @@ let mutationObserver;
 let highPriorityQueue = new Set();
 let lowPriorityQueue = new Set();
 let observationStarted = false;
+let activePromises = 0;
 
-const processNextImage = async () => {
-	let batch = [];
+const STATUSES = {
+	// the numbers are there to make it easier to sort
+	ERROR: "-1ERROR",
+	OBSERVED: "0OBSERVED",
+	QUEUED: "1QUEUED",
+	LOADING: "2LOADING",
+	LOADED: "3LOADED",
+	PROCESSING: "4PROCESSING",
+	PROCESSED: "5PROCESSED",
+	INVALID: "9INVALID",
+};
 
-	// Fill the batch with high-priority images first
-	while (batch.length < BATCH_SIZE && highPriorityQueue.size > 0) {
-		const nextImage = highPriorityQueue.entries().next()?.value?.[0];
-		nextImage.dataset.processed
-			? null
-			: batch.push(
-					runDetection(nextImage).then(() => {
+const handleImage = async (img, lowPriority) => {
+	try {
+		let thePromise;
+		let timeoutId;
+		const timeoutPromise = new Promise((_, reject) => {
+			timeoutId = setTimeout(() => reject(new Error("Timeout")), 2000);
+		});
+
+		if (lowPriority) {
+			thePromise = new Promise((resolve) => {
+				const id = requestIdleCallback(() => {
+					runDetection(img).then(() => {
 						// cancel the requestIdleCallback so it doesn't run after the image has been processed
-						if (nextImage.dataset.ribId) {
-							cancelIdleCallback(nextImage.dataset.ribId);
+						if (img.dataset.ribId) {
+							cancelIdleCallback(img.dataset.ribId);
 
 							// remove the id from the dataset
-							delete nextImage.dataset.ribId;
+							delete img.dataset.ribId;
 						}
-					})
-			  );
-		highPriorityQueue.delete(nextImage);
-	}
-
-	// If there's still room in the batch, fill the rest with low-priority images
-	while (batch.length < BATCH_SIZE && lowPriorityQueue.size > 0) {
-		const nextImage = lowPriorityQueue.entries().next()?.value?.[0];
-
-		// push a promise that runs the runDetection function through requestIdleCallback, we also wanna store
-		// the id of the requestIdleCallback in the image object so we can cancel it if the image is moved to the
-		// high-priority queue
-		batch.push(
-			new Promise((resolve) => {
-				const id = requestIdleCallback(() => {
-					runDetection(nextImage).then(() => {
-						// remove the id from the dataset
-						delete nextImage.dataset.ribId;
-
 						resolve();
 					});
 				});
-				nextImage.dataset.ribId = id;
-			})
-		);
+				img.dataset.ribId = id;
+			});
+		} else {
+			thePromise = runDetection(img);
+		}
 
-		lowPriorityQueue.delete(nextImage);
+		await Promise.race([thePromise, timeoutPromise]);
+		clearTimeout(timeoutId);
+	} catch (err) {
+		// console.error(err, img); //TODO: enable logging in debug mode
+	} finally {
+		activePromises--;
+		// cancel the requestIdleCallback so it doesn't run after the image has been processed
+		if (img.dataset.ribId) {
+			cancelIdleCallback(img.dataset.ribId);
+
+			// remove the id from the dataset
+			delete img.dataset.ribId;
+		}
+		processNextImage(); // Start processing the next image
 	}
+};
 
-	if (batch.length > 0) {
-		await Promise.allSettled(batch);
-
-		if (lowPriorityQueue.size > 0 || highPriorityQueue.size > 0)
-			processNextImage(); // Call processNextImage again after all images in the batch have been processed
+const processNextImage = async () => {
+	while (activePromises < BATCH_SIZE) {
+		let nextImage,
+			lowPriority = false;
+		if (highPriorityQueue.size > 0) {
+			nextImage = highPriorityQueue.entries().next()?.value?.[0];
+			highPriorityQueue.delete(nextImage);
+		} else if (lowPriorityQueue.size > 0) {
+			nextImage = lowPriorityQueue.entries().next()?.value?.[0];
+			lowPriority = true;
+			lowPriorityQueue.delete(nextImage);
+		}
+		if (nextImage) {
+			activePromises++;
+			handleImage(nextImage, lowPriority);
+		} else {
+			break;
+		}
 	}
 };
 
 const increasePriority = (node) => {
+	if (node.dataset.HBstatus && node.dataset.HBstatus >= STATUSES.PROCESSING)
+		return; // if the element is already being processed, return
 	lowPriorityQueue.delete(node);
 	highPriorityQueue.add(node);
+	node.dataset.HBstatus = STATUSES.QUEUED;
 };
 
 const decreasePriority = (node) => {
+	if (node.dataset.HBstatus && node.dataset.HBstatus >= STATUSES.PROCESSING)
+		return; // if the element is already being processed, return
 	highPriorityQueue.delete(node);
 	lowPriorityQueue.add(node);
+	node.dataset.HBstatus = STATUSES.QUEUED;
 };
 
 const startObservation = () => {
@@ -105,29 +136,30 @@ const initMutationObserver = async () => {
 		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
 				mutation.addedNodes.forEach((node) => {
-					processNode(node, (node) => {
-						startObservation();
-						applyBlurryStartMode(node);
-						return intersectionObserver.observe(node);
-					});
+					processNode(node, observeNode);
 				});
+			} else if (mutation.type === "attributes") {
+				// if the src attribute of an image or video changes, process it
+				const node = mutation.target;
+				processNode(node, observeNode);
 			}
 		});
 
 		shouldDetect() && processNextImage();
 	});
 
-	mutationObserver.observe(document.body, {
+	mutationObserver.observe(document, {
 		childList: true,
+		characterData: false,
 		subtree: true,
+		attributes: true,
+		attributeFilter: ["src"],
 	});
 
 	// process all images and videos that are already in the DOM
-	processNode(document.body, (node) => {
-		startObservation();
-		applyBlurryStartMode(node);
-		return intersectionObserver.observe(node);
-	});
+	processNode(document, observeNode);
+
+	shouldDetect() && processNextImage();
 };
 
 const attachObserversListener = () => {
@@ -144,4 +176,23 @@ const attachObserversListener = () => {
 	});
 };
 
-export { attachObserversListener };
+function observeNode(node) {
+	// if the node is already being processed, return
+	if (node.dataset.HBstatus && node.dataset.HBstatus >= STATUSES.QUEUED)
+		return;
+
+	startObservation();
+
+	// apply blurry start if the node wasn't already processed
+	applyBlurryStart(node);
+
+	node.dataset.HBstatus = STATUSES.OBSERVED;
+	if (node.src) {
+		// if there's no src attribute yet, wait for the mutation observer to catch it
+		return intersectionObserver.observe(node);
+	} else {
+		// remove the HBstatus if the node has no src attribute
+		delete node.dataset?.HBstatus;
+	}
+}
+export { attachObserversListener, STATUSES };

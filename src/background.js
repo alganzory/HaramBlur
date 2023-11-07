@@ -8,9 +8,9 @@ const defaultSettings = {
 	blurVideos: true,
 	blurMale: false,
 	blurFemale: true,
-	unblurImages: true,
+	unblurImages: false,
 	unblurVideos: false,
-	strictness: 0.3, // goes from 0 to 1
+	strictness: 0.4, // goes from 0 to 1
 };
 
 chrome.runtime.onInstalled.addListener(function () {
@@ -28,3 +28,8 @@ chrome.runtime.onInstalled.addListener(function () {
 		}
 	});
 });
+
+// on uninstall
+chrome.runtime.setUninstallURL(
+	"https://forms.gle/RovVrtp29vK3Z7To7"
+);

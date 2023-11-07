@@ -69,20 +69,26 @@ const setStyle = () => {
 	unblurSelectors = unblurSelectors.join(", ");
 	hbStyleSheet.innerHTML = `
     ${blurSelectors} {
-      filter: blur(${settings.blurAmount}px) grayscale(100%);
-      transition: filter 0.1s ease;
-      opacity: unset;
+      filter: blur(${settings.blurAmount}px) grayscale(100%) !important;
+      transition: filter 0.1s ease !important;
+      opacity: unset !important;
     }
 	
-    ${unblurSelectors} {
-      filter: grayscale(0%);
-      transition: filter 0.5s ease;
+${unblurSelectors} {
+      filter: blur(0px) grayscale(0%) !important;
+      transition: filter 0.5s ease !important;
+      transition-delay: 1s !important;
     }
-    ${unblurSelectors} {
-      filter: blur(0px);
-      transition: filter 0.5s ease;
-      transition-delay: 1s;
-    }
+
+	.hb-blur-temp { 
+		animation: hb-blur-temp ${BLURRY_START_MODE_TIMEOUT}ms ease-in-out forwards !important;
+	}
+
+	@keyframes hb-blur-temp {
+		0% { filter: blur(${settings.blurAmount}px) grayscale(100%); }
+		95% { filter: blur(${settings.blurAmount}px) grayscale(100%); }
+		100% { filter: blur(0px) grayscale(0%); }
+	}
   `;
 };
 
@@ -91,10 +97,10 @@ const turnOffBlurryStart = (e) => {
 	blurryStartStyleSheet.innerHTML = "";
 };
 
-const applyBlurryStartMode = (node) => {
-	isBlurryStartMode() && node.classList.add("hb-blur");
+const applyBlurryStart = (node) => {
+	if (!isBlurryStartMode()) return;
+	node.classList.add("hb-blur-temp");
 };
-
 
 const attachStyleListener = () => {
 	listenToEvent("settingsLoaded", initStylesheets);
@@ -105,4 +111,4 @@ const attachStyleListener = () => {
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener, applyBlurryStartMode}
+export { attachStyleListener, applyBlurryStart };
