@@ -27,19 +27,8 @@ getSettings()
 	.then(() => {
 		console.log("HB== models initialized");
 
-		// wait for the dom to load
-		if (document.readyState === "loading") {
-			document.addEventListener("DOMContentLoaded", () => {
-				// console.log("HB==DOM LOADED");
-				// turn on/off the extension
-				toggleOnOffStatus();
-			});
-		} else {
-			// console.log("HB==DOM ALREADY LOADED", document.readyState);
-
-			// turn on/off the extension
-			toggleOnOffStatus();
-		}
+		// turn on/off the extension
+		toggleOnOffStatus();
 	})
 	.catch((e) => {
 		console.log("HB==INITIALIZATION ERROR", e);

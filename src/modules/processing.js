@@ -33,7 +33,7 @@ const FRAME_RATE = 1000 / 30; // 30 fps
 // threshold for number of consecutive frames that need to be positive for the image to be considered positive
 const POSITIVE_THRESHOLD = 1; //at 30 fps, this is 0.03 seconds of consecutive positive detections
 // threshold for number of consecutive frames that need to be negative for the image to be considered negative
-const NEGATIVE_THRESHOLD = 9; //at 30 fps, this is 0.3 seconds of consecutive negative detections
+const NEGATIVE_THRESHOLD = 6; //at 30 fps, this is 0.2 seconds of consecutive negative detections
 
 /**
  * Object containing the possible results of image processing.
@@ -113,7 +113,7 @@ const containsGenderFace = (detections) => {
 	return true;
 };
 
-const processImageDetections =  (detections, nsfwDetections, img) => {
+const processImageDetections = (detections, nsfwDetections, img) => {
 	flagDetectionStart();
 
 	// Not or-ing the two conditions because we may want to add different classes in the future
@@ -138,11 +138,7 @@ const processImageDetections =  (detections, nsfwDetections, img) => {
 	return false;
 };
 
-const processVideoDetections =  (
-	detections,
-	nsfwDetections = null,
-	video
-) => {
+const processVideoDetections = (detections, nsfwDetections = null, video) => {
 	flagDetectionStart();
 	const prevResult = video.dataset.HBresult;
 	const isPrevResultClear = prevResult === RESULTS.CLEAR ? 1 : 0;
@@ -199,6 +195,21 @@ const processVideoDetections =  (
 	return false;
 };
 
+const processFrame = async (tensor, video, needToResize) => {
+	let nsfwDet = await nsfwModelClassify(tensor);
+	const positiveDet = processVideoDetections(null, nsfwDet, video);
+	// console.log("nsfwDet:", nsfwDet, video);
+	if (!positiveDet) {
+		// only run human detection if nsfw detection is negative
+		let detections = await humanModelClassify(tensor, needToResize);
+		// console.log("HB==video detections", detections);
+		// interpolate the new detections
+		const interpolated = human.next(detections);
+		processVideoDetections(interpolated, null, video);
+		human.tf.dispose(tensor);
+	}
+};
+
 const videoDetectionLoop = async (video, needToResize) => {
 	// get the current timestamp
 	const currTime = now();
@@ -206,33 +217,13 @@ const videoDetectionLoop = async (video, needToResize) => {
 	// calculate the time difference
 	const diffTime = currTime - video.dataset.HBprevTime;
 
+	let tensor;
 	if (!video.paused) {
 		try {
 			if (diffTime >= FRAME_RATE) {
-				let processed = await human.image(video, true);
-
-				let nsfwDet = await nsfwModelClassify(processed.tensor);
-				const positiveDet =  processVideoDetections(
-					null,
-					nsfwDet,
-					video
-				);
-				// console.log("nsfwDet:", nsfwDet, video);
-
-				if (!positiveDet) {
-					// only run human detection if nsfw detection is negative
-					let detections = await humanModelClassify(
-						processed.tensor,
-						needToResize
-					);
-					// console.log("HB==video detections", detections);
-					// interpolate the new detections
-					const interpolated = human.next(detections);
-					 processVideoDetections(interpolated, null, video);
-				}
-
-				// dispose the tensor to free memory
-				human.tf.dispose(processed.tensor);
+				tensor = (await human.image(video, true))?.tensor;
+				if (!tensor) return;
+				await processFrame(tensor, video, needToResize);
 				// store the current timestamp
 				video.dataset.HBprevTime = currTime;
 			}
@@ -240,6 +231,9 @@ const videoDetectionLoop = async (video, needToResize) => {
 			// console.log("HB==Video detection loop error", error, video);
 			cancelAnimationFrame(video.dataset.HBrafId);
 			video.dataset.HBerrored = true;
+		} finally {
+			if (tensor) human.tf.dispose(tensor.tensor);
+			// console.log("number tensors video", human.tf.memory().numTensors);
 		}
 	}
 
@@ -262,48 +256,33 @@ const videoDetectionLoop = async (video, needToResize) => {
 	}
 };
 
-/**
- * Processes an image by loading it, resizing it if necessary, and running it through a human and NSFW model for classification.
- * @async
- * @function
- * @param {HTMLImageElement} img - The image element to process.
- * @returns {Promise<boolean>} - A Promise that resolves to true if the image was successfully processed, or false if it was not a valid image.
- * @throws {Error} - If there was an error processing the image.
- */
 const processImage = async (img) => {
+	let tensor;
 	try {
 		img.dataset.HBstatus = STATUSES.LOADING;
 		const validImage = await loadImage(img);
 		if (!validImage) return false;
 		img.dataset.HBstatus = STATUSES.LOADED;
-	} catch (err) {
-		throw err;
-	}
-
-	try {
 		const needToResize = calcResize(img, "image");
-		let processed = await human.image(img, true);
+		tensor = (await human.image(img, true))?.tensor;
 
-		let nsfwDet = await nsfwModelClassify(processed.tensor);
-		const positiveDet =  processImageDetections(null, nsfwDet, img);
+		let nsfwDet = await nsfwModelClassify(tensor);
+		const positiveDet = processImageDetections(null, nsfwDet, img);
 
 		if (!positiveDet) {
-			let detections = await humanModelClassify(
-				processed.tensor,
-				needToResize
-			);
+			let detections = await humanModelClassify(tensor, needToResize);
 			// console.log("HB==Human detections", detections, img);
 
-			 processImageDetections(detections, null, img);
+			processImageDetections(detections, null, img);
 		}
-
-		// dispose the tensor to free memory
-		human.tf.dispose(processed.tensor);
-		img.removeAttribute("crossorigin");
-
 		return true;
 	} catch (error) {
-		throw new Error("Failed to process image", img, error);
+		throw error;
+	} finally {
+		if (tensor) human.tf.dispose(tensor);
+		// console.log("number tensors", human.tf.memory().numTensors);
+
+		img.removeAttribute("crossorigin");
 	}
 };
 
@@ -311,17 +290,15 @@ const processVideo = async (video) => {
 	try {
 		video.dataset.HBstatus = STATUSES.LOADING;
 		await loadVideo(video);
-		video.dataset.HBstatus = STATUSES.LOADED;
-	} catch (err) {
-		throw new Error("Failed to load video", video, err);
-	}
 
-	try {
+		video.dataset.HBstatus = STATUSES.LOADED;
 		const needToResize = calcResize(video, "video");
 		video.dataset.HBprevTime = 0;
-		await videoDetectionLoop(video, needToResize);
+		videoDetectionLoop(video, needToResize);
 	} catch (error) {
-		throw new Error("Failed to process video", video, error);
+		throw err;
+	} finally {
+		video.removeAttribute("crossorigin");
 	}
 };
 
@@ -330,23 +307,17 @@ const runDetection = async (element) => {
 		if (!shouldDetect()) return; // safe guard
 		if (hasBeenProcessed(element)) return; // if the element has already been processed, return
 		element.dataset.HBstatus = STATUSES.PROCESSING;
-		let processed = false;
 
 		// set crossorigin attribute to anonymous to avoid CORS issues
 		element.setAttribute("crossorigin", "anonymous");
 		if (element.tagName === "IMG" && shouldDetectImages) {
-			processed = await processImage(element);
+			await processImage(element);
 		} else if (element.tagName === "VIDEO" && shouldDetectVideos) {
-			processed = await processVideo(element);
+			await processVideo(element);
 		}
 
 		// if the element was successfully processed, set its status to processed
-		if (processed) {
-			element.dataset.HBstatus = STATUSES.PROCESSED;
-		} else {
-			element.dataset.HBstatus = STATUSES.INVALID;
-			resetElement(element);
-		}
+		element.dataset.HBstatus = STATUSES.PROCESSED;
 	} catch (error) {
 		// console.error("HumanBlur ==> Detection error: ", error, element);
 		element.dataset.HBstatus = STATUSES.ERROR;

@@ -13,10 +13,10 @@ const MAX_VIDEO_HEIGHT = 1080 / 3.5;
  * @param {HTMLImageElement} img - The image to load.
  * @returns {Promise<boolean>} A Promise that resolves to a boolean indicating whether the image is large enough or rejects if the image fails to load.
  */
-const loadImage = (img) => {
-	return new Promise((resolve, reject) => {
+const loadImage = async (img) => {
+	img.setAttribute("crossorigin", "anonymous");
+	return await new Promise((resolve, reject) => {
 		// set crossorigin attribute to anonymous to avoid CORS issues
-		img.setAttribute("crossorigin", "anonymous");
 		if (img.complete && img.naturalHeight) {
 			isImageTooSmall(img) ? resolve(false) : resolve(img);
 		} else {
@@ -35,7 +35,7 @@ const loadImage = (img) => {
 };
 
 const loadVideo = (video) => {
-	// TODO: check if video is too small resolve false 
+	// TODO: check if video is too small resolve false
 	return new Promise((resolve, reject) => {
 		if (video.readyState >= 3 && video.videoHeight) {
 			resolve(true);
@@ -186,5 +186,5 @@ export {
 	listenToEvent,
 	now,
 	timeTaken,
-	resetElement
+	resetElement,
 };
