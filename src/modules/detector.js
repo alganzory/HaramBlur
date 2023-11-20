@@ -68,7 +68,7 @@ const getNsfwClasses = (factor = 0) => {
 		1: {
 			className: "Hentai",
 			nsfw: true,
-			thresh: 0.5 + (1 - factor) * 0.9, // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.5 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 		2: {
 			className: "Neutral",
@@ -78,12 +78,12 @@ const getNsfwClasses = (factor = 0) => {
 		3: {
 			className: "Porn",
 			nsfw: true,
-			thresh: 0.1 + (1 - factor) * 0.9, // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.1 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 		4: {
 			className: "Sexy",
 			nsfw: true,
-			thresh: 0.1 + (1 - factor) * 0.9, // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.1 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 	};
 };
@@ -253,6 +253,6 @@ export {
 	human,
 	HUMAN_CONFIG,
 	nsfwModelClassify,
-	getNsfwClasses,
 	humanModelClassify,
+	getNsfwClasses,
 };

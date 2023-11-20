@@ -17,7 +17,7 @@ import {
 	timeTaken,
 	resetElement,
 } from "./helpers.js";
-import { STATUSES } from "./observers.js";
+import { STATUSES, getDetectionQueue } from "./observers.js";
 import {
 	shouldDetect,
 	shouldDetectGender,
@@ -50,12 +50,17 @@ const RESULTS = {
 	ERROR: "ERROR",
 };
 
+let detectedCount = 0;
 let detectionStarted = false;
 
-const flagDetectionStart = () => {
-	if (detectionStarted) return;
-	detectionStarted = true;
-	emitEvent("detectionStarted");
+const flagDetectionStart = (img = null) => {
+	// detection is marked as started when at least 1/8th of the images have been processed (arbitrary number)
+	if (detectedCount >= getDetectionQueue().length / 8 && !detectionStarted) {
+		detectionStarted = true;
+		console.log("HaramBlur: Detection started");
+		emitEvent("detectionStarted");
+	}
+	detectedCount++;
 };
 
 const genderPredicate = (gender, score) => {
@@ -259,10 +264,6 @@ const videoDetectionLoop = async (video, needToResize) => {
 const processImage = async (img) => {
 	let tensor;
 	try {
-		img.dataset.HBstatus = STATUSES.LOADING;
-		const validImage = await loadImage(img);
-		if (!validImage) return false;
-		img.dataset.HBstatus = STATUSES.LOADED;
 		const needToResize = calcResize(img, "image");
 		tensor = (await human.image(img, true))?.tensor;
 
@@ -288,10 +289,6 @@ const processImage = async (img) => {
 
 const processVideo = async (video) => {
 	try {
-		video.dataset.HBstatus = STATUSES.LOADING;
-		await loadVideo(video);
-
-		video.dataset.HBstatus = STATUSES.LOADED;
 		const needToResize = calcResize(video, "video");
 		video.dataset.HBprevTime = 0;
 		videoDetectionLoop(video, needToResize);
@@ -308,8 +305,6 @@ const runDetection = async (element) => {
 		if (hasBeenProcessed(element)) return; // if the element has already been processed, return
 		element.dataset.HBstatus = STATUSES.PROCESSING;
 
-		// set crossorigin attribute to anonymous to avoid CORS issues
-		element.setAttribute("crossorigin", "anonymous");
 		if (element.tagName === "IMG" && shouldDetectImages) {
 			await processImage(element);
 		} else if (element.tagName === "VIDEO" && shouldDetectVideos) {
@@ -319,7 +314,7 @@ const runDetection = async (element) => {
 		// if the element was successfully processed, set its status to processed
 		element.dataset.HBstatus = STATUSES.PROCESSED;
 	} catch (error) {
-		// console.error("HumanBlur ==> Detection error: ", error, element);
+		console.error("HumanBlur ==> Detection error: ", error, element);
 		element.dataset.HBstatus = STATUSES.ERROR;
 		resetElement(element);
 		throw error;
