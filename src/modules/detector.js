@@ -25,7 +25,7 @@ const HUMAN_CONFIG = {
 		emotion: { enabled: false },
 		detector: {
 			modelPath: "blazeface.json",
-			maxDetected: 3,
+			maxDetected: 2,
 		},
 		description: {
 			enabled: true,
@@ -65,25 +65,25 @@ const getNsfwClasses = (factor = 0) => {
 			nsfw: false,
 			thresh: 0.5,
 		},
-		1: {  
+		1: {
 			className: "Hentai",
 			nsfw: true,
-			thresh: 0.5 + (1-factor) * 0.9,  // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.5 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 		2: {
 			className: "Neutral",
 			nsfw: false,
-			thresh: 0.5 + factor * 0.5,  // the higher the factor, the higher the thresh, the less "strict" the filter
+			thresh: 0.5 + factor * 0.5, // the higher the factor, the higher the thresh, the less "strict" the filter
 		},
 		3: {
 			className: "Porn",
 			nsfw: true,
-			thresh: 0.1 + (1-factor) * 0.9,  // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.1 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 		4: {
 			className: "Sexy",
 			nsfw: true,
-			thresh: 0.1 + (1-factor) * 0.9,  // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.1 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
 		},
 	};
 };
@@ -109,8 +109,7 @@ const humanModelClassify = async (tensor, needToResize) =>
 					filter: {
 						enabled: true,
 						width: needToResize?.newWidth,
-						height: needToResize?.newHeight,
-						return: true,
+						height: needToResize?.newHeight
 					},
 			  })
 			: human.detect(tensor);
@@ -200,14 +199,15 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 				config.size,
 				config.size,
 			]);
-			const normalized = tf.div(resized, tf.scalar(config.tfScalar));
+			const scalar = tf.scalar(config.tfScalar);
+			const normalized = tf.div(resized, scalar);
 			const logits = await nsfwModel.predict(normalized);
 
 			nsfwCache.predictions = await getTopKClasses(logits, config.topK);
 			nsfwCache.timestamp = now();
 			nsfwCache.skippedFrames = 0;
 
-			tf.dispose([resized, normalized, logits]);
+			tf.dispose([resized, normalized, logits, scalar]);
 		} else {
 			nsfwCache.skippedFrames++;
 		}
@@ -253,6 +253,6 @@ export {
 	human,
 	HUMAN_CONFIG,
 	nsfwModelClassify,
-	getNsfwClasses,
 	humanModelClassify,
+	getNsfwClasses,
 };

@@ -2,15 +2,15 @@
 
 const defaultSettings = {
 	status: true,
-	blurryStartMode: true,
-	blurAmount: 15,
+	blurryStartMode: false,
+	blurAmount: 20,
 	blurImages: true,
 	blurVideos: true,
 	blurMale: false,
 	blurFemale: true,
 	unblurImages: false,
 	unblurVideos: false,
-	strictness: 0.4, // goes from 0 to 1
+	strictness: 0.5, // goes from 0 to 1
 };
 
 chrome.runtime.onInstalled.addListener(function () {

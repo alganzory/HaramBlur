@@ -1,53 +1,53 @@
 import { STATUSES } from "./observers";
 
 const MAX_IMG_HEIGHT = 300;
-const MAX_IMG_WIDTH = 500;
+const MAX_IMG_WIDTH = 400;
 const MIN_IMG_WIDTH = 64;
 const MIN_IMG_HEIGHT = 64;
 // maintain 1920x1080 aspect ratio
-const MAX_VIDEO_WIDTH = 1920 / 3.5;
-const MAX_VIDEO_HEIGHT = 1080 / 3.5;
+const MAX_VIDEO_WIDTH = 1920 / 4; 
+const MAX_VIDEO_HEIGHT = 1080 / 4;
 
 /**
  * Loads an image and returns a Promise that resolves to a boolean indicating whether the image is large enough.
  * @param {HTMLImageElement} img - The image to load.
  * @returns {Promise<boolean>} A Promise that resolves to a boolean indicating whether the image is large enough or rejects if the image fails to load.
  */
-const loadImage = (img) => {
-	return new Promise((resolve, reject) => {
-		// set crossorigin attribute to anonymous to avoid CORS issues
+const loadImage = async (img) => {
+	return await new Promise((resolve, reject) => {
 		img.setAttribute("crossorigin", "anonymous");
+		// set crossorigin attribute to anonymous to avoid CORS issues
 		if (img.complete && img.naturalHeight) {
 			isImageTooSmall(img) ? resolve(false) : resolve(img);
-		} else {
-			img.onload = () => {
-				img.naturalHeight
-					? isImageTooSmall(img)
-						? resolve(false)
-						: resolve(img)
-					: reject("Image failed to load, no height");
-			};
-			img.onerror = (e) => {
-				reject("Image failed to load", img);
-			};
 		}
+		img.onload = () => {
+			img.naturalHeight
+				? isImageTooSmall(img)
+					? resolve(false)
+					: resolve(img)
+				: reject("Image failed to load, no height");
+		};
+		img.onerror = (e) => {
+			reject(e);
+		};
 	});
 };
 
 const loadVideo = (video) => {
-	// TODO: check if video is too small resolve false 
+	// TODO: check if video is too small resolve false
+
 	return new Promise((resolve, reject) => {
+		video.setAttribute("crossorigin", "anonymous");
 		if (video.readyState >= 3 && video.videoHeight) {
 			resolve(true);
-		} else {
-			video.onloadeddata = () => {
-				video.videoHeight ? resolve(true) : reject();
-			};
-			video.onerror = (e) => {
-				// console.error("Failed to load video", video);
-				reject("Failed to load video", video);
-			};
 		}
+		video.onloadeddata = () => {
+			video.videoHeight ? resolve(true) : reject();
+		};
+		video.onerror = (e) => {
+			// console.error("Failed to load video", video);
+			reject("Failed to load video", video);
+		};
 	});
 };
 
@@ -97,6 +97,8 @@ const hasBeenProcessed = (element) => {
 };
 
 const processNode = (node, callBack) => {
+	if (node.dataset?.HBstatus && node.dataset.HBstatus >= STATUSES.PROCESSING)
+		return; // if the element is already being processed, return
 	let nodes = [];
 
 	// if the node itself is an image or video, add it to the array
@@ -112,26 +114,31 @@ const processNode = (node, callBack) => {
 	}
 
 	// if the node has any images or videos as children, add them to the array
-	node?.querySelectorAll
-		? nodes.push(...node.querySelectorAll("img, video"))
-		: null;
+	const imgs = node?.getElementsByTagName?.("img");
+	imgs?.length && nodes.push(...imgs);
+	const videos = node?.getElementsByTagName?.("video");
+	videos?.length && nodes.push(...videos);
 
 	// process each image/video
 	// nodes that don't get callback (observed) are:
 	// 1. images
 	// 1.1. that are too small (but we have to make sure they have loaded first, cause they might be too small because they haven't loaded yet)
 
-	nodes?.forEach((node) => {
+	for (let node of nodes) {
 		if (node.tagName === "VIDEO") {
 			callBack(node);
-		} else {
-			// if image is too small, and has completed loading,
-			// (like a 1x1 pixel image, icon, etc.) don't process it
-			isImageTooSmall(node) && node.complete && node.naturalHeight
+		} else if (node.tagName === "IMG") {
+			// if the image is already being processed, skip it
+			node.dataset?.HBstatus &&
+			node.dataset.HBstatus >= STATUSES.PROCESSING
+				? null
+				: // if image is too small, and has completed loading,
+				// (like a 1x1 pixel image, icon, etc.) don't process it
+				node.complete && isImageTooSmall(node) && node.naturalHeight
 				? null
 				: callBack(node);
 		}
-	});
+	}
 };
 
 const resetElement = (element) => {
@@ -186,5 +193,5 @@ export {
 	listenToEvent,
 	now,
 	timeTaken,
-	resetElement
+	resetElement,
 };
