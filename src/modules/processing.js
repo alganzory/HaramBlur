@@ -8,13 +8,11 @@ import {
 	nsfwModelClassify,
 } from "./detector.js"; // import the human variable from detector.js
 import {
-	loadImage,
-	loadVideo,
 	calcResize,
 	hasBeenProcessed,
 	emitEvent,
 	now,
-	timeTaken,
+	isImageTooSmall,
 	resetElement,
 } from "./helpers.js";
 import { STATUSES, getDetectionQueue } from "./observers.js";
@@ -115,7 +113,7 @@ const containsGenderFace = (detections) => {
 		);
 	}
 
-	return true;
+	return true; // If no gender specified, return true cause there's a face
 };
 
 const processImageDetections = (detections, nsfwDetections, img) => {
@@ -261,11 +259,19 @@ const videoDetectionLoop = async (video, needToResize) => {
 	}
 };
 
-const processImage = async (img) => {
+/**
+ * Processes an image by performing various operations such as resizing, classification, and detection.
+ * @param {Image} img - The original image so that it can be modified according to the processing results.
+ * @param {Image} loadedImg - The loaded image that will be used for processing.
+ * @returns {Promise<boolean>} - A promise that resolves to true if the image processing is successful, false otherwise.
+ * @throws {Error} - If an error occurs during the image processing.
+ */
+const processImage = async (img, loadedImg) => {
 	let tensor;
 	try {
-		const needToResize = calcResize(img, "image");
-		tensor = (await human.image(img, true))?.tensor;
+		if (isImageTooSmall(loadedImg)) return false;
+		const needToResize = calcResize(loadedImg, "image");
+		tensor = (await human.image(loadedImg, true))?.tensor;
 
 		let nsfwDet = await nsfwModelClassify(tensor);
 		const positiveDet = processImageDetections(null, nsfwDet, img);
@@ -282,8 +288,6 @@ const processImage = async (img) => {
 	} finally {
 		if (tensor) human.tf.dispose(tensor);
 		// console.log("number tensors", human.tf.memory().numTensors);
-
-		img.removeAttribute("crossorigin");
 	}
 };
 
@@ -299,25 +303,31 @@ const processVideo = async (video) => {
 	}
 };
 
-const runDetection = async (element) => {
+const runDetection = async (node, loadedNode) => {
 	try {
 		if (!shouldDetect()) return; // safe guard
-		if (hasBeenProcessed(element)) return; // if the element has already been processed, return
-		element.dataset.HBstatus = STATUSES.PROCESSING;
+		// if (hasBeenProcessed(node)) return; // if the element has already been processed, return
 
-		if (element.tagName === "IMG" && shouldDetectImages) {
-			await processImage(element);
-		} else if (element.tagName === "VIDEO" && shouldDetectVideos) {
-			await processVideo(element);
+		node.dataset.HBstatus = STATUSES.PROCESSING;
+
+		if (node.tagName === "IMG" && shouldDetectImages) {
+			await processImage(node, loadedNode);
+		} else if (node.tagName === "VIDEO" && shouldDetectVideos) {
+			await processVideo(node);
 		}
-
 		// if the element was successfully processed, set its status to processed
-		element.dataset.HBstatus = STATUSES.PROCESSED;
+		node.dataset.HBstatus = STATUSES.PROCESSED;
 	} catch (error) {
-		console.error("HumanBlur ==> Detection error: ", error, element);
-		element.dataset.HBstatus = STATUSES.ERROR;
-		resetElement(element);
+		console.error("HumanBlur ==> Detection error: ", error, node);
+		node.dataset.HBstatus = STATUSES.ERROR;
+		resetElement(node);
 		throw error;
+	} finally {
+		// console.log ("tensors count", human.tf.memory().numTensors)
+		if (loadedNode?.tagName) {
+			loadedNode.src = "";
+			loadedNode = null;
+		}
 	}
 };
 

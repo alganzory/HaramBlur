@@ -1,6 +1,6 @@
 import { human, initHuman, initNsfwModel, nsfwModel } from "./modules/detector";
 import { emitEvent } from "./modules/helpers";
-import { attachObserversListener } from "./modules/observers";
+import { attachObserversListener, initMutationObserver } from "./modules/observers";
 import {
 	getSettings,
 	listenForMessages,
@@ -15,12 +15,10 @@ const attachAllListeners = () => {
 	attachObserversListener();
 };
 
-attachAllListeners();
-
 if (window.self === window.top) {
-	// console.log("HB==I AM THE TOP WINDOW");
-	// I am the top window
-
+	attachAllListeners();
+	initMutationObserver();
+	
 	getSettings()
 		.then(() => {
 			// console.log("HB==SETTINGS LOADED");

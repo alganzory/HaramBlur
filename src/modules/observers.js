@@ -10,7 +10,7 @@ import {
 	processNode,
 } from "./helpers.js";
 import { shouldDetect } from "./settings.js";
-import {  applyBlurryStart} from "./style.js";
+import { applyBlurryStart } from "./style.js";
 
 const BATCH_SIZE = 20; //TODO: make this a setting/calculated based on the device's performance
 
@@ -36,14 +36,14 @@ const STATUSES = {
 
 const handleElementLoading = async (node) => {
 	try {
-		let validNode = false;
+		let loadedNode = false;
 		node.dataset.HBstatus = STATUSES.LOADING;
 		if (node.tagName === "IMG") {
-			validNode = await loadImage(node);
+			loadedNode = await loadImage(node);
 		} else if (node.tagName === "VIDEO") {
-			validNode = await loadVideo(node);
+			loadedNode = await loadVideo(node);
 		}
-		if (!validNode) {
+		if (!loadedNode) {
 			node.dataset.HBstatus = STATUSES.INVALID;
 			return;
 		}
@@ -51,46 +51,46 @@ const handleElementLoading = async (node) => {
 		flagStartQueuing(node);
 
 		node.dataset.HBstatus = STATUSES.LOADED;
-		detectionQueue.push(node);
+		detectionQueue.push({ node, loadedNode });
 	} catch (error) {
 		node.dataset.HBstatus = STATUSES.ERROR;
-		console.error("HB== handleElementLoading error", error, node);
+		// console.error("HB== handleElementLoading error", error, node);
 		// throw error;
 	} finally {
 		activeLoading--;
-		loadNextImage(); // Start loading the next image
+		loadNextElement(); // Start loading the next image
 	}
 };
 
-const handleElementProcessing = async (img) => {
+const handleElementProcessing = async ({ node, loadedNode }) => {
 	try {
-		await runDetection(img);
+		await runDetection(node, loadedNode);
 	} catch (err) {
 		// console.error(err, img); //TODO: enable logging in debug mode
 	} finally {
 		activeProcessing--;
-		processNextImage(); // Start processing the next image
+		processNextElement(); // Start processing the next image
 	}
 };
 
-const loadNextImage = async () => {
+const loadNextElement = async () => {
 	while (activeLoading < BATCH_SIZE * 10) {
-		let nextImage = loadingQueue.shift();
-		if (nextImage) {
+		let nextElement = loadingQueue.shift();
+		if (nextElement) {
 			activeLoading++;
-			 handleElementLoading(nextImage);
+			handleElementLoading(nextElement);
 		} else {
 			break;
 		}
 	}
 };
 
-const processNextImage = async () => {
+const processNextElement = async () => {
 	while (activeProcessing < BATCH_SIZE) {
-		let nextImage = detectionQueue.shift();
-		if (nextImage) {
+		let nextElement = detectionQueue.shift();
+		if (nextElement) {
 			activeProcessing++;
-			handleElementProcessing(nextImage);
+			handleElementProcessing(nextElement);
 		} else {
 			break;
 		}
@@ -115,12 +115,21 @@ const addToLoadingQueue = async (node) => {
 const flagStartQueuing = (node) => {
 	if (queuingStarted) return;
 	queuingStarted = true;
-	// console.log("HB== queuing started", node);
 	emitEvent("queuingStarted");
 };
 
+const startObserving = () => {
+	mutationObserver.observe(document, {
+		childList: true,
+		characterData: false,
+		subtree: true,
+		attributes: true,
+		attributeFilter: ["src"],
+	});
+};
+
 const initMutationObserver = () => {
-	if (mutationObserver) mutationObserver.disconnect();
+	// if (mutationObserver) mutationObserver.disconnect();
 	mutationObserver = new MutationObserver((mutations) => {
 		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
@@ -135,34 +144,18 @@ const initMutationObserver = () => {
 			}
 		});
 
-		shouldDetect && loadNextImage();
+		shouldDetect() && loadNextElement();
 
 		if (isDetectionReady) {
-			shouldDetect() && processNextImage();
+			shouldDetect() && processNextElement();
 		}
 	});
-
-	mutationObserver.observe(document, {
-		childList: true,
-		characterData: false,
-		subtree: true,
-		attributes: true,
-		attributeFilter: ["src"],
-	});
-
-	// process all images and videos that are already in the DOM
-	processNode(document, observeNode);
 };
 
 const attachObserversListener = () => {
-	listenToEvent("disableOnce", () => {
-		mutationObserver?.disconnect();
-		// console.log("HB== Observers Listener", "disconnecting");
-	});
 	listenToEvent("settingsLoaded", () => {
 		if (shouldDetect()) {
-			initMutationObserver();
-			loadNextImage();
+			startObserving();
 		} else {
 			mutationObserver?.disconnect();
 		}
@@ -172,7 +165,7 @@ const attachObserversListener = () => {
 		// console.log("HB== Observers Listener", shouldDetect());
 		if (shouldDetect()) {
 			// process all images and videos that are already in the DOM
-			processNextImage();
+			processNextElement();
 		} else {
 			// console.log("HB== Observers Listener", "disconnecting");
 			mutationObserver?.disconnect();
@@ -189,11 +182,10 @@ function observeNode(node) {
 	)
 		return;
 
-
 	applyBlurryStart(node);
 
 	node.dataset.HBstatus = STATUSES.OBSERVED;
-	if (node.src) {
+	if (node.src?.length) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
 		addToLoadingQueue(node);
 	} else {
@@ -205,4 +197,9 @@ function observeNode(node) {
 function getDetectionQueue() {
 	return detectionQueue;
 }
-export { attachObserversListener, STATUSES, getDetectionQueue };
+export {
+	attachObserversListener,
+	initMutationObserver,
+	STATUSES,
+	getDetectionQueue,
+};
