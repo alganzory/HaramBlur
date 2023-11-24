@@ -10,7 +10,7 @@ import {
 	processNode,
 } from "./helpers.js";
 import { shouldDetect } from "./settings.js";
-import {  applyBlurryStart, showSplashScreen } from "./style.js";
+import {  applyBlurryStart} from "./style.js";
 
 const BATCH_SIZE = 20; //TODO: make this a setting/calculated based on the device's performance
 
@@ -54,6 +54,7 @@ const handleElementLoading = async (node) => {
 		detectionQueue.push(node);
 	} catch (error) {
 		node.dataset.HBstatus = STATUSES.ERROR;
+		console.error("HB== handleElementLoading error", error, node);
 		// throw error;
 	} finally {
 		activeLoading--;
@@ -121,7 +122,6 @@ const flagStartQueuing = (node) => {
 const initMutationObserver = () => {
 	if (mutationObserver) mutationObserver.disconnect();
 	mutationObserver = new MutationObserver((mutations) => {
-		showSplashScreen();
 		mutations.forEach((mutation) => {
 			if (mutation.type === "childList") {
 				mutation.addedNodes.forEach((node) => {

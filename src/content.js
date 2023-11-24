@@ -26,8 +26,6 @@ if (window.self === window.top) {
 			// console.log("HB==SETTINGS LOADED");
 			emitEvent("settingsLoaded");
 
-			// when dom loads, show splash screen
-
 			// init human
 			return initHuman();
 		})
