@@ -5,31 +5,35 @@ const MAX_IMG_WIDTH = 400;
 const MIN_IMG_WIDTH = 64;
 const MIN_IMG_HEIGHT = 64;
 // maintain 1920x1080 aspect ratio
-const MAX_VIDEO_WIDTH = 1920 / 4; 
+const MAX_VIDEO_WIDTH = 1920 / 4;
 const MAX_VIDEO_HEIGHT = 1080 / 4;
 
 /**
- * Loads an image and returns a Promise that resolves to a boolean indicating whether the image is large enough.
- * @param {HTMLImageElement} img - The image to load.
- * @returns {Promise<boolean>} A Promise that resolves to a boolean indicating whether the image is large enough or rejects if the image fails to load.
+ * Loads an image and returns a Promise that resolves to a new Image element that has finished loading.
+ * @param {string} src - The source URL of the image to load.
+ * @returns {Promise<HTMLImageElement>} A Promise that resolves to a new Image element that has finished loading or rejects if the image fails to load.
  */
-const loadImage = async (img) => {
+const loadImage = async (inputImg) => {
+	const img = new Image(
+		inputImg.width || MAX_IMG_WIDTH,
+		inputImg.height || MAX_IMG_HEIGHT
+	);
 	return await new Promise((resolve, reject) => {
 		img.setAttribute("crossorigin", "anonymous");
-		// set crossorigin attribute to anonymous to avoid CORS issues
-		if (img.complete && img.naturalHeight) {
-			isImageTooSmall(img) ? resolve(false) : resolve(img);
-		}
+
 		img.onload = () => {
-			img.naturalHeight
-				? isImageTooSmall(img)
-					? resolve(false)
-					: resolve(img)
-				: reject("Image failed to load, no height");
+			resolve(img);
 		};
+
 		img.onerror = (e) => {
 			reject(e);
 		};
+
+		try {
+			img.src = inputImg.src;
+		} catch (e) {
+			reject(e);
+		}
 	});
 };
 
@@ -194,4 +198,5 @@ export {
 	now,
 	timeTaken,
 	resetElement,
+	isImageTooSmall,
 };

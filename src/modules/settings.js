@@ -8,13 +8,12 @@ let shouldDetectMale = false;
 let shouldDetectFemale = false;
 let strictness = 0.3;
 
-let disableOnce = false;
 function shouldDetectGender() {
 	return shouldDetectMale || shouldDetectFemale;
 }
 
 function shouldDetect() {
-	if ((!shouldDetectImages && !shouldDetectVideos) || disableOnce) {
+	if ((!shouldDetectImages && !shouldDetectVideos)) {
 		return false;
 	}
 	return shouldDetectGender();
@@ -45,9 +44,6 @@ function toggleOnOffStatus() {
 	emitEvent("toggleOnOffStatus", settings.status);
 }
 
-function _disableOnce() {
-	disableOnce = true;
-}
 
 function getSettings() {
 	return new Promise(function (resolve) {
@@ -60,7 +56,6 @@ function getSettings() {
 
 function listenForMessages() {
 	listenToEvent("settingsLoaded", setSettings);
-	listenToEvent("disableOnce", _disableOnce);
 	chrome.runtime.onMessage.addListener(function (
 		request,
 		sender,
