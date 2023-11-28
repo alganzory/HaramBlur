@@ -1,4 +1,4 @@
-import { human, initHuman, initNsfwModel, nsfwModel } from "./modules/detector";
+// import { human, initHuman, initNsfwModel, nsfwModel } from "./modules/detector";
 import { emitEvent } from "./modules/helpers";
 import { attachObserversListener, initMutationObserver } from "./modules/observers";
 import {
@@ -20,18 +20,18 @@ if (window.self === window.top) {
 	initMutationObserver();
 	
 	getSettings()
-		.then(() => {
-			// console.log("HB==SETTINGS LOADED");
-			emitEvent("settingsLoaded");
+// 		.then(() => {
+// 			// console.log("HB==SETTINGS LOADED");
+// 			emitEvent("settingsLoaded");
 
-			// init human
-			return initHuman();
-		})
-		.then(() => {
-			// console.log("HB==HUMAN INITIALIZED");
-			// init nsfw model
-			return initNsfwModel();
-		})
+// 			// init human
+// 			return initHuman();
+// 		})
+// 		.then(() => {
+// 			// console.log("HB==HUMAN INITIALIZED");
+// 			// init nsfw model
+// 			return initNsfwModel();
+// 		})
 		.then(() => {
 			// console.log("HB== models initialized")
 
@@ -41,4 +41,5 @@ if (window.self === window.top) {
 		.catch((e) => {
 			console.log("HB==INITIALIZATION ERROR", e);
 		});
+
 }

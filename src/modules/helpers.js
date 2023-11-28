@@ -1,4 +1,4 @@
-import { STATUSES } from "./observers";
+// import { STATUSES } from "./observers";
 
 const MAX_IMG_HEIGHT = 300;
 const MAX_IMG_WIDTH = 400;
@@ -8,15 +8,13 @@ const MIN_IMG_HEIGHT = 64;
 const MAX_VIDEO_WIDTH = 1920 / 4;
 const MAX_VIDEO_HEIGHT = 1080 / 4;
 
-/**
- * Loads an image and returns a Promise that resolves to a new Image element that has finished loading.
- * @param {string} src - The source URL of the image to load.
- * @returns {Promise<HTMLImageElement>} A Promise that resolves to a new Image element that has finished loading or rejects if the image fails to load.
- */
-const loadImage = async (inputImg) => {
-	const img = new Image(
-		inputImg.width || MAX_IMG_WIDTH,
-		inputImg.height || MAX_IMG_HEIGHT
+const loadImage = async (imgSrc, imgWidth, imgHeight) => {
+
+	// let { newWidth, newHeight } = calcResize(imgWidth, imgHeight);
+	// TODO: use the newWidth and newHeight to resize the image (for some reason it's a lot slower when I do that)
+	const img = new Image(	
+		224,
+		224
 	);
 	return await new Promise((resolve, reject) => {
 		img.setAttribute("crossorigin", "anonymous");
@@ -30,7 +28,7 @@ const loadImage = async (inputImg) => {
 		};
 
 		try {
-			img.src = inputImg.src;
+			img.src = imgSrc;
 		} catch (e) {
 			reject(e);
 		}
@@ -59,33 +57,35 @@ const isImageTooSmall = (img) => {
 	return img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
 };
 
-const calcResize = (element, type = "image") => {
+const calcResize = (width, height, type = "image") => {
+	let newWidth= width; 
+	let newHeight = height;
+
+	if (!width || !height) return { newWidth, newHeight };
+	
+
 	let actualMaxWidth = type === "image" ? MAX_IMG_WIDTH : MAX_VIDEO_WIDTH;
 	let actualMaxHeight = type === "image" ? MAX_IMG_HEIGHT : MAX_VIDEO_HEIGHT;
 
-	let elementWidth =
-		type === "video" ? element.videoWidth : element.naturalWidth;
-	let elementHeight =
-		type === "video" ? element.videoHeight : element.naturalHeight;
 
 	// if the aspect ratio is reversed (portrait image/video), swap max width and max height
-	if (elementWidth < elementHeight) {
+	if (newWidth < newHeight) {
 		const temp = actualMaxWidth;
 		actualMaxWidth = actualMaxHeight;
 		actualMaxHeight = temp;
 	}
 
-	// if image is smaller than max size, return null;
-	if (elementWidth < actualMaxWidth && elementHeight < actualMaxHeight)
-		return null;
-
+	// if image is smaller than max size, don't resize
+	if (!(newWidth < actualMaxWidth && newHeight < actualMaxHeight)) {
+			
 	// calculate new width to resize image to
 	const ratio = Math.min(
-		actualMaxWidth / elementWidth,
-		actualMaxHeight / elementHeight
+		actualMaxWidth / newWidth,
+		actualMaxHeight / newHeight
 	);
-	const newWidth = elementWidth * ratio;
-	const newHeight = elementHeight * ratio;
+	newWidth = newWidth * ratio;
+	newHeight = newHeight * ratio;
+	}
 
 	return { newWidth, newHeight };
 };
@@ -101,44 +101,23 @@ const hasBeenProcessed = (element) => {
 };
 
 const processNode = (node, callBack) => {
-	if (node.dataset?.HBstatus && node.dataset.HBstatus >= STATUSES.PROCESSING)
-		return; // if the element is already being processed, return
-	let nodes = [];
-
-	// if the node itself is an image or video, add it to the array
-	if (node.tagName === "IMG") {
-		// if image is too small, and has completed loading,
-		// (like a 1x1 pixel image, icon, etc.) don't process it
-		isImageTooSmall(node) && node.complete && node.naturalHeight
-			? null
-			: nodes.push(node);
-	}
-	if (node.tagName === "VIDEO") {
-		nodes.push(node);
-	}
-
 	// if the node has any images or videos as children, add them to the array
-	const imgs = node?.getElementsByTagName?.("img");
-	imgs?.length && nodes.push(...imgs);
-	const videos = node?.getElementsByTagName?.("video");
-	videos?.length && nodes.push(...videos);
+	const imgs = node?.getElementsByTagName?.("img") ?? [];
+
+	const videos = node?.getElementsByTagName?.("video") ?? [];
 
 	// process each image/video
 	// nodes that don't get callback (observed) are:
 	// 1. images
 	// 1.1. that are too small (but we have to make sure they have loaded first, cause they might be too small because they haven't loaded yet)
 
-	for (let node of nodes) {
+	for (let i = 0; i < imgs.length + videos.length; i++) {
+		const node = i < imgs.length ? imgs[i] : videos[i - imgs.length];
 		if (node.tagName === "VIDEO") {
 			callBack(node);
 		} else if (node.tagName === "IMG") {
-			// if the image is already being processed, skip it
-			node.dataset?.HBstatus &&
-			node.dataset.HBstatus >= STATUSES.PROCESSING
-				? null
-				: // if image is too small, and has completed loading,
-				// (like a 1x1 pixel image, icon, etc.) don't process it
-				node.complete && isImageTooSmall(node) && node.naturalHeight
+			// (like a 1x1 pixel image, icon, etc.) don't process it
+			node.complete && isImageTooSmall(node) && node.naturalHeight
 				? null
 				: callBack(node);
 		}
@@ -187,6 +166,7 @@ const timeTaken = (fnToRun) => {
 // 	}, 1);
 // }
 
+
 export {
 	loadImage,
 	loadVideo,
@@ -199,4 +179,4 @@ export {
 	timeTaken,
 	resetElement,
 	isImageTooSmall,
-};
+}
