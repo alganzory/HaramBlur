@@ -10,7 +10,7 @@ const nsfwUrl = chrome.runtime.getURL("src/assets/models/nsfwjs/model.json");
  */
 const HUMAN_CONFIG = {
 	modelBasePath: modelsUrl,
-	backend: "humangl",	
+	backend: "humangl",
 	// debug: true,
 	cacheSensitivity: 0.9,
 	warmup: "none",
@@ -28,7 +28,7 @@ const HUMAN_CONFIG = {
 		detector: {
 			modelPath: "blazeface.json",
 			maxDetected: 2,
-			minConfidence:0.3
+			minConfidence: 0.3,
 		},
 		description: {
 			enabled: true,
@@ -192,6 +192,7 @@ const nsfwModelSkip = async (input, config) => {
 const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 	const tf = human.tf;
 	if (!tensor) return [];
+	let resized, expanded;
 	try {
 		const skipAllowed = await nsfwModelSkip(tensor, config);
 		const skipFrame = nsfwCache.skippedFrames < (config.skipFrames || 0);
@@ -206,7 +207,6 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 			!skipFrame ||
 			nsfwCache.predictions.length === 0
 		) {
-			let resized = null;
 			// if size is not 224, resize the image
 			if (tensor.shape[1] !== config.size) {
 				resized = tf.image.resizeBilinear(tensor, [
@@ -214,24 +214,28 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 					config.size,
 				]);
 			}
+			// if 3d tensor, add a dimension
+			if ((resized && resized.shape.length === 3) || tensor.shape.length === 3) {
+				console.log("HB==shape not 4", tensor.shape);
+				expanded = tf.expandDims(resized || tensor, 0);
+
+			}
 			const scalar = tf.scalar(config.tfScalar);
-			const normalized = tf.div(resized || tensor, scalar);
+			const normalized = tf.div(expanded || resized || tensor, scalar)
 			const logits = await nsfwModel.predict(normalized);
 
 			nsfwCache.predictions = await getTopKClasses(logits, config.topK);
 			nsfwCache.timestamp = performance?.now?.() || Date.now();
 			nsfwCache.skippedFrames = 0;
 
-			tf.dispose(
-				[scalar, normalized, logits].concat(resized ? [resized] : [])
-			);
+			tf.dispose([scalar, normalized, logits].concat(expanded ? [expanded] : []).concat(resized ? [resized] : []));
 		} else {
 			nsfwCache.skippedFrames++;
 		}
 
 		return nsfwCache.predictions;
 	} catch (error) {
-		console.error("HB==NSFW Detection Error", error);
+		console.error("HB==NSFW Detection Error", resized || tensor, error);
 	}
 };
 

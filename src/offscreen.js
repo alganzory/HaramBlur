@@ -13,6 +13,25 @@ import Queue from "./modules/queues.js";
 // 4. define handleVideoDetection
 var settings;
 var queue;
+let videoPort;
+window.onmessage = (e) => {
+	console.log(
+		"location.search ",
+		new URLSearchParams(location.search).get("secret")
+	);
+	if (e.data === new URLSearchParams(location.search).get("secret")) {
+		window.onmessage = null;
+		videoPort = e.ports[0];
+		videoPort.onmessage = (e) => onContentMessage(e, videoPort);
+		videoPort.onmessageerror = (e) => console.log("message error", e);
+	}
+};
+
+function onContentMessage(e, port) {
+	if (e.data.type === "videoDetection") {
+		handleVideoDetection(e.data, port);
+	}
+}
 
 const loadSettings = async () => {
 	settings = await chrome.runtime.sendMessage({ type: "getSettings" });
@@ -38,40 +57,44 @@ const handleImageDetection = (request, sender, sendResponse) => {
 		}
 	);
 };
+let activeFrame = false;
 
-const handleVideoDetection = async (request, sender, sendResponse) => {
-	// add video to queue
-	// in the then block, send response
-	// in the catch block, send error
+const handleVideoDetection = async (data, port) => {
+	if (activeFrame) return;
+	activeFrame = true;
+	const { frame } = data;
+	const { data: imageData, timestamp } = frame;
+	const result = await detectImage(imageData);
+	activeFrame = false;
+	port.postMessage(
+		{ type: "detectionResult", result, timestamp, imgR: imageData },
+		[imageData.data.buffer]
+	);
 };
 
 const start = () => {
 	chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		if (request.type === "imageDetection") {
-			console.log("image detection request", new Date().getTime());
 			handleImageDetection(request, sender, sendResponse);
-		} else if (request.type === "videoDetection") {
-			handleVideoDetection(request, sender, sendResponse);
 		}
 		return true;
 	});
 };
 
 const detectImage = async (img) => {
-	console.log("offscreen detect image", img.width, img.height);
+	console.log("img in detectImage", img.width, img.height);
 	const tensor = await human.tf.browser.fromPixelsAsync(img);
 	console.log("tensors count", human.tf.memory().numTensors);
-	const expanded = human.tf.expandDims(tensor, 0);
 	// console.log("offscreen tensor", tensor);
-	const nsfwResult = await nsfwModelClassify(expanded);
+	const nsfwResult = await nsfwModelClassify(tensor);
 	// console.log("offscreen nsfw result", nsfwResult);
 	if (containsNsfw(nsfwResult, settings.strictness)) {
-		human.tf.dispose([tensor, expanded]);
+		human.tf.dispose(tensor);
 		return "nsfw";
 	}
 	const predictions = await humanModelClassify(tensor);
 	// console.log("offscreen human result", predictions);
-	human.tf.dispose([tensor, expanded]);
+	human.tf.dispose(tensor);
 	if (containsGenderFace(predictions, settings.blurMale, settings.blurFemale))
 		return "face";
 	return false;

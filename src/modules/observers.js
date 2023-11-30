@@ -1,21 +1,13 @@
 // observers.js
 // This module exports mutation observer and image processing logic.
+import { listenToEvent, processNode } from "./helpers.js";
 
-import { runDetection } from "./processing.js"; // import the runDetection function from processing.js
-import {
-	emitEvent,
-	listenToEvent,
-	loadImage,
-	loadVideo,
-	processNode,
-} from "./helpers.js";
 import { shouldDetect } from "./settings.js";
 import { applyBlurryStart } from "./style.js";
-
-const BATCH_SIZE = 20; //TODO: make this a setting/calculated based on the device's performance
+import { processImage, processVideo } from "./processing2.js";
 
 let mutationObserver;
-let isDetectionReady = false;
+let videoPort = null;
 
 const STATUSES = {
 	// the numbers are there to make it easier to sort
@@ -68,7 +60,6 @@ const attachObserversListener = () => {
 		}
 	});
 	listenToEvent("toggleOnOffStatus", async () => {
-		isDetectionReady = true;
 		// console.log("HB== Observers Listener", shouldDetect());
 		if (shouldDetect()) {
 			// process all images and videos that are already in the DOM
@@ -78,36 +69,15 @@ const attachObserversListener = () => {
 			mutationObserver?.disconnect();
 		}
 	});
-};
-
-const sendAndReceive = (node) => {
-	// console.log ("first send", new Date().getTime())
-	try {
-		chrome.runtime.sendMessage(
-			{
-				type: "imageDetection",
-				image: {
-					src: node.src,
-					width: node.width || node.naturalWidth,
-					height: node.height || node.naturalHeight,
-				}
-			},
-			(response) => {
-				if (response === "face" || response === "nsfw") {
-					// console.log("HB== handleElementProcessing", response);
-					node.classList.add("hb-blur");
-					node.dataset.HBstatus = STATUSES.PROCESSED;
-					node.dataset.HBresult = response;
-				}
-			}
-		);
-	} catch (e) {
-		console.log("HB==ERROR", e);
-	}
+	listenToEvent("videoFramePort", (event) => {
+		console.log("HB== videoFramePort", event.detail);
+		videoPort = event.detail;
+	});
 };
 
 function observeNode(node, srcAttribute) {
-	const conditions = (srcAttribute || !node.dataset.HBstatus) &&
+	const conditions =
+		(srcAttribute || !node.dataset.HBstatus) &&
 		node.src?.length > 0 &&
 		((node.width > 32 && node.height > 32) ||
 			node.height === 0 ||
@@ -120,7 +90,10 @@ function observeNode(node, srcAttribute) {
 	node.dataset.HBstatus = STATUSES.OBSERVED;
 	if (node.src?.length) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
-		sendAndReceive(node);
+		node.tagName === "IMG" ? processImage(node, STATUSES) : null;
+		node.tagName === "VIDEO"
+			? processVideo(node, STATUSES, videoPort)
+			: null;
 	} else {
 		// remove the HBstatus if the node has no src attribute
 		delete node.dataset?.HBstatus;

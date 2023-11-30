@@ -35,10 +35,10 @@ const loadImage = async (imgSrc, imgWidth, imgHeight) => {
 	});
 };
 
-const loadVideo = (video) => {
+const loadVideo = async (video) => {
 	// TODO: check if video is too small resolve false
 
-	return new Promise((resolve, reject) => {
+	return await new Promise((resolve, reject) => {
 		video.setAttribute("crossorigin", "anonymous");
 		if (video.readyState >= 3 && video.videoHeight) {
 			resolve(true);
