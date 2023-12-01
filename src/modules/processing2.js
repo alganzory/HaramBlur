@@ -116,35 +116,43 @@ const videoDetectionLoop = async (video, port, { width, height }) => {
 	const diffTime = currTime - video.dataset.HBprevTime;
 
 	if (!video.paused) {
-		if (diffTime >= FRAME_RATE) {
-			// store the current timestamp
-			video.dataset.HBprevTime = currTime;
-			processFrame(video, port, { width, height })
-				.then(({ result, timestamp, imgR }) => {
-					console.log(
-						"HB== video detection result",
-						result,
-						timestamp,
-						video.currentTime,
-						imgR
-					);
-					// if (video.currentTime - timestamp <= 0.5)
-					processVideoDetections(result, video);
-					// else {
-					// 	console.log(
-					// 		"discarding frame",
-					// 		timestamp,
-					// 		video.currentTime
-					// 	);
-					// }
-					// draw img on canvas
-					c?.getContext("2d").putImageData(imgR, 0, 0);
-				})
-				.catch((error) => {
-					console.log("HB==Video detection loop error", error, video);
-					cancelAnimationFrame(video.dataset.HBrafId);
-					video.dataset.HBerrored = true;
-				});
+		try {
+			if (diffTime >= FRAME_RATE) {
+				// store the current timestamp
+				const { result, timestamp, imgR } = await processFrame(
+					video,
+					port,
+					{ width, height }
+				);
+
+				video.dataset.HBprevTime = currTime;
+				console.log(
+					"HB== video detection result",
+					result,
+					timestamp,
+					video.currentTime,
+					imgR
+				);
+
+				if (result === "skipped") {
+					console.log("skipped frame", timestamp, video.currentTime);
+				}
+				// if (video.currentTime - timestamp <= 0.5)
+				processVideoDetections(result, video);
+				// else {
+				// 	console.log(
+				// 		"discarding frame",
+				// 		timestamp,
+				// 		video.currentTime
+				// 	);
+				// }
+				// draw img on canvas
+				c?.getContext("2d").putImageData(imgR, 0, 0);
+			}
+		} catch (e) {
+			console.log("HB==Video detection loop error", error, video);
+			cancelAnimationFrame(video.dataset.HBrafId);
+			video.dataset.HBerrored = true;
 		}
 	}
 

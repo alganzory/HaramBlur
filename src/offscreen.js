@@ -60,10 +60,13 @@ const handleImageDetection = (request, sender, sendResponse) => {
 let activeFrame = false;
 
 const handleVideoDetection = async (data, port) => {
-	if (activeFrame) return;
-	activeFrame = true;
 	const { frame } = data;
 	const { data: imageData, timestamp } = frame;
+	if (activeFrame) {
+		port.postMessage({ type: "detectionResult", result: "skipped", timestamp , imgR: imageData },[imageData.data.buffer]);
+		return;
+	}
+	activeFrame = true;
 	const result = await detectImage(imageData);
 	activeFrame = false;
 	port.postMessage(
@@ -82,18 +85,19 @@ const start = () => {
 };
 
 const detectImage = async (img) => {
-	console.log("img in detectImage", img.width, img.height);
-	const tensor = await human.tf.browser.fromPixelsAsync(img);
+	// console.log("img in detectImage", img.width, img.height);
+	const tensor = human.tf.browser.fromPixels(img);
+	tensor.print();
 	console.log("tensors count", human.tf.memory().numTensors);
 	// console.log("offscreen tensor", tensor);
 	const nsfwResult = await nsfwModelClassify(tensor);
-	// console.log("offscreen nsfw result", nsfwResult);
+	console.log("offscreen nsfw result", nsfwResult);
 	if (containsNsfw(nsfwResult, settings.strictness)) {
 		human.tf.dispose(tensor);
 		return "nsfw";
 	}
 	const predictions = await humanModelClassify(tensor);
-	// console.log("offscreen human result", predictions);
+	console.log("offscreen human result", predictions);
 	human.tf.dispose(tensor);
 	if (containsGenderFace(predictions, settings.blurMale, settings.blurFemale))
 		return "face";

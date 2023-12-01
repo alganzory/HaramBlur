@@ -2,7 +2,11 @@
 // This module exports mutation observer and image processing logic.
 import { listenToEvent, processNode } from "./helpers.js";
 
-import { shouldDetect } from "./settings.js";
+import {
+	shouldDetect,
+	shouldDetectImages,
+	shouldDetectVideos,
+} from "./settings.js";
 import { applyBlurryStart } from "./style.js";
 import { processImage, processVideo } from "./processing2.js";
 
@@ -44,8 +48,7 @@ const initMutationObserver = () => {
 			} else if (mutation.type === "attributes") {
 				// if the src attribute of an image or video changes, process it
 				const node = mutation.target;
-				if (node.tagName === "IMG" || node.tagName === "VIDEO")
-					observeNode(node, mutation?.attributeName === "src");
+				observeNode(node, mutation?.attributeName === "src");
 			}
 		});
 	});
@@ -76,6 +79,13 @@ const attachObserversListener = () => {
 };
 
 function observeNode(node, srcAttribute) {
+	if (
+		!(
+			(node.tagName === "IMG" && shouldDetectImages) ||
+			(node.tagName === "VIDEO" && shouldDetectVideos)
+		)
+	)
+		return;
 	const conditions =
 		(srcAttribute || !node.dataset.HBstatus) &&
 		node.src?.length > 0 &&
