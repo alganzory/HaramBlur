@@ -50,7 +50,7 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 	activeFrame = true;
 	const imageData = new Image();
 	imageData.onload = () => {
-		detectImage(imageData)
+		runDetection(imageData)
 			.then((result) => {
 				activeFrame = false;
 				sendResponse({ type: "detectionResult", result, timestamp });
@@ -81,7 +81,7 @@ const start = () => {
 	});
 };
 
-const detectImage = async (img) => {
+const runDetection = async (img) => {
 	const tensor = human.tf.browser.fromPixels(img);
 	// console.log("tensors count", human.tf.memory().numTensors);
 	const nsfwResult = await nsfwModelClassify(tensor);
@@ -103,7 +103,7 @@ const init = async () => {
 	console.log("Settings loaded", settings);
 	await loadModels();
 	console.log("Models loaded", human, nsfwModel);
-	queue = new Queue(detectImage);
+	queue = new Queue(runDetection);
 	start();
 };
 

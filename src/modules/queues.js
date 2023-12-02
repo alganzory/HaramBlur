@@ -17,7 +17,7 @@ class Queue {
 			const node = await loadImage(img.src, img.width, img.height);
 			this.processNextElement(node, onSuccess, onError);
 		} catch (error) {
-			console.error("Offscreen== handleElementLoading error", error);
+			console.warn("HB=== image failed to load", error);
 			onError(error);
 		} finally {
 			this.activeLoading--;

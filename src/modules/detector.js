@@ -216,7 +216,6 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 			}
 			// if 3d tensor, add a dimension
 			if ((resized && resized.shape.length === 3) || tensor.shape.length === 3) {
-				console.log("HB==shape not 4", tensor.shape);
 				expanded = tf.expandDims(resized || tensor, 0);
 
 			}

@@ -1,4 +1,5 @@
-import { calcResize, loadVideo, getCanvas} from "./helpers";
+import { calcResize, loadVideo, getCanvas, emitEvent } from "./helpers";
+import { removeBlurryStart } from "./style";
 
 const FRAME_RATE = 1000 / 25; // 25 fps
 
@@ -21,9 +22,25 @@ const RESULTS = {
 	ERROR: "ERROR",
 };
 
+let requestCount = 0;
+let detectedCount = 0;
+let detectionStarted = false;
+
+const flagDetectionStart = () => {
+	if (detectionStarted) return;
+	// detection is marked as started when at least 1/8th of the images have been processed (arbitrary number)
+	if (detectedCount >= requestCount / 8 && !detectionStarted) {
+		detectionStarted = true;
+		console.log("HaramBlur: Detection started");
+		emitEvent("detectionStarted");
+	}
+	detectedCount++;
+};
+
 const processImage = (node, STATUSES) => {
 	try {
 		node.dataset.HBstatus = STATUSES.PROCESSING;
+		!detectionStarted && requestCount++;
 		chrome.runtime.sendMessage(
 			{
 				type: "imageDetection",
@@ -34,7 +51,13 @@ const processImage = (node, STATUSES) => {
 				},
 			},
 			(response) => {
-				if (response === "face" || response === "nsfw" || response === false) {
+				flagDetectionStart();
+				removeBlurryStart(node);
+				if (
+					response === "face" ||
+					response === "nsfw" ||
+					response == false
+				) {
 					// console.log("HB== handleElementProcessing", response);
 					node.dataset.HBstatus = STATUSES.PROCESSED;
 					if (response === "face" || response === "nsfw") {
@@ -96,7 +119,6 @@ const videoDetectionLoop = async (video, { width, height }) => {
 
 				processFrame(video, { width, height })
 					.then(({ result, timestamp }) => {
-
 						// if frame was skipped, don't process it
 						if (result === "skipped") {
 							// console.log( "skipped frame");
@@ -152,6 +174,8 @@ const processVideo = async (node, STATUSES) => {
 			node.videoHeight ?? node.height,
 			"video"
 		);
+		flagDetectionStart();
+		removeBlurryStart(node);
 		videoDetectionLoop(node, { width: newWidth, height: newHeight });
 	} catch (e) {
 		console.log("HB== processVideo error", e);

@@ -109,6 +109,11 @@ const applyBlurryStart = (node) => {
 	node.classList.add("hb-blur-temp");
 };
 
+const removeBlurryStart = (node) => {
+	if (!isBlurryStartMode()) return;
+	node.classList.remove("hb-blur-temp");
+};
+
 const setQueuingStarted = () => {
 	queuingStarted = true;
 };
@@ -123,4 +128,4 @@ const attachStyleListener = () => {
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener, applyBlurryStart };
+export { attachStyleListener, applyBlurryStart, removeBlurryStart };
