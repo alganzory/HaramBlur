@@ -17,7 +17,7 @@ class Queue {
 			const node = await loadImage(img.src, img.width, img.height);
 			this.processNextElement(node, onSuccess, onError);
 		} catch (error) {
-			console.warn("HB=== image failed to load", error);
+			console.warn("HB=== image failed to load", img);
 			onError(error);
 		} finally {
 			this.activeLoading--;

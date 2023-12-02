@@ -1,14 +1,11 @@
 {
-  "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch",
-    "release": "bestzip extension.zip dist manifest.json src/assets src/background.js src/popup.html src/popup.js"
-  },
-  "devDependencies": {
-    "bestzip": "^2.2.1",
-    "vite": "^4.4.9"
-  },
-  "dependencies": {
-    "@vladmandic/human": "^3.1.2"
-  }
+	"scripts": {
+		"build": "vite build",
+		"dev": "vite build --watch",
+		"release": "bestzip extension.zip dist manifest.json src/assets src/background.js src/popup.html src/popup.js"
+	},
+	"devDependencies": {
+		"bestzip": "^2.2.1",
+		"vite": "^4.4.9"
+	}
 }

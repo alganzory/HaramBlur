@@ -1,13 +1,9 @@
 // detector.js
-// This module exports the human variable and the HUMAN_CONFIG object
+// This module exports detector functions and variables
 
-// import Human from "@vladmandic/human";
-// import { now } from "./helpers";
 const modelsUrl = chrome.runtime.getURL("src/assets/models/human");
 const nsfwUrl = chrome.runtime.getURL("src/assets/models/nsfwjs/model.json");
-/**
- * @type {import("@vladmandic/human").Config}
- */
+
 const HUMAN_CONFIG = {
 	modelBasePath: modelsUrl,
 	backend: "humangl",
@@ -215,19 +211,25 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 				]);
 			}
 			// if 3d tensor, add a dimension
-			if ((resized && resized.shape.length === 3) || tensor.shape.length === 3) {
+			if (
+				(resized && resized.shape.length === 3) ||
+				tensor.shape.length === 3
+			) {
 				expanded = tf.expandDims(resized || tensor, 0);
-
 			}
 			const scalar = tf.scalar(config.tfScalar);
-			const normalized = tf.div(expanded || resized || tensor, scalar)
+			const normalized = tf.div(expanded || resized || tensor, scalar);
 			const logits = await nsfwModel.predict(normalized);
 
 			nsfwCache.predictions = await getTopKClasses(logits, config.topK);
 			nsfwCache.timestamp = performance?.now?.() || Date.now();
 			nsfwCache.skippedFrames = 0;
 
-			tf.dispose([scalar, normalized, logits].concat(expanded ? [expanded] : []).concat(resized ? [resized] : []));
+			tf.dispose(
+				[scalar, normalized, logits]
+					.concat(expanded ? [expanded] : [])
+					.concat(resized ? [resized] : [])
+			);
 		} else {
 			nsfwCache.skippedFrames++;
 		}

@@ -119,6 +119,10 @@ const videoDetectionLoop = async (video, { width, height }) => {
 
 				processFrame(video, { width, height })
 					.then(({ result, timestamp }) => {
+						if (result === "error") {
+							throw new Error("HB==Error in processFrame");
+						}
+
 						// if frame was skipped, don't process it
 						if (result === "skipped") {
 							// console.log( "skipped frame");
