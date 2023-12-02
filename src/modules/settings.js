@@ -81,6 +81,10 @@ const updateSettings = (newSetting) => {
 			settings.blurAmount = value;
 			changeBlurAmount();
 			break;
+		case "gray":
+			settings.gray = value;
+			changeGray();
+			break;
 	}
 };
 
@@ -88,6 +92,12 @@ const changeBlurAmount = () => {
 	// emit event to style.js
 	emitEvent("changeBlurAmount", settings.blurAmount);
 };
+
+const changeGray = () => {
+	// emit event to style.js
+	emitEvent("changeGray", settings.gray);
+};
+
 
 export {
 	settings,

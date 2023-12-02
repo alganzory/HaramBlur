@@ -10,6 +10,7 @@ const defaultSettings = {
 	blurFemale: true,
 	unblurImages: false,
 	unblurVideos: false,
+	gray: true,
 	strictness: 0.5, // goes from 0 to 1
 };
 

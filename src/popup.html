@@ -295,7 +295,7 @@
 			.row {
 				display: flex;
 				justify-content: space-around;
-				align-items: center;
+				/* align-items: center; */
 			}
 
 			.space-between {
@@ -367,6 +367,20 @@
 			.mb-4 {
 				margin-bottom: 1rem;
 			}
+			
+			.ml-4 {
+				margin-left: 1rem;
+			}
+
+			/* grayscale checkbox: we want the label to be above the checkbox not below it */
+			#grayscale-label {
+				display: flex;
+				/* flex-direction: column; */
+				align-items: end;
+				margin-right: 0;
+			}
+			
+			
 		</style>
 	</head>
 	<body>
@@ -387,7 +401,7 @@
 			</div>
 
 			<!-- blurryStart mode setting toggle switch -->
-			<div class="mb-2">
+			<div class="mb-4">
 				<div class="row space-between">
 					<label for="blurryStart-mode"
 						>Blur media on load:
@@ -416,20 +430,39 @@
 				</div>
 			</div>
 			<!-- blur amount setting slider -->
-			<div class="mb-2">
-				<label for="blur-amount"
-					>Blur amount:
-					<span id="blur-amount-value">20</span>
-				</label>
-				<input
-					type="range"
-					id="blur-amount"
-					name="blurAmount"
-					min="10"
-					max="30"
-					value="20"
-					class="form-range"
-				/>
+			
+			<div class="mt-4">
+					<div class="mb-2">
+						<label for="blur-amount"
+						>Blur amount:
+						<span id="blur-amount-value">20</span>
+					</label>
+					<div class="row space-between">
+
+						<input
+						type="range"
+						id="blur-amount"
+						name="blurAmount"
+						min="10"
+						max="30"
+						value="20"
+						class="form-range"
+						/>
+						<!-- checkbox for "grayscale?" -->
+				<div class="mb-2 ml-4">
+					<label class="form-checkbox-label" id="grayscale-label">
+						<span>Grayscale:</span>
+						<input
+						type="checkbox"
+						class="form-checkbox"
+						name="gray"
+						id="grayscale-checkbox"
+						/>
+					</label>
+				</div>
+			</div>
+				</div>
+				
 			</div>
 			<!-- strictness slider -->
 			<div class="mb-2">

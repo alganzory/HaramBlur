@@ -13,7 +13,7 @@ const refreshableSettings = [
 	"strictness",
 ];
 
-const allSettings = ["status", "blurAmount", ...refreshableSettings];
+const allSettings = ["status", "blurAmount", "gray", ...refreshableSettings];
 
 var refreshMessage, container;
 
@@ -61,6 +61,7 @@ function displaySettings(settings) {
 		settings.blurAmount;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
 		settings.blurAmount + "px";
+	document.querySelector("input[name=gray]").checked = settings.gray ?? true;
 	document.querySelector("input[name=strictness]").value =
 		+settings.strictness;
 	document.querySelector("span[id=strictness-value]").innerHTML =
@@ -103,6 +104,9 @@ function addListeners() {
 	document
 		.querySelector("input[name=blurAmount]")
 		.addEventListener("change", updateBlurAmount);
+	document
+		.querySelector("input[name=gray]")
+		.addEventListener("change", updateCheckbox("gray"));
 	document
 		.querySelector("input[name=strictness]")
 		.addEventListener("change", updateStrictness);
