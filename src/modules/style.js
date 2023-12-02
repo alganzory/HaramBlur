@@ -2,7 +2,6 @@
 // This module exports the style sheet and blur effect functions
 
 import { emitEvent, listenToEvent } from "./helpers.js";
-import { STATUSES, getDetectionQueue } from "./observers.js";
 import { settings, shouldDetect, isBlurryStartMode } from "./settings.js";
 
 const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?

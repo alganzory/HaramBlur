@@ -1,6 +1,6 @@
 // observers.js
 // This module exports mutation observer and image processing logic.
-import { listenToEvent, processNode } from "./helpers.js";
+import { isImageTooSmall, listenToEvent, processNode } from "./helpers.js";
 
 import {
 	shouldDetect,
@@ -11,7 +11,6 @@ import { applyBlurryStart } from "./style.js";
 import { processImage, processVideo } from "./processing2.js";
 
 let mutationObserver;
-let videoPort = null;
 
 const STATUSES = {
 	// the numbers are there to make it easier to sort
@@ -24,9 +23,10 @@ const STATUSES = {
 	PROCESSED: "5PROCESSED",
 	INVALID: "9INVALID",
 };
-
 const startObserving = () => {
-	mutationObserver.observe(document, {
+	if (!mutationObserver) initMutationObserver();
+
+	mutationObserver?.observe(document, {
 		childList: true,
 		characterData: false,
 		subtree: true,
@@ -52,29 +52,29 @@ const initMutationObserver = () => {
 			}
 		});
 	});
+	startObserving();
 };
 
 const attachObserversListener = () => {
 	listenToEvent("settingsLoaded", () => {
-		if (shouldDetect()) {
-			startObserving();
-		} else {
+		if (!shouldDetect()) {
 			mutationObserver?.disconnect();
+			mutationObserver = null;
+		} else {
+			// if observing isn't already started, start it
+			if (!mutationObserver) startObserving();
 		}
 	});
 	listenToEvent("toggleOnOffStatus", async () => {
 		// console.log("HB== Observers Listener", shouldDetect());
-		if (shouldDetect()) {
-			// process all images and videos that are already in the DOM
-			startObserving();
-		} else {
+		if (!shouldDetect()) {
 			// console.log("HB== Observers Listener", "disconnecting");
 			mutationObserver?.disconnect();
+			mutationObserver = null;
+		} else {
+			// if observing isn't already started, start it
+			if (!mutationObserver) startObserving();
 		}
-	});
-	listenToEvent("videoFramePort", (event) => {
-		console.log("HB== videoFramePort", event.detail);
-		videoPort = event.detail;
 	});
 };
 
@@ -89,11 +89,11 @@ function observeNode(node, srcAttribute) {
 	const conditions =
 		(srcAttribute || !node.dataset.HBstatus) &&
 		node.src?.length > 0 &&
-		((node.width > 32 && node.height > 32) ||
-			node.height === 0 ||
-			node.width === 0);
+		(!isImageTooSmall(node) || node.height === 0 || node.width === 0);
 
-	if (!conditions) return;
+	if (!conditions) {
+		return;
+	}
 
 	applyBlurryStart(node);
 
@@ -101,21 +101,11 @@ function observeNode(node, srcAttribute) {
 	if (node.src?.length) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
 		node.tagName === "IMG" ? processImage(node, STATUSES) : null;
-		node.tagName === "VIDEO"
-			? processVideo(node, STATUSES, videoPort)
-			: null;
+		node.tagName === "VIDEO" ? processVideo(node, STATUSES) : null;
 	} else {
 		// remove the HBstatus if the node has no src attribute
 		delete node.dataset?.HBstatus;
 	}
 }
 
-function getDetectionQueue() {
-	return [];
-}
-export {
-	attachObserversListener,
-	initMutationObserver,
-	STATUSES,
-	getDetectionQueue,
-};
+export { attachObserversListener, initMutationObserver, STATUSES };

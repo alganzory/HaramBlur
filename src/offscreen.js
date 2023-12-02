@@ -13,25 +13,6 @@ import Queue from "./modules/queues.js";
 // 4. define handleVideoDetection
 var settings;
 var queue;
-let videoPort;
-window.onmessage = (e) => {
-	console.log(
-		"location.search ",
-		new URLSearchParams(location.search).get("secret")
-	);
-	if (e.data === new URLSearchParams(location.search).get("secret")) {
-		window.onmessage = null;
-		videoPort = e.ports[0];
-		videoPort.onmessage = (e) => onContentMessage(e, videoPort);
-		videoPort.onmessageerror = (e) => console.log("message error", e);
-	}
-};
-
-function onContentMessage(e, port) {
-	if (e.data.type === "videoDetection") {
-		handleVideoDetection(e.data, port);
-	}
-}
 
 const loadSettings = async () => {
 	settings = await chrome.runtime.sendMessage({ type: "getSettings" });
@@ -59,20 +40,33 @@ const handleImageDetection = (request, sender, sendResponse) => {
 };
 let activeFrame = false;
 
-const handleVideoDetection = async (data, port) => {
-	const { frame } = data;
-	const { data: imageData, timestamp } = frame;
+const handleVideoDetection = async (request, sender, sendResponse) => {
+	const { frame } = request;
+	const { data, timestamp } = frame;
 	if (activeFrame) {
-		port.postMessage({ type: "detectionResult", result: "skipped", timestamp , imgR: imageData },[imageData.data.buffer]);
+		sendResponse({ result: "skipped" });
 		return;
 	}
 	activeFrame = true;
-	const result = await detectImage(imageData);
-	activeFrame = false;
-	port.postMessage(
-		{ type: "detectionResult", result, timestamp, imgR: imageData },
-		[imageData.data.buffer]
-	);
+	const imageData = new Image();
+	imageData.onload = () => {
+		detectImage(imageData)
+			.then((result) => {
+				activeFrame = false;
+				sendResponse({ type: "detectionResult", result, timestamp });
+			})
+			.catch((e) => {
+				console.log("HB== error in detectImage", e);
+				activeFrame = false;
+				sendResponse({ result: "error" });
+			});
+	};
+	imageData.onerror = (e) => {
+		console.log("HB== image error", e);
+		activeFrame = false;
+		sendResponse({ result: "error" });
+	};
+	imageData.src = data;
 };
 
 const start = () => {
@@ -80,24 +74,24 @@ const start = () => {
 		if (request.type === "imageDetection") {
 			handleImageDetection(request, sender, sendResponse);
 		}
+		if (request.type === "videoDetection") {
+			handleVideoDetection(request, sender, sendResponse);
+		}
 		return true;
 	});
 };
 
 const detectImage = async (img) => {
-	// console.log("img in detectImage", img.width, img.height);
 	const tensor = human.tf.browser.fromPixels(img);
-	tensor.print();
-	console.log("tensors count", human.tf.memory().numTensors);
-	// console.log("offscreen tensor", tensor);
+	// console.log("tensors count", human.tf.memory().numTensors);
 	const nsfwResult = await nsfwModelClassify(tensor);
-	console.log("offscreen nsfw result", nsfwResult);
+	// console.log("offscreen nsfw result", nsfwResult);
 	if (containsNsfw(nsfwResult, settings.strictness)) {
 		human.tf.dispose(tensor);
 		return "nsfw";
 	}
 	const predictions = await humanModelClassify(tensor);
-	console.log("offscreen human result", predictions);
+	// console.log("offscreen human result", predictions);
 	human.tf.dispose(tensor);
 	if (containsGenderFace(predictions, settings.blurMale, settings.blurFemale))
 		return "face";

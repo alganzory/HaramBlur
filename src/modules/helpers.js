@@ -2,20 +2,16 @@
 
 const MAX_IMG_HEIGHT = 300;
 const MAX_IMG_WIDTH = 400;
-const MIN_IMG_WIDTH = 64;
-const MIN_IMG_HEIGHT = 64;
+const MIN_IMG_WIDTH = 32;
+const MIN_IMG_HEIGHT = 32;
 // maintain 1920x1080 aspect ratio
 const MAX_VIDEO_WIDTH = 1920 / 4;
 const MAX_VIDEO_HEIGHT = 1080 / 4;
 
 const loadImage = async (imgSrc, imgWidth, imgHeight) => {
-
 	// let { newWidth, newHeight } = calcResize(imgWidth, imgHeight);
 	// TODO: use the newWidth and newHeight to resize the image (for some reason it's a lot slower when I do that)
-	const img = new Image(	
-		224,
-		224
-	);
+	const img = new Image(224, 224);
 	return await new Promise((resolve, reject) => {
 		img.setAttribute("crossorigin", "anonymous");
 
@@ -58,15 +54,13 @@ const isImageTooSmall = (img) => {
 };
 
 const calcResize = (width, height, type = "image") => {
-	let newWidth= width; 
+	let newWidth = width;
 	let newHeight = height;
 
 	if (!width || !height) return { newWidth, newHeight };
-	
 
 	let actualMaxWidth = type === "image" ? MAX_IMG_WIDTH : MAX_VIDEO_WIDTH;
 	let actualMaxHeight = type === "image" ? MAX_IMG_HEIGHT : MAX_VIDEO_HEIGHT;
-
 
 	// if the aspect ratio is reversed (portrait image/video), swap max width and max height
 	if (newWidth < newHeight) {
@@ -77,14 +71,13 @@ const calcResize = (width, height, type = "image") => {
 
 	// if image is smaller than max size, don't resize
 	if (!(newWidth < actualMaxWidth && newHeight < actualMaxHeight)) {
-			
-	// calculate new width to resize image to
-	const ratio = Math.min(
-		actualMaxWidth / newWidth,
-		actualMaxHeight / newHeight
-	);
-	newWidth = newWidth * ratio;
-	newHeight = newHeight * ratio;
+		// calculate new width to resize image to
+		const ratio = Math.min(
+			actualMaxWidth / newWidth,
+			actualMaxHeight / newHeight
+		);
+		newWidth = newWidth * ratio;
+		newHeight = newHeight * ratio;
 	}
 
 	return { newWidth, newHeight };
@@ -122,6 +115,10 @@ const processNode = (node, callBack) => {
 				: callBack(node);
 		}
 	}
+
+	if (node.tagName === "IMG" || node.tagName === "VIDEO") {
+		callBack(node);
+	}
 };
 
 const resetElement = (element) => {
@@ -152,20 +149,27 @@ const timeTaken = (fnToRun) => {
 	return afterRun - beforeRun;
 };
 
-// fallback for requestIdleCallback
-// const requestIdleCallback = (fn) => {
-// 	if (window.requestIdleCallback) {
-// 		return window.requestIdleCallback(fn);
-// 	}
-// 	const start = Date.now();
-// 	return setTimeout(() => {
-// 		fn({
-// 			didTimeout: false,
-// 			timeRemaining: () => Math.max(0, 50 - (Date.now() - start)),
-// 		});
-// 	}, 1);
-// }
+const getCanvas = (width, height) => {
+	const c =
+		document?.getElementById("hb-in-canvas") ??
+		document?.createElement("canvas");
+	c.id = "hb-in-canvas";
+	c.width = width;
+	c.height = height;
 
+	// uncomment this to see the canvas (debugging)
+	/* c.style.position = "absolute";
+	// c.style.top = "0";
+	// c.style.left = "0";
+	// c.style.zIndex = 9999;
+	// if it's not appended to the DOM, append it
+	// if (!c.parentElement) {
+	// 	document.body.appendChild(c);
+	// }
+	*/
+
+	return c;
+};
 
 export {
 	loadImage,
@@ -179,4 +183,5 @@ export {
 	timeTaken,
 	resetElement,
 	isImageTooSmall,
-}
+	getCanvas,
+};

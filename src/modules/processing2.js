@@ -1,10 +1,6 @@
-import { calcResize, loadVideo } from "./helpers";
-
-const offscreenCanvas = new OffscreenCanvas(224, 224);
+import { calcResize, loadVideo, getCanvas} from "./helpers";
 
 const FRAME_RATE = 1000 / 25; // 25 fps
-const MAX_VIDEO_WIDTH = 1920 / 4;
-const MAX_VIDEO_HEIGHT = 1080 / 4;
 
 // threshold for number of consecutive frames that need to be positive for the image to be considered positive
 const POSITIVE_THRESHOLD = 1; //at 25 fps, this is 0.04 seconds of consecutive positive detections
@@ -26,7 +22,6 @@ const RESULTS = {
 };
 
 const processImage = (node, STATUSES) => {
-	// console.log ("first send", new Date().getTime())
 	try {
 		node.dataset.HBstatus = STATUSES.PROCESSING;
 		chrome.runtime.sendMessage(
@@ -39,11 +34,13 @@ const processImage = (node, STATUSES) => {
 				},
 			},
 			(response) => {
-				if (response === "face" || response === "nsfw") {
+				if (response === "face" || response === "nsfw" || response === false) {
 					// console.log("HB== handleElementProcessing", response);
-					node.classList.add("hb-blur");
 					node.dataset.HBstatus = STATUSES.PROCESSED;
-					node.dataset.HBresult = response;
+					if (response === "face" || response === "nsfw") {
+						node.classList.add("hb-blur");
+						node.dataset.HBresult = response;
+					}
 				}
 			}
 		);
@@ -52,64 +49,40 @@ const processImage = (node, STATUSES) => {
 	}
 };
 
-const processFrame = async (video, port, { width, height }) => {
+const processFrame = async (video, { width, height }) => {
 	return await new Promise((resolve, reject) => {
-		offscreenCanvas.width = width;
-		offscreenCanvas.height = height;
-		const offscreenCtx = offscreenCanvas.getContext("2d", {
+		const canv = getCanvas(width, height);
+		const ctx = canv.getContext("2d", {
 			willReadFrequently: true,
 		});
-		offscreenCtx.drawImage(video, 0, 0, width, height);
-		const imageData = offscreenCtx.getImageData(0, 0, width, height);
-		const videoCurrentTime = video.currentTime;
-		// send image data to through the port transferable object
-		port.postMessage(
-			{
-				type: "videoDetection",
-				frame: {
-					data: imageData,
-					timestamp: videoCurrentTime,
-				},
-			},
-			[imageData.data.buffer]
-		);
+		ctx.drawImage(video, 0, 0, width, height);
 
-		// const timeoutId = setTimeout(() => {
-		// 	resolve({
-		// 		result: video.dataset.HBresult ?? RESULTS.CLEAR,
-		// 		timestamp: videoCurrentTime,
-		// 		stale: true,
-		// 	});
-		// }, 500);
-		port.onmessage = (event) => {
-			// if (event?.data?.timestamp === videoCurrentTime) {
-			// clearTimeout(timeoutId);
-			resolve(event.data);
-			// }
-		};
+		canv.toBlob((blob) => {
+			let data = URL.createObjectURL(blob);
+			chrome.runtime.sendMessage(
+				{
+					type: "videoDetection",
+					frame: {
+						data: data,
+						timestamp: video.currentTime,
+					},
+				},
+				(response) => {
+					// revoke the object url to free up memory
+					URL.revokeObjectURL(data);
+					resolve(response);
+				}
+			);
+		});
 	});
 };
 
-const videoDetectionLoop = async (video, port, { width, height }) => {
+const videoDetectionLoop = async (video, { width, height }) => {
 	// get the current timestamp
 	const currTime = performance.now();
 
 	if (!video.dataset.HBprevTime) {
 		video.dataset.HBprevTime = currTime;
-	}
-
-	let c = document.getElementById("hb-canvas");
-	if (!c) {
-		c = document.createElement("canvas");
-		c.id = "hb-canvas";
-		c.width = width;
-		c.height = height;
-		c.style.position = "absolute";
-		c.style.top = "0";
-		c.style.left = "0";
-		c.style.zIndex = 9999;
-
-		document.body.appendChild(c);
 	}
 
 	// calculate the time difference
@@ -119,62 +92,57 @@ const videoDetectionLoop = async (video, port, { width, height }) => {
 		try {
 			if (diffTime >= FRAME_RATE) {
 				// store the current timestamp
-				const { result, timestamp, imgR } = await processFrame(
-					video,
-					port,
-					{ width, height }
-				);
-
 				video.dataset.HBprevTime = currTime;
-				console.log(
-					"HB== video detection result",
-					result,
-					timestamp,
-					video.currentTime,
-					imgR
-				);
 
-				if (result === "skipped") {
-					console.log("skipped frame", timestamp, video.currentTime);
-				}
-				// if (video.currentTime - timestamp <= 0.5)
-				processVideoDetections(result, video);
-				// else {
-				// 	console.log(
-				// 		"discarding frame",
-				// 		timestamp,
-				// 		video.currentTime
-				// 	);
-				// }
-				// draw img on canvas
-				c?.getContext("2d").putImageData(imgR, 0, 0);
+				processFrame(video, { width, height })
+					.then(({ result, timestamp }) => {
+
+						// if frame was skipped, don't process it
+						if (result === "skipped") {
+							// console.log( "skipped frame");
+							return;
+						}
+
+						// if the frame is too old, don't process it
+						if (video.currentTime - timestamp > 0.5) {
+							// console.log("too old frame");
+							return;
+						}
+
+						// process the result
+						processVideoDetections(result, video);
+					})
+					.catch((error) => {
+						throw error;
+					});
 			}
-		} catch (e) {
+		} catch (error) {
 			console.log("HB==Video detection loop error", error, video);
-			cancelAnimationFrame(video.dataset.HBrafId);
-			video.dataset.HBerrored = true;
+			video.dataset.HBerrored =
+				parseInt(video.dataset.HBerrored ?? 0) + 1;
 		}
 	}
 
-	if (video.dataset.HBerrored) {
+	if (video.dataset.HBerrored > 10) {
 		// remove onplay listener
 		video.onplay = null;
+		cancelAnimationFrame(video.dataset.HBrafId);
 		video.removeAttribute("crossorigin");
 		return;
 	}
 	if (!video.paused) {
 		video.dataset.HBrafId = requestAnimationFrame(() =>
-			videoDetectionLoop(video, port, { width, height })
+			videoDetectionLoop(video, { width, height })
 		);
 	} else {
 		video.onplay = () => {
 			video.dataset.HBrafId = requestAnimationFrame(() =>
-				videoDetectionLoop(video, port, { width, height })
+				videoDetectionLoop(video, { width, height })
 			);
 		};
 	}
 };
-const processVideo = async (node, STATUSES, port) => {
+const processVideo = async (node, STATUSES) => {
 	try {
 		node.dataset.HBstatus = STATUSES.LOADING;
 		await loadVideo(node);
@@ -184,7 +152,7 @@ const processVideo = async (node, STATUSES, port) => {
 			node.videoHeight ?? node.height,
 			"video"
 		);
-		videoDetectionLoop(node, port, { width: newWidth, height: newHeight });
+		videoDetectionLoop(node, { width: newWidth, height: newHeight });
 	} catch (e) {
 		console.log("HB== processVideo error", e);
 	}
