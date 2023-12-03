@@ -29,7 +29,7 @@ let detectionStarted = false;
 const flagDetectionStart = () => {
 	if (detectionStarted) return;
 	// detection is marked as started when at least 1/8th of the images have been processed (arbitrary number)
-	if (detectedCount >= requestCount / 8 && !detectionStarted) {
+	if ((detectedCount >= requestCount / 8) && !detectionStarted) {
 		detectionStarted = true;
 		console.log("HaramBlur: Detection started");
 		emitEvent("detectionStarted");

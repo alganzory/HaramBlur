@@ -39,6 +39,7 @@ const handleImageDetection = (request, sender, sendResponse) => {
 	);
 };
 let activeFrame = false;
+let frameImage = new Image();
 
 const handleVideoDetection = async (request, sender, sendResponse) => {
 	const { frame } = request;
@@ -48,9 +49,8 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 		return;
 	}
 	activeFrame = true;
-	const imageData = new Image();
-	imageData.onload = () => {
-		runDetection(imageData)
+	frameImage.onload = () => {
+		runDetection(frameImage)
 			.then((result) => {
 				activeFrame = false;
 				sendResponse({ type: "detectionResult", result, timestamp });
@@ -59,14 +59,14 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 				console.log("HB== error in detectImage", e);
 				activeFrame = false;
 				sendResponse({ result: "error" });
-			});
+			})
 	};
-	imageData.onerror = (e) => {
+	frameImage.onerror = (e) => {
 		console.log("HB== image error", e);
 		activeFrame = false;
 		sendResponse({ result: "error" });
 	};
-	imageData.src = data;
+	frameImage.src = data;
 };
 
 const start = () => {

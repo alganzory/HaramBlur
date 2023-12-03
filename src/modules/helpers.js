@@ -150,23 +150,24 @@ const timeTaken = (fnToRun) => {
 };
 
 const getCanvas = (width, height) => {
-	const c =
-		document?.getElementById("hb-in-canvas") ??
-		document?.createElement("canvas");
-	c.id = "hb-in-canvas";
+	let c = document?.getElementById("hb-in-canvas");
+	if (!c) {
+		c = document?.createElement("canvas");
+		c.id = "hb-in-canvas";
+	}
 	c.width = width;
 	c.height = height;
 
 	// uncomment this to see the canvas (debugging)
-	/* c.style.position = "absolute";
+	// c.style.position = "absolute";
 	// c.style.top = "0";
 	// c.style.left = "0";
 	// c.style.zIndex = 9999;
+
 	// if it's not appended to the DOM, append it
-	// if (!c.parentElement) {
-	// 	document.body.appendChild(c);
-	// }
-	*/
+	if (!c.parentElement) {
+		document.body.appendChild(c);
+	}
 
 	return c;
 };
