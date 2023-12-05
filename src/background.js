@@ -10,6 +10,7 @@ const defaultSettings = {
 	blurFemale: true,
 	unblurImages: false,
 	unblurVideos: false,
+	gray: true,
 	strictness: 0.5, // goes from 0 to 1
 };
 
@@ -29,7 +30,25 @@ chrome.runtime.onInstalled.addListener(function () {
 	});
 });
 
+chrome?.offscreen
+	.createDocument({
+		url: chrome.runtime.getURL("src/offscreen.html"),
+		reasons: ["DOM_PARSER"],
+		justification: "Process Images",
+	})
+	.then((document) => {
+		console.log("offscreen document created");
+	})
+	.finally(() => {});
+
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	if (request.type === "getSettings") {
+		chrome.storage.sync.get(["hb-settings"], function (result) {
+			sendResponse(result["hb-settings"]);
+		});
+		return true;
+	}
+});
+
 // on uninstall
-chrome.runtime.setUninstallURL(
-	"https://forms.gle/RovVrtp29vK3Z7To7"
-);
+chrome.runtime.setUninstallURL("https://forms.gle/RovVrtp29vK3Z7To7");

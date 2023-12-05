@@ -1,23 +1,21 @@
 // detector.js
-// This module exports the human variable and the HUMAN_CONFIG object
+// This module exports detector functions and variables
 
-import Human from "@vladmandic/human";
-import { now } from "./helpers";
 const modelsUrl = chrome.runtime.getURL("src/assets/models/human");
 const nsfwUrl = chrome.runtime.getURL("src/assets/models/nsfwjs/model.json");
-/**
- * @type {import("@vladmandic/human").Config}
- */
+
 const HUMAN_CONFIG = {
 	modelBasePath: modelsUrl,
 	backend: "humangl",
-	debug: false,
+	// debug: true,
 	cacheSensitivity: 0.9,
 	warmup: "none",
-	// filter: {
-	// 	width: 224,
-	// 	height: 224,
-	// },
+	async: true,
+	filter: {
+		enabled: false,
+		// width: 224,
+		// height: 224,
+	},
 	face: {
 		enabled: true,
 		iris: { enabled: false },
@@ -26,6 +24,7 @@ const HUMAN_CONFIG = {
 		detector: {
 			modelPath: "blazeface.json",
 			maxDetected: 2,
+			minConfidence: 0.3,
 		},
 		description: {
 			enabled: true,
@@ -97,9 +96,15 @@ let nsfwCache = {
 	lastInputTensor: null,
 };
 
-const initHuman = () => {
-	human = new Human(HUMAN_CONFIG);
-	return human.load();
+const initHuman = async () => {
+	human = new Human.Human(HUMAN_CONFIG);
+	await human.load();
+	human.tf.enableProdMode();
+	// warmup the model
+	const tensor = human.tf.zeros([1, 224, 224, 3]);
+	await human.detect(tensor);
+	console.log("HB==Human model warmed up");
+	human.tf.dispose(tensor);
 };
 
 const humanModelClassify = async (tensor, needToResize) =>
@@ -109,7 +114,7 @@ const humanModelClassify = async (tensor, needToResize) =>
 					filter: {
 						enabled: true,
 						width: needToResize?.newWidth,
-						height: needToResize?.newHeight
+						height: needToResize?.newHeight,
 					},
 			  })
 			: human.detect(tensor);
@@ -183,10 +188,13 @@ const nsfwModelSkip = async (input, config) => {
 const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 	const tf = human.tf;
 	if (!tensor) return [];
+	let resized, expanded;
 	try {
 		const skipAllowed = await nsfwModelSkip(tensor, config);
 		const skipFrame = nsfwCache.skippedFrames < (config.skipFrames || 0);
-		const skipTime = (config.skipTime || 0) > now() - nsfwCache.timestamp;
+		const skipTime =
+			(config.skipTime || 0) >
+			(performance?.now?.() || Date.now()) - nsfwCache.timestamp;
 
 		// if skip is not allowed or skip time is not reached or skip frame is not reached or cache is empty then run the model
 		if (
@@ -195,26 +203,40 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 			!skipFrame ||
 			nsfwCache.predictions.length === 0
 		) {
-			const resized = tf.image.resizeBilinear(tensor, [
-				config.size,
-				config.size,
-			]);
+			// if size is not 224, resize the image
+			if (tensor.shape[1] !== config.size) {
+				resized = tf.image.resizeBilinear(tensor, [
+					config.size,
+					config.size,
+				]);
+			}
+			// if 3d tensor, add a dimension
+			if (
+				(resized && resized.shape.length === 3) ||
+				tensor.shape.length === 3
+			) {
+				expanded = tf.expandDims(resized || tensor, 0);
+			}
 			const scalar = tf.scalar(config.tfScalar);
-			const normalized = tf.div(resized, scalar);
+			const normalized = tf.div(expanded || resized || tensor, scalar);
 			const logits = await nsfwModel.predict(normalized);
 
 			nsfwCache.predictions = await getTopKClasses(logits, config.topK);
-			nsfwCache.timestamp = now();
+			nsfwCache.timestamp = performance?.now?.() || Date.now();
 			nsfwCache.skippedFrames = 0;
 
-			tf.dispose([resized, normalized, logits, scalar]);
+			tf.dispose(
+				[scalar, normalized, logits]
+					.concat(expanded ? [expanded] : [])
+					.concat(resized ? [resized] : [])
+			);
 		} else {
 			nsfwCache.skippedFrames++;
 		}
 
 		return nsfwCache.predictions;
 	} catch (error) {
-		console.error("HB==NSFW Detection Error", error);
+		console.error("HB==NSFW Detection Error", resized || tensor, error);
 	}
 };
 
@@ -245,6 +267,65 @@ async function getTopKClasses(logits, topK) {
 	}
 	return topClassesAndProbs;
 }
+
+const containsNsfw = (nsfwDetections, strictness) => {
+	if (!nsfwDetections?.length) return false;
+	let highestNsfwDelta = 0;
+	let highestSfwDelta = 0;
+
+	const nsfwClasses = getNsfwClasses(strictness);
+	nsfwDetections.forEach((det) => {
+		if (nsfwClasses?.[det.id].nsfw) {
+			highestNsfwDelta = Math.max(
+				highestNsfwDelta,
+				det.probability - nsfwClasses[det.id].thresh
+			);
+		} else {
+			highestSfwDelta = Math.max(
+				highestSfwDelta,
+				det.probability - nsfwClasses[det.id].thresh
+			);
+		}
+	});
+	return highestNsfwDelta > highestSfwDelta;
+};
+
+const genderPredicate = (gender, score, detectMale, detectFemale) => {
+	if (detectMale && detectFemale) return gender !== "unknown";
+
+	if (detectMale && !detectFemale) {
+		return (
+			(gender === "male" && score > 0.3) ||
+			(gender === "female" && score < 0.2)
+		);
+	}
+	if (!detectMale && detectFemale) {
+		return gender === "female" && score > 0.2;
+	}
+
+	return false;
+};
+
+const containsGenderFace = (detections, detectMale, detectFemale) => {
+	if (!detections?.face?.length) {
+		return false;
+	}
+
+	const faces = detections.face;
+
+	if (detectMale || detectFemale)
+		return faces.some(
+			(face) =>
+				face.age > 20 &&
+				genderPredicate(
+					face.gender,
+					face.genderScore,
+					detectMale,
+					detectFemale
+				)
+		);
+	else return true; // If no gender specified, return true cause there's a face
+};
 // export the human variable and the HUMAN_CONFIG object
 export {
 	initHuman,
@@ -255,4 +336,6 @@ export {
 	nsfwModelClassify,
 	humanModelClassify,
 	getNsfwClasses,
+	containsNsfw,
+	containsGenderFace,
 };

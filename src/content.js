@@ -1,6 +1,7 @@
-import { human, initHuman, initNsfwModel, nsfwModel } from "./modules/detector";
-import { emitEvent } from "./modules/helpers";
-import { attachObserversListener, initMutationObserver } from "./modules/observers";
+import {
+	attachObserversListener,
+	initMutationObserver,
+} from "./modules/observers";
 import {
 	getSettings,
 	listenForMessages,
@@ -18,23 +19,9 @@ const attachAllListeners = () => {
 if (window.self === window.top) {
 	attachAllListeners();
 	initMutationObserver();
-	
+
 	getSettings()
 		.then(() => {
-			// console.log("HB==SETTINGS LOADED");
-			emitEvent("settingsLoaded");
-
-			// init human
-			return initHuman();
-		})
-		.then(() => {
-			// console.log("HB==HUMAN INITIALIZED");
-			// init nsfw model
-			return initNsfwModel();
-		})
-		.then(() => {
-			// console.log("HB== models initialized")
-
 			// turn on/off the extension
 			toggleOnOffStatus();
 		})
