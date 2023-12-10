@@ -162,17 +162,18 @@ function updateCheckbox(key) {
 
 /* sendUpdatedSettings - Send updated settings object to tab.js to modify active tab blur CSS */
 function sendUpdatedSettings(key) {
+	const message = {
+		type: "updateSettings",
+		newSetting: {
+			key: key,
+			value: settings[key],
+		},
+	};
+
+	chrome.runtime.sendMessage(message);
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		var activeTab = tabs[0];
-		chrome.tabs.sendMessage(activeTab.id, {
-			message: {
-				type: "updateSettings",
-				newSetting: {
-					key: key,
-					value: settings[key],
-				},
-			},
-		});
+		chrome.tabs.sendMessage(activeTab.id, message);
 
 		if (refreshableSettings.includes(key)) {
 			refreshMessage.classList.remove("hidden");

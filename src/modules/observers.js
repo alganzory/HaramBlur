@@ -2,15 +2,10 @@
 // This module exports mutation observer and image processing logic.
 import { isImageTooSmall, listenToEvent, processNode } from "./helpers.js";
 
-import {
-	shouldDetect,
-	shouldDetectImages,
-	shouldDetectVideos,
-} from "./settings.js";
 import { applyBlurryStart } from "./style.js";
 import { processImage, processVideo } from "./processing2.js";
 
-let mutationObserver;
+let mutationObserver, _settings;
 
 const STATUSES = {
 	// the numbers are there to make it easier to sort
@@ -56,8 +51,9 @@ const initMutationObserver = () => {
 };
 
 const attachObserversListener = () => {
-	listenToEvent("settingsLoaded", () => {
-		if (!shouldDetect()) {
+	listenToEvent("settingsLoaded", ({detail: settings}) => {
+		_settings = settings;
+		if (!_settings.shouldDetect()) {
 			mutationObserver?.disconnect();
 			mutationObserver = null;
 		} else {
@@ -65,9 +61,9 @@ const attachObserversListener = () => {
 			if (!mutationObserver) startObserving();
 		}
 	});
-	listenToEvent("toggleOnOffStatus", async () => {
-		// console.log("HB== Observers Listener", shouldDetect());
-		if (!shouldDetect()) {
+	listenToEvent("toggleOnOffStatus", () => {
+		// console.log("HB== Observers Listener", _settings.shouldDetect());
+		if (!_settings?.shouldDetect()) {
 			// console.log("HB== Observers Listener", "disconnecting");
 			mutationObserver?.disconnect();
 			mutationObserver = null;
@@ -81,8 +77,8 @@ const attachObserversListener = () => {
 function observeNode(node, srcAttribute) {
 	if (
 		!(
-			(node.tagName === "IMG" && shouldDetectImages) ||
-			(node.tagName === "VIDEO" && shouldDetectVideos)
+			(node.tagName === "IMG" && (_settings ? _settings.shouldDetectImages() : true)) ||
+			(node.tagName === "VIDEO" && (_settings ? _settings.shouldDetectVideos() : true))
 		)
 	)
 		return;
