@@ -5,8 +5,8 @@ const MAX_IMG_WIDTH = 400;
 const MIN_IMG_WIDTH = 32;
 const MIN_IMG_HEIGHT = 32;
 // maintain 1920x1080 aspect ratio
-const MAX_VIDEO_WIDTH = 1920 / 5;
-const MAX_VIDEO_HEIGHT = 1080 / 5;
+const MAX_VIDEO_WIDTH = 1920 / 4.5;
+const MAX_VIDEO_HEIGHT = 1080 / 4.5;
 
 const loadImage = async (imgSrc, imgWidth, imgHeight) => {
 	// let { newWidth, newHeight } = calcResize(imgWidth, imgHeight);
