@@ -22,7 +22,7 @@ const initBlurryMode = () => {
 	blurryStartStyleSheet = document.createElement("style");
 	blurryStartStyleSheet.id = "hb-blurry-start-stylesheet";
 	blurryStartStyleSheet.innerHTML = `
-	  img:not(#hb-logo), video{
+	  img, video{
 		filter: blur(${_settings.getBlurAmount()}px) ${
 		_settings.isGray() ? "grayscale(100%)" : ""
 	} !important;
@@ -30,7 +30,7 @@ const initBlurryMode = () => {
 		opacity: unset !important;
 	  }
 
-	  img:not(#hb-logo):hover, video:hover{
+	  img:hover, video:hover{
 		filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""} !important;
 		transition: filter 0.5s ease !important;
 		transition-delay: 0.5s !important;

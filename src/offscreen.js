@@ -46,7 +46,7 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 	}
 	activeFrame = true;
 	frameImage.onload = () => {
-		runDetection(frameImage)
+		runDetection(frameImage, true)
 			.then((result) => {
 				activeFrame = false;
 				sendResponse({ type: "detectionResult", result, timestamp });
@@ -78,13 +78,14 @@ const startListening = () => {
 	});
 };
 
-const runDetection = async (img) => {
+const runDetection = async (img, isVideo = false) => {
 	if (!settings?.shouldDetect() || !img) return false;
 	const tensor = human.tf.browser.fromPixels(img);
 	// console.log("tensors count", human.tf.memory().numTensors);
 	const nsfwResult = await nsfwModelClassify(tensor);
 	// console.log("offscreen nsfw result", nsfwResult);
-	if (containsNsfw(nsfwResult, settings.getStrictness())) {
+	const strictness = settings.getStrictness() * (isVideo ? 0.75 : 1); // makes detection less strict for videos (to reduce false positives)
+	if (containsNsfw(nsfwResult, strictness)) {
 		human.tf.dispose(tensor);
 		return "nsfw";
 	}

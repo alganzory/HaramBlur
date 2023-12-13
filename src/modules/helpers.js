@@ -151,24 +151,26 @@ const timeTaken = (fnToRun) => {
 	return afterRun - beforeRun;
 };
 
-const getCanvas = (width, height) => {
-	let c = document?.getElementById("hb-in-canvas");
-	if (!c) {
-		c = document?.createElement("canvas");
+const getCanvas = (width, height, offscreen = true) => {
+	let c;
+
+	if (!offscreen) {
+		c= document.getElementById("hb-in-canvas") ?? document.createElement("canvas");
 		c.id = "hb-in-canvas";
-	}
-	c.width = width;
-	c.height = height;
+		c.width = width;
+		c.height = height;
+		// uncomment this to see the canvas (debugging)
+		// c.style.position = "absolute";
+		// c.style.top = "0";
+		// c.style.left = "0";
+		// c.style.zIndex = 9999;
 
-	// uncomment this to see the canvas (debugging)
-	// c.style.position = "absolute";
-	// c.style.top = "0";
-	// c.style.left = "0";
-	// c.style.zIndex = 9999;
-
-	// if it's not appended to the DOM, append it
-	if (!c.parentElement) {
-		document.body.appendChild(c);
+		// if it's not appended to the DOM, append it
+		if (!c.parentElement) {
+			document.body.appendChild(c);
+		}
+	} else {
+		c = new OffscreenCanvas(width, height);
 	}
 
 	return c;
@@ -177,26 +179,47 @@ const getCanvas = (width, height) => {
 const disableVideo = (video) => {
 	video.dataset.HBstatus = STATUSES.DISABLED;
 	video.classList.remove("hb-blur");
-}
+};
 
 const enableVideo = (video) => {
-	video.dataset.HBstatus = STATUSES.PROCESSING
-}
+	video.dataset.HBstatus = STATUSES.PROCESSING;
+};
 
 function updateBGvideoStatus(videosInProcess) {
 	// checks if there are any disabled videos in the videosInProcess array, sends a message to the background to disable/enable the extension icon
-	const disabledVideos = videosInProcess.filter(
-		(video) =>
-			video.dataset.HBstatus === STATUSES.DISABLED &&
-			!video.paused &&
-			video.currentTime > 0
-	) ?? [];
+	const disabledVideos =
+		videosInProcess.filter(
+			(video) =>
+				video.dataset.HBstatus === STATUSES.DISABLED &&
+				!video.paused &&
+				video.currentTime > 0
+		) ?? [];
 
 	chrome.runtime.sendMessage({
 		type: "video-status",
-		status: disabledVideos.length === 0
+		status: disabledVideos.length === 0,
 	});
 }
+
+const requestIdleCB =
+	window.requestIdleCallback ||
+	function (cb) {
+		var start = Date.now();
+		return setTimeout(function () {
+			cb({
+				didTimeout: false,
+				timeRemaining: function () {
+					return Math.max(0, 50 - (Date.now() - start));
+				},
+			});
+		}, 1);
+	};
+
+const cancelIdleCB =
+	window.cancelIdleCallback ||
+	function (id) {
+		clearTimeout(id);
+	};
 
 export {
 	loadImage,
@@ -213,5 +236,7 @@ export {
 	getCanvas,
 	disableVideo,
 	enableVideo,
-	updateBGvideoStatus
+	updateBGvideoStatus,
+	requestIdleCB,
+	cancelIdleCB,
 };
