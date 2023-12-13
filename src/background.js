@@ -45,9 +45,48 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.type === "getSettings") {
 		chrome.storage.sync.get(["hb-settings"], function (result) {
 			sendResponse(result["hb-settings"]);
+
+			const isVideoEnabled = result["hb-settings"].status && result["hb-settings"].blurVideos;
+			chrome.contextMenus.update("enable-detection", {
+				enabled: isVideoEnabled,
+				checked: isVideoEnabled,
+				title: isVideoEnabled ? "Enabled for this video" : "Please enable video detection in settings",
+			});
+		});
+		return true;
+	} else if (request.type === "video-status") {
+		chrome.contextMenus.update("enable-detection", {
+			checked: request.status,
 		});
 		return true;
 	}
+});
+
+// context menu: "enable detection on this video"
+chrome.contextMenus.create({
+	id: "enable-detection",
+	title: "Enable for this video",
+	contexts: ["all"],
+	type: "checkbox",
+	enabled: true, 
+	checked: true, 
+});
+
+chrome.contextMenus.onClicked.addListener((info, tab) => {
+	console.log("HB== context menu clicked", info, tab);
+	if (info.menuItemId === "enable-detection") {
+		if (info.checked) {
+			chrome.tabs.sendMessage(tab.id, {
+				type: "enable-detection",
+			});
+		} else {
+			chrome.tabs.sendMessage(tab.id, {
+				type: "disable-detection",
+			});
+		}
+	}
+
+	return true;
 });
 
 // on uninstall

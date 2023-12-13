@@ -1,5 +1,6 @@
 import { calcResize, loadVideo, getCanvas, emitEvent } from "./helpers";
 import { removeBlurryStart } from "./style";
+import { STATUSES } from "../constants.js";
 
 const FRAME_RATE = 1000 / 25; // 25 fps
 
@@ -29,7 +30,7 @@ let detectionStarted = false;
 const flagDetectionStart = () => {
 	if (detectionStarted) return;
 	// detection is marked as started when at least 1/8th of the images have been processed (arbitrary number)
-	if ((detectedCount >= requestCount / 8) && !detectionStarted) {
+	if (detectedCount >= requestCount / 8 && !detectionStarted) {
 		detectionStarted = true;
 		console.log("HaramBlur: Detection started");
 		emitEvent("detectionStarted");
@@ -111,7 +112,10 @@ const videoDetectionLoop = async (video, { width, height }) => {
 	// calculate the time difference
 	const diffTime = currTime - video.dataset.HBprevTime;
 
-	if (!video.paused) {
+	if (video.dataset.HBstatus === STATUSES.DISABLED) {
+		video.classList.remove("hb-blur");
+	}
+	if (!video.paused && video.dataset.HBstatus !== STATUSES.DISABLED) {
 		try {
 			if (diffTime >= FRAME_RATE) {
 				// store the current timestamp

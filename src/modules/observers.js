@@ -1,23 +1,13 @@
 // observers.js
 // This module exports mutation observer and image processing logic.
-import { isImageTooSmall, listenToEvent, processNode } from "./helpers.js";
+import { disableVideo, enableVideo, isImageTooSmall, listenToEvent, processNode, updateBGvideoStatus } from "./helpers.js";
 
 import { applyBlurryStart } from "./style.js";
 import { processImage, processVideo } from "./processing2.js";
-
+import { STATUSES } from "../constants.js";
 let mutationObserver, _settings;
+let videosInProcess = [];
 
-const STATUSES = {
-	// the numbers are there to make it easier to sort
-	ERROR: "-1ERROR",
-	OBSERVED: "0OBSERVED",
-	QUEUED: "1QUEUED",
-	LOADING: "2LOADING",
-	LOADED: "3LOADED",
-	PROCESSING: "4PROCESSING",
-	PROCESSED: "5PROCESSED",
-	INVALID: "9INVALID",
-};
 const startObserving = () => {
 	if (!mutationObserver) initMutationObserver();
 
@@ -51,7 +41,7 @@ const initMutationObserver = () => {
 };
 
 const attachObserversListener = () => {
-	listenToEvent("settingsLoaded", ({detail: settings}) => {
+	listenToEvent("settingsLoaded", ({ detail: settings }) => {
 		_settings = settings;
 		if (!_settings.shouldDetect()) {
 			mutationObserver?.disconnect();
@@ -72,13 +62,45 @@ const attachObserversListener = () => {
 			if (!mutationObserver) startObserving();
 		}
 	});
+
+	// listen to message from background to tab
+	chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+		if (request.type === "disable-detection") {
+			videosInProcess
+				.filter(
+					// filter videos that are playing, not disabled and in process
+					(video) =>
+						video.dataset.HBstatus === STATUSES.PROCESSING &&
+						!video.paused &&
+						video.currentTime > 0
+				)
+				.forEach((video) => {
+					disableVideo(video);
+				
+				});
+			} else if (request.type === "enable-detection") {
+				videosInProcess
+				.filter(
+					(video) =>
+					video.dataset.HBstatus === STATUSES.DISABLED &&
+					!video.paused &&
+					video.currentTime > 0
+					)
+					.forEach((video) => {
+						enableVideo(video);
+				});
+		}
+		return true;
+	});
 };
 
 function observeNode(node, srcAttribute) {
 	if (
 		!(
-			(node.tagName === "IMG" && (_settings ? _settings.shouldDetectImages() : true)) ||
-			(node.tagName === "VIDEO" && (_settings ? _settings.shouldDetectVideos() : true))
+			(node.tagName === "IMG" &&
+				(_settings ? _settings.shouldDetectImages() : true)) ||
+			(node.tagName === "VIDEO" &&
+				(_settings ? _settings.shouldDetectVideos() : true))
 		)
 	)
 		return;
@@ -96,8 +118,12 @@ function observeNode(node, srcAttribute) {
 	node.dataset.HBstatus = STATUSES.OBSERVED;
 	if (node.src?.length) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
-		node.tagName === "IMG" ? processImage(node, STATUSES) : null;
-		node.tagName === "VIDEO" ? processVideo(node, STATUSES) : null;
+		if (node.tagName === "IMG") processImage(node, STATUSES);
+		else if (node.tagName === "VIDEO") {
+			processVideo(node, STATUSES);
+			videosInProcess.push(node);
+			updateBGvideoStatus(videosInProcess);
+		}
 	} else {
 		// remove the HBstatus if the node has no src attribute
 		delete node.dataset?.HBstatus;

@@ -1,5 +1,7 @@
 // import { STATUSES } from "./observers";
 
+import { STATUSES } from "../constants.js";
+
 const MAX_IMG_HEIGHT = 300;
 const MAX_IMG_WIDTH = 400;
 const MIN_IMG_WIDTH = 32;
@@ -172,6 +174,30 @@ const getCanvas = (width, height) => {
 	return c;
 };
 
+const disableVideo = (video) => {
+	video.dataset.HBstatus = STATUSES.DISABLED;
+	video.classList.remove("hb-blur");
+}
+
+const enableVideo = (video) => {
+	video.dataset.HBstatus = STATUSES.PROCESSING
+}
+
+function updateBGvideoStatus(videosInProcess) {
+	// checks if there are any disabled videos in the videosInProcess array, sends a message to the background to disable/enable the extension icon
+	const disabledVideos = videosInProcess.filter(
+		(video) =>
+			video.dataset.HBstatus === STATUSES.DISABLED &&
+			!video.paused &&
+			video.currentTime > 0
+	) ?? [];
+
+	chrome.runtime.sendMessage({
+		type: "video-status",
+		status: disabledVideos.length === 0
+	});
+}
+
 export {
 	loadImage,
 	loadVideo,
@@ -185,4 +211,7 @@ export {
 	resetElement,
 	isImageTooSmall,
 	getCanvas,
+	disableVideo,
+	enableVideo,
+	updateBGvideoStatus
 };

@@ -96,7 +96,6 @@ const setStyle = ({detail:settings}) => {
 	.hb-blur-temp { 
 		animation: hb-blur-temp ${BLURRY_START_MODE_TIMEOUT}ms ease-in-out forwards !important;
 	}
-
 	@keyframes hb-blur-temp {
 		0% { filter: blur(${_settings.getBlurAmount()}px) ${
 		_settings.isGray() ? "grayscale(100%)" : ""
