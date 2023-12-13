@@ -46,11 +46,15 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		chrome.storage.sync.get(["hb-settings"], function (result) {
 			sendResponse(result["hb-settings"]);
 
-			const isVideoEnabled = result["hb-settings"].status && result["hb-settings"].blurVideos;
+			const isVideoEnabled =
+				result["hb-settings"].status &&
+				result["hb-settings"].blurVideos;
 			chrome.contextMenus.update("enable-detection", {
 				enabled: isVideoEnabled,
 				checked: isVideoEnabled,
-				title: isVideoEnabled ? "Enabled for this video" : "Please enable video detection in settings",
+				title: isVideoEnabled
+					? "Enabled for this video"
+					: "Please enable video detection in settings",
 			});
 		});
 		return true;
@@ -68,8 +72,8 @@ chrome.contextMenus.create({
 	title: "Enable for this video",
 	contexts: ["all"],
 	type: "checkbox",
-	enabled: true, 
-	checked: true, 
+	enabled: true,
+	checked: true,
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
@@ -87,6 +91,13 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 	}
 
 	return true;
+});
+
+// on install, onboarding
+chrome.runtime.onInstalled.addListener(function (details) {
+	chrome.tabs.create({
+		url: "https://onboard.haramblur.com/",
+	});
 });
 
 // on uninstall
