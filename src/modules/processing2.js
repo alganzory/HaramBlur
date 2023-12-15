@@ -1,12 +1,19 @@
-import { calcResize, loadVideo, getCanvas, emitEvent } from "./helpers";
+import {
+	calcResize,
+	loadVideo,
+	getCanvas,
+	emitEvent,
+	requestIdleCB,
+} from "./helpers";
 import { removeBlurryStart } from "./style";
+import { STATUSES } from "../constants.js";
 
 const FRAME_RATE = 1000 / 25; // 25 fps
 
 // threshold for number of consecutive frames that need to be positive for the image to be considered positive
 const POSITIVE_THRESHOLD = 1; //at 25 fps, this is 0.04 seconds of consecutive positive detections
 // threshold for number of consecutive frames that need to be negative for the image to be considered negative
-const NEGATIVE_THRESHOLD = 5; //at 25 fps, this is 0.2 seconds of consecutive negative detections
+const NEGATIVE_THRESHOLD = 4; //at 25 fps, this is 0.16 seconds of consecutive negative detections
 /**
  * Object containing the possible results of image processing.
  * @typedef {Object} RESULTS
@@ -25,11 +32,13 @@ const RESULTS = {
 let requestCount = 0;
 let detectedCount = 0;
 let detectionStarted = false;
+let activeFrame = false;
+let canv, ctx;
 
 const flagDetectionStart = () => {
 	if (detectionStarted) return;
 	// detection is marked as started when at least 1/8th of the images have been processed (arbitrary number)
-	if ((detectedCount >= requestCount / 8) && !detectionStarted) {
+	if (detectedCount >= requestCount / 8 && !detectionStarted) {
 		detectionStarted = true;
 		console.log("HaramBlur: Detection started");
 		emitEvent("detectionStarted");
@@ -73,14 +82,16 @@ const processImage = (node, STATUSES) => {
 };
 
 const processFrame = async (video, { width, height }) => {
-	return await new Promise((resolve, reject) => {
-		const canv = getCanvas(width, height);
-		const ctx = canv.getContext("2d", {
-			willReadFrequently: true,
-		});
+	return new Promise((resolve, reject) => {
+		if (!canv || canv.width !== width || canv.height !== height) {
+			canv = null; // free up memory (I think?)
+			canv = getCanvas(width, height);
+			ctx = canv.getContext("2d", {willReadFrequently: true});
+		}
+		ctx.clearRect(0, 0, width, height);
 		ctx.drawImage(video, 0, 0, width, height);
 
-		canv.toBlob((blob) => {
+		canv.convertToBlob({ type: "image/png" }).then((blob) => {
 			let data = URL.createObjectURL(blob);
 			chrome.runtime.sendMessage(
 				{
@@ -111,36 +122,45 @@ const videoDetectionLoop = async (video, { width, height }) => {
 	// calculate the time difference
 	const diffTime = currTime - video.dataset.HBprevTime;
 
-	if (!video.paused) {
+	if (video.dataset.HBstatus === STATUSES.DISABLED) {
+		video.classList.remove("hb-blur");
+	}
+	if (!video.paused && video.dataset.HBstatus !== STATUSES.DISABLED) {
 		try {
 			if (diffTime >= FRAME_RATE) {
 				// store the current timestamp
 				video.dataset.HBprevTime = currTime;
 
-				processFrame(video, { width, height })
-					.then(({ result, timestamp }) => {
-						if (result === "error") {
-							throw new Error("HB==Error in processFrame");
-						}
+				if (!activeFrame) {
+					activeFrame = true;
+					processFrame(video, { width, height })
+						.then(({ result, timestamp }) => {
+							if (result === "error") {
+								throw new Error("HB==Error in processFrame");
+							}
 
-						// if frame was skipped, don't process it
-						if (result === "skipped") {
-							// console.log( "skipped frame");
-							return;
-						}
+							// if frame was skipped, don't process it
+							if (result === "skipped") {
+								// console.log( "skipped frame");
+								return;
+							}
 
-						// if the frame is too old, don't process it
-						if (video.currentTime - timestamp > 0.5) {
-							// console.log("too old frame");
-							return;
-						}
+							// if the frame is too old, don't process it
+							if (video.currentTime - timestamp > 0.5) {
+								// console.log("too old frame");
+								return;
+							}
 
-						// process the result
-						processVideoDetections(result, video);
-					})
-					.catch((error) => {
-						throw error;
-					});
+							// process the result
+							processVideoDetections(result, video);
+						})
+						.catch((error) => {
+							throw error;
+						})
+						.finally(() => {
+							activeFrame = false;
+						});
+				}
 			}
 		} catch (error) {
 			console.log("HB==Video detection loop error", error, video);
@@ -180,7 +200,10 @@ const processVideo = async (node, STATUSES) => {
 		);
 		flagDetectionStart();
 		removeBlurryStart(node);
-		videoDetectionLoop(node, { width: newWidth, height: newHeight });
+
+		requestIdleCB(() => { // requestIdleCallback is used to prevent the video and dom from freezing (I think?)
+			videoDetectionLoop(node, { width: newWidth, height: newHeight });
+		}, {timeout: 1000});
 	} catch (e) {
 		console.log("HB== processVideo error", e);
 	}

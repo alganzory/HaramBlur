@@ -1,115 +1,139 @@
-import { emitEvent, listenToEvent } from "./helpers";
+import { emitEvent } from "./helpers.js";
+import { DEFAULT_SETTINGS } from "../constants.js";
 
-let settings = {};
-
-let shouldDetectVideos = true;
-let shouldDetectImages = true;
-let shouldDetectMale = false;
-let shouldDetectFemale = false;
-let strictness = 0.3;
-
-function shouldDetectGender() {
-	return shouldDetectMale || shouldDetectFemale;
-}
-
-function shouldDetect() {
-	if ((!shouldDetectImages && !shouldDetectVideos)) {
-		return false;
+class Settings {
+	/*
+	 * @private
+	 */
+	constructor(settings = DEFAULT_SETTINGS) {
+		this._settings = settings;
 	}
-	return shouldDetectGender();
-}
 
-function isBlurryStartMode() {
-	return settings.blurryStartMode;
-}
-
-function setSettings() {
-	if (settings.status !== true) {
-		shouldDetectImages = false;
-		shouldDetectVideos = false;
-	} else {
-		shouldDetectImages = settings.blurImages;
-		shouldDetectVideos = settings.blurVideos;
-		shouldDetectMale = settings.blurMale;
-		shouldDetectFemale = settings.blurFemale;
-		strictness = settings.strictness;
+	shouldDetectMale() {
+		if (!this._settings.status) return false;
+		return this._settings.blurMale;
 	}
-}
 
-function toggleOnOffStatus() {
-	// console.log("HB==toggleOnOffStatus", settings.status)
+	shouldDetectFemale() {
+		if (!this._settings.status) return false;
+		return this._settings.blurFemale;
+	}
 
-	setSettings();
-	// console.log("HB==toggleOnOffStatus", settings.status);
-	emitEvent("toggleOnOffStatus", settings.status);
-}
+	shouldDetectGender() {
+		if (!this._settings.status) return false;
+		return this.shouldDetectMale() || this.shouldDetectFemale();
+	}
 
+	shouldDetectImages() {
+		if (!this._settings.status) return false;
+		return this._settings.blurImages;
+	}
 
-function getSettings() {
-	return new Promise(function (resolve) {
-		chrome.storage.sync.get(["hb-settings"], function (storage) {
-			settings = storage["hb-settings"];
-			resolve();
+	shouldDetectVideos() {
+		if (!this._settings.status) return false;
+		return this._settings.blurVideos;
+	}
+
+	// alias
+	shouldBlurImages() {
+		return this.shouldDetectImages();
+	}
+
+	// alias
+	shouldBlurVideos() {
+		return this.shouldDetectVideos();
+	}
+
+	shouldUnblurImages() {
+		if (!this._settings.status) return false;
+		return this._settings.unblurImages;
+	}
+
+	shouldUnblurVideos() {
+		if (!this._settings.status) return false;
+		return this._settings.unblurVideos;
+	}
+	
+	shouldDetect() {
+		if (!this._settings.status) return false;
+		if (!this.shouldDetectImages() && !this.shouldDetectVideos())
+			return false;
+
+		// at least 1 gender should be selected for detection to start,
+		// this could change in the future (if we wanna allow nsfw only detection)
+		return this.shouldDetectGender();
+	}
+
+	isBlurryStartMode() {
+		if (!this.shouldDetect()) return false;
+		return this._settings.blurryStartMode;
+	}
+
+	getBlurAmount() {
+		if (!this.shouldDetect()) return 0;
+		return this._settings.blurAmount;
+	}
+
+	getStrictness() {
+		if (!this.shouldDetect()) return 0;
+		return this._settings.strictness;
+	}
+
+	isGray() {
+		if (!this.shouldDetect()) return false;
+		return this._settings.gray;
+	}
+	getSettings() {
+		return this._settings;
+	}
+
+	setSettings(settings) {
+		this._settings = settings;
+	}
+
+	toggleOnOffStatus() {
+		emitEvent("toggleOnOffStatus", this);
+	}
+
+	listenForChanges() {
+		chrome.runtime.onMessage.addListener(
+			(request, sender, sendResponse) => {
+				if (request.type === "updateSettings") {
+					this.updateSettings(request.newSetting);
+				}
+				return true;
+			}
+		);
+	}
+	// this acts as an async constructor
+	static async init() {
+		const loadedSettings = await new Promise((resolve) => {
+			chrome.runtime.sendMessage({ type: "getSettings" }, (settings) => {
+				resolve(settings);
+			});
 		});
-	});
-}
-
-function listenForMessages() {
-	listenToEvent("settingsLoaded", setSettings);
-	chrome.runtime.onMessage.addListener(function (
-		request,
-		sender,
-		sendResponse
-	) {
-		if (request.message?.type === "updateSettings") {
-			updateSettings(request.message.newSetting);
-		}
-	});
-}
-
-const updateSettings = (newSetting) => {
-	// console.log("HB==updateSettings", newSetting);
-	const { key, value } = newSetting;
-
-	// take action based on key
-	switch (key) {
-		case "status":
-			settings.status = value;
-			toggleOnOffStatus();
-			break;
-		case "blurAmount":
-			settings.blurAmount = value;
-			changeBlurAmount();
-			break;
-		case "gray":
-			settings.gray = value;
-			changeGray();
-			break;
+		const settings = new Settings(loadedSettings);
+		settings.listenForChanges();
+		emitEvent("settingsLoaded", settings);
+		return settings;
 	}
-};
 
-const changeBlurAmount = () => {
-	// emit event to style.js
-	emitEvent("changeBlurAmount", settings.blurAmount);
-};
+	updateSettings(newSetting) {
+		const { key, value } = newSetting;
 
-const changeGray = () => {
-	// emit event to style.js
-	emitEvent("changeGray", settings.gray);
-};
+		this._settings[key] = value;
+		switch (key) {
+			case "status":
+				this.toggleOnOffStatus();
+				break;
+			case "blurAmount":
+				emitEvent("changeBlurAmount", this);
+				break;
+			case "gray":
+				emitEvent("changeGray", this);
+				break;
+		}
+	}
+}
 
-
-export {
-	settings,
-	isBlurryStartMode,
-	getSettings,
-	toggleOnOffStatus,
-	listenForMessages,
-	shouldDetect,
-	shouldDetectGender,
-	shouldDetectImages,
-	shouldDetectVideos,
-	shouldDetectMale,
-	shouldDetectFemale,
-	strictness,
-};
+export default Settings;
