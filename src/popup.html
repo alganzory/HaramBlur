@@ -385,7 +385,12 @@
 	</head>
 	<body>
 		<div class="header">
-			<h1>HaramBlur Extension</h1>
+			<h1 id="title" >HaramBlur Extensionst</h1>
+			<label for="language" class="hidden">Select Language:</label>
+			<select id="language">
+				<option value="eng">🇬🇧 English</option>
+				<option value="ar">🇸🇦 Arabic</option>
+			</select>
 			<label class="switch">
 				<input name="status" type="checkbox" />
 				<span class="slider"></span>
@@ -393,7 +398,7 @@
 		</div>
 		<div class="container" id="container">
 			<div class="mb-4">
-				<h2>Settings</h2>
+				<h2 id="settings">Settings</h2>
 				<!-- refresh to see changes -->
 				<div class="hidden mt--4 refresh" id="refresh-message">
 					Refresh the page to see changes.
@@ -403,7 +408,7 @@
 			<!-- blurryStart mode setting toggle switch -->
 			<div class="mb-4">
 				<div class="row space-between">
-					<label for="blurryStart-mode"
+					<label for="blurryStart-mode" id="blurryStart"
 						>Blur media on load:
 						<!-- i icon tooltip -->
 						<span class="tooltip">
@@ -433,7 +438,7 @@
 			
 			<div class="mt-4">
 					<div class="mb-2">
-						<label for="blur-amount"
+						<label for="blur-amount" id="blurAmount"
 						>Blur amount:
 						<span id="blur-amount-value">20</span>
 					</label>
@@ -451,7 +456,7 @@
 						<!-- checkbox for "grayscale?" -->
 				<div class="mb-2 ml-4">
 					<label class="form-checkbox-label" id="grayscale-label">
-						<span>Grayscale:</span>
+						<span id="grayscale" >Grayscale:</span>
 						<input
 						type="checkbox"
 						class="form-checkbox"
@@ -466,7 +471,7 @@
 			</div>
 			<!-- strictness slider -->
 			<div class="mb-2">
-				<label for="blur-amount"
+				<label for="blur-amount" id="strictness"
 					>Strictness:
 					<span id="strictness-value">30%</span>
 				</label>
@@ -483,7 +488,7 @@
 			</div>
 
 			<div class="mb-2">
-				<label
+				<label id="mediaToBlur"
 					>Media to Blur
 					<span class="refresh"> (requires page refresh): </span>
 				</label>
@@ -495,7 +500,7 @@
 							name="blurImages"
 							value="images"
 						/>
-						<span>Images</span>
+						<span id="blurImages">Images</span>
 					</label>
 					<label class="form-checkbox-label">
 						<input
@@ -504,12 +509,12 @@
 							name="blurVideos"
 							value="videos"
 						/>
-						<span>Videos</span>
+						<span id="blurVideos">Videos</span>
 					</label>
 				</div>
 			</div>
 			<div class="mb-2">
-				<label
+				<label id="facesToBlur"
 					>Faces to Blur
 					<span class="refresh"> (requires page refresh): </span>
 				</label>
@@ -521,7 +526,7 @@
 							name="blurMale"
 							value="male"
 						/>
-						<span>Male</span>
+						<span id="blurMale">Male</span>
 					</label>
 					<label class="form-checkbox-label">
 						<input
@@ -530,13 +535,13 @@
 							name="blurFemale"
 							value="female"
 						/>
-						<span>Female</span>
+						<span id="blurFemale">Female</span>
 					</label>
 				</div>
 			</div>
 
 			<div class="mb-4">
-				<label
+				<label id="unblurOnHover"
 					>Unblur on hover
 					<span class="refresh"> (requires page refresh): </span>
 				</label>
@@ -548,7 +553,7 @@
 							name="unblurImages"
 							value="images"
 						/>
-						<span>Images</span>
+						<span id="unblurImages">Images</span>
 					</label>
 					<label class="form-checkbox-label">
 						<input
@@ -557,7 +562,7 @@
 							name="unblurVideos"
 							value="videos"
 						/>
-						<span>Videos</span>
+						<span id="unblurVideos">Videos</span>
 					</label>
 				</div>
 			</div>
@@ -649,5 +654,8 @@
 				<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
 			
 			</div>
+
+<script src="translations.js"></script>
+
 	</body>
 </html>
