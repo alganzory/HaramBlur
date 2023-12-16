@@ -24,7 +24,7 @@ const HUMAN_CONFIG = {
 		detector: {
 			modelPath: "blazeface.json",
 			maxDetected: 2,
-			minConfidence: 0.3,
+			minConfidence: 0.25,
 		},
 		description: {
 			enabled: true,
@@ -204,8 +204,11 @@ const nsfwModelClassify = async (tensor, config = NSFW_CONFIG) => {
 			nsfwCache.predictions.length === 0
 		) {
 			// if size is not 224, resize the image
-			if (tensor.shape[1] !== config.size) {
-				resized = tf.image.resizeBilinear(tensor, [
+			if (
+				tensor.shape[1] !== config.size ||
+				tensor.shape[2] !== config.size
+			) {
+				resized = tf.image.resizeNearestNeighbor(tensor, [
 					config.size,
 					config.size,
 				]);
@@ -300,7 +303,7 @@ const genderPredicate = (gender, score, detectMale, detectFemale) => {
 		);
 	}
 	if (!detectMale && detectFemale) {
-		return gender === "female" && score > 0.2;
+		return gender === "female" && score > 0.25;
 	}
 
 	return false;
@@ -312,7 +315,6 @@ const containsGenderFace = (detections, detectMale, detectFemale) => {
 	}
 
 	const faces = detections.face;
-
 	if (detectMale || detectFemale)
 		return faces.some(
 			(face) =>
