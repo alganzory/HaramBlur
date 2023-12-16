@@ -3,7 +3,7 @@
 	"name": "HaramBlur",
 	"description": "Protect your privacy and uphold Islamic values by auto detecting & blurring images and videos of unwanted or impermissible content.",
 	"version": "0.1.7",
-	"permissions": ["storage", "offscreen"],
+	"permissions": ["storage", "offscreen", "activeTab"],
 	"author": "md.alganzory@gmail.com",
 	"action": {
 		"default_title": "HaramBlur",
