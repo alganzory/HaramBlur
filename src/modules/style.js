@@ -2,12 +2,14 @@
 // This module exports the style sheet and blur effect functions
 
 import { emitEvent, listenToEvent } from "./helpers.js";
-import { settings, shouldDetect, isBlurryStartMode } from "./settings.js";
 
-const BLURRY_START_MODE_TIMEOUT = 5000; // TODO: make this a setting maybe?
-let hbStyleSheet, blurryStartStyleSheet;
+const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
+let hbStyleSheet,
+	blurryStartStyleSheet,
+	_settings;
 
-const initStylesheets = () => {
+const initStylesheets = ({detail}) => {
+	_settings = detail;
 	// console.log("HB==INIT STYLESHEETS")
 	hbStyleSheet = document.createElement("style");
 	hbStyleSheet.id = "hb-stylesheet";
@@ -16,18 +18,20 @@ const initStylesheets = () => {
 };
 
 const initBlurryMode = () => {
-	if (!shouldDetect() || !isBlurryStartMode()) return;
+	if (!_settings.shouldDetect() || !_settings.isBlurryStartMode()) return;
 	blurryStartStyleSheet = document.createElement("style");
 	blurryStartStyleSheet.id = "hb-blurry-start-stylesheet";
 	blurryStartStyleSheet.innerHTML = `
 	  img, video{
-		filter: blur(${settings.blurAmount}px) grayscale(100%) !important;
+		filter: blur(${_settings.getBlurAmount()}px) ${
+		_settings.isGray() ? "grayscale(100%)" : ""
+	} !important;
 		transition: filter 0.1s ease !important;
 		opacity: unset !important;
 	  }
 
 	  img:hover, video:hover{
-		filter: blur(0px) grayscale(0%) !important;
+		filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""} !important;
 		transition: filter 0.5s ease !important;
 		transition-delay: 0.5s !important;
 	  }
@@ -42,19 +46,20 @@ const initBlurryMode = () => {
 	}, BLURRY_START_MODE_TIMEOUT);
 };
 
-const setStyle = () => {
+const setStyle = ({detail:settings}) => {
+	_settings = settings;
 	// console.log("HB==SET STYLE")
 	if (!hbStyleSheet) {
 		initStylesheets();
 	}
-	if (!shouldDetect()) {
+	if (!_settings.shouldDetect()) {
 		hbStyleSheet.innerHTML = "";
 		return;
 	}
-	const shouldBlurImages = settings.blurImages;
-	const shouldBlurVideos = settings.blurVideos;
-	const shouldUnblurImagesOnHover = settings.unblurImages;
-	const shouldUnblurVideosOnHover = settings.unblurVideos;
+	const shouldBlurImages = _settings.shouldBlurImages();
+	const shouldBlurVideos = _settings.shouldBlurVideos();
+	const shouldUnblurImagesOnHover = _settings.shouldUnblurImages();
+	const shouldUnblurVideosOnHover = _settings.shouldUnblurVideos();
 
 	let blurSelectors = [];
 	if (shouldBlurImages) blurSelectors.push("img" + ".hb-blur");
@@ -69,20 +74,43 @@ const setStyle = () => {
 	unblurSelectors = unblurSelectors.join(", ");
 	hbStyleSheet.innerHTML = `
     ${blurSelectors} {
-      filter: blur(${settings.blurAmount}px) grayscale(100%);
-      transition: filter 0.1s ease;
-      opacity: unset;
+      filter: blur(${_settings.getBlurAmount()}px) ${
+		_settings.isGray() ? "grayscale(100%)" : ""
+	} !important;
+      transition: filter 0.1s ease !important;
+      opacity: unset !important;
     }
 	
-    ${unblurSelectors} {
-      filter: grayscale(0%);
-      transition: filter 0.5s ease;
-    }
-    ${unblurSelectors} {
-      filter: blur(0px);
-      transition: filter 0.5s ease;
-      transition-delay: 1s;
-    }
+  `;
+	if (unblurSelectors) {
+		hbStyleSheet.innerHTML += `
+		${unblurSelectors} {
+			filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""} !important;
+			transition: filter 0.5s ease !important;
+			transition-delay: 1s !important;
+		  }
+	`;
+	}
+
+	hbStyleSheet.innerHTML += `
+	.hb-blur-temp { 
+		animation: hb-blur-temp ${BLURRY_START_MODE_TIMEOUT}ms ease-in-out forwards !important;
+	}
+
+	#hb-in-canvas {
+		display: none !important;
+		visibility: hidden !important;
+	}
+
+	@keyframes hb-blur-temp {
+		0% { filter: blur(${_settings.getBlurAmount()}px) ${
+		_settings.isGray() ? "grayscale(100%)" : ""
+	}; }
+		95% { filter: blur(${_settings.getBlurAmount()}px) ${
+		_settings.isGray() ? "grayscale(100%)" : ""
+	}; }
+		100% { filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""}; }
+	}
   `;
 };
 
@@ -91,12 +119,26 @@ const turnOffBlurryStart = (e) => {
 	blurryStartStyleSheet.innerHTML = "";
 };
 
+const applyBlurryStart = (node) => {
+	if (_settings?.isBlurryStartMode()) {
+		node.classList.add("hb-blur-temp");
+	}
+};
+
+const removeBlurryStart = (node) => {
+
+	node.classList.remove("hb-blur-temp");
+};
+
+
 const attachStyleListener = () => {
 	listenToEvent("settingsLoaded", initStylesheets);
 	listenToEvent("toggleOnOffStatus", setStyle);
 	listenToEvent("changeBlurAmount", setStyle);
+	listenToEvent("changeGray", setStyle);
 	listenToEvent("detectionStarted", turnOffBlurryStart);
+	// listenToEvent("queuingStarted", turnOffBlurryStart);
 	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
-export { attachStyleListener };
+export { attachStyleListener, applyBlurryStart, removeBlurryStart };

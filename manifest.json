@@ -2,13 +2,14 @@
 	"manifest_version": 3,
 	"name": "HaramBlur",
 	"description": "Protect your privacy and uphold Islamic values by auto detecting & blurring images and videos of unwanted or impermissible content.",
-	"version": "0.1.0",
-	"permissions": ["activeTab", "storage"],
+	"version": "0.1.8",
+	"permissions": ["storage", "offscreen","contextMenus"],
 	"author": "md.alganzory@gmail.com",
 	"action": {
 		"default_title": "HaramBlur",
 		"default_popup": "src/popup.html"
 	},
+	"minimum_chrome_version": "109",
 	"background": {
 		"scripts": ["src/background.js"]
 	},
@@ -30,7 +31,7 @@
 	},
 	"web_accessible_resources": [
 		{
-			"resources": ["src/assets/models/*"],
+			"resources": ["src/assets/*"],
 			"matches": ["https://*/*", "http://*/*"]
 		}
 	]

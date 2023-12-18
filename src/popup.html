@@ -2,35 +2,36 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<title>Blur Extension</title>
+		<title>HaramBlur Extension</title>
 		<script src="popup.js"></script>
 		<script async defer src="./assets/github-button.js"></script>
 		<style>
-			body {
+		body {
 				background-color: #f7fafc;
 				color: #374151;
 				font-family: sans-serif;
 				font-size: 16px;
 				line-height: 1.5;
 				font-family: Poppins, sans-serif;
+				margin: 0;
 			}
 
 			.container {
-				width: 20vw;
-				min-width: 300px;
-				margin: 0 auto;
-				padding: 1rem 2rem;
-				/* overflow-y: scroll; */
+				min-width: 350px;
+				padding:3.75rem 2rem 0.5rem 2rem;
 			}
 
 			.header {
 				display: flex;
 				justify-content: space-between;
 				align-items: center;
-				/* purple */
 				background-color: royalblue;
 				color: #fff;
 				padding: 1rem;
+				position: fixed;
+				top: 0;
+				left: 0;
+				right: 0;
 			}
 
 			.header h1 {
@@ -55,7 +56,6 @@
 				width: 0;
 				height: 0;
 			}
-
 			.slider {
 				position: absolute;
 				cursor: pointer;
@@ -281,7 +281,7 @@
 				bottom: 0;
 				left: 0;
 				width: 100%;
-				padding: 1rem 0 0 0;
+				padding: 0.5rem 0 0.5rem 0;
 			}
 
 			.bmc-btn {
@@ -295,8 +295,7 @@
 			.row {
 				display: flex;
 				justify-content: space-around;
-				align-items: center;
-				margin-bottom: 1rem;
+				/* align-items: center; */
 			}
 
 			.space-between {
@@ -341,6 +340,17 @@
 				color: #4299e1;
 			}
 
+			.feedback {
+				text-align: center;
+				font-size: 0.8rem;
+				color: #4299e1;
+			}
+
+			.feedback a {
+				color: royalblue;
+				text-decoration: none;
+			}
+
 			.mt-2 {
 				margin-top: 0.5rem;
 			}
@@ -350,9 +360,27 @@
 			.mt-4 {
 				margin-top: 1rem;
 			}
+
+			.mt--4 {
+				margin-top: -1.5rem;
+			}
 			.mb-4 {
 				margin-bottom: 1rem;
 			}
+			
+			.ml-4 {
+				margin-left: 1rem;
+			}
+
+			/* grayscale checkbox: we want the label to be above the checkbox not below it */
+			#grayscale-label {
+				display: flex;
+				/* flex-direction: column; */
+				align-items: end;
+				margin-right: 0;
+			}
+			
+			
 		</style>
 	</head>
 	<body>
@@ -364,12 +392,19 @@
 			</label>
 		</div>
 		<div class="container" id="container">
-			<h2>Settings</h2>
+			<div class="mb-4">
+				<h2>Settings</h2>
+				<!-- refresh to see changes -->
+				<div class="hidden mt--4 refresh" id="refresh-message">
+					Refresh the page to see changes.
+				</div>
+			</div>
+
 			<!-- blurryStart mode setting toggle switch -->
-			<div class="mb-2">
+			<div class="mb-4">
 				<div class="row space-between">
 					<label for="blurryStart-mode"
-						>Blur on page load
+						>Blur media on load:
 						<!-- i icon tooltip -->
 						<span class="tooltip">
 							<svg
@@ -384,7 +419,7 @@
 							</svg>
 							<span class="tooltiptext">
 								When enabled, all images and videos will be
-								blurred on page load until detection starts.
+								blurred by default until detection starts.
 							</span>
 						</span>
 					</label>
@@ -395,21 +430,58 @@
 				</div>
 			</div>
 			<!-- blur amount setting slider -->
+			
+			<div class="mt-4">
+					<div class="mb-2">
+						<label for="blur-amount"
+						>Blur amount:
+						<span id="blur-amount-value">20</span>
+					</label>
+					<div class="row space-between">
+
+						<input
+						type="range"
+						id="blur-amount"
+						name="blurAmount"
+						min="10"
+						max="30"
+						value="20"
+						class="form-range"
+						/>
+						<!-- checkbox for "grayscale?" -->
+				<div class="mb-2 ml-4">
+					<label class="form-checkbox-label" id="grayscale-label">
+						<span>Grayscale:</span>
+						<input
+						type="checkbox"
+						class="form-checkbox"
+						name="gray"
+						id="grayscale-checkbox"
+						/>
+					</label>
+				</div>
+			</div>
+				</div>
+				
+			</div>
+			<!-- strictness slider -->
 			<div class="mb-2">
 				<label for="blur-amount"
-					>Blur amount:
-					<span id="blur-amount-value">20</span>
+					>Strictness:
+					<span id="strictness-value">30%</span>
 				</label>
 				<input
 					type="range"
-					id="blur-amount"
-					name="blurAmount"
-					min="10"
-					max="30"
-					value="20"
+					id="strictness"
+					name="strictness"
+					min="0.1"
+					max="1"
+					value="0.5"
+					step="0.1"
 					class="form-range"
 				/>
 			</div>
+
 			<div class="mb-2">
 				<label
 					>Media to Blur
@@ -489,25 +561,10 @@
 					</label>
 				</div>
 			</div>
-			<!-- refresh to see changes -->
-			<div class="hidden mt-4 refresh" id="refresh-message">
-				Refresh the page to see changes.
-			</div>
-
-			<!-- <div id="advanced-settings">
-        <h2>Advanced Settings</h2>
-        <div>
-          <label for="detection-sensitivity">Detection Sensitivity:</label>
-          <input type="range" id="detection-sensitivity" name="detection-sensitivity" min="0" max="100" value="50" class="form-range">
-        </div>
-        <div>
-          <button class="button button-secondary" id="reset-settings">Reset Settings</button>
-        </div>
-      </div> -->
 		</div>
 		<div class="footer">
 			<!-- 3 buttons/links 1- share 2- github 3- support -->
-			<div class="row">
+			<div class="row mb-2">
 				<script
 					type="text/javascript"
 					src="./assets/buymeacoffee.min.js"
@@ -531,14 +588,66 @@
 					aria-label="Star HaramBlur on GitHub"
 					>Star</a
 				>
-				<a href="https://www.addtoany.com/add_to/facebook?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension" target="_blank"><img src="https://static.addtoany.com/buttons/facebook.svg" width="28" height="28" style="background-color:royalblue"></a>
-				<a href="https://www.addtoany.com/add_to/twitter?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension" target="_blank"><img src="https://static.addtoany.com/buttons/twitter.svg" width="28" height="28" style="background-color:royalblue"></a>
-				<a href="https://www.addtoany.com/add_to/whatsapp?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension" target="_blank"><img src="https://static.addtoany.com/buttons/whatsapp.svg" width="28" height="28" style="background-color:royalblue"></a>
-				<a href="https://www.addtoany.com/add_to/telegram?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension" target="_blank"><img src="https://static.addtoany.com/buttons/telegram.svg" width="28" height="28" style="background-color:royalblue"></a>
-				<a href="https://www.addtoany.com/add_to/linkedin?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension" target="_blank"><img src="https://static.addtoany.com/buttons/linkedin.svg" width="28" height="28" style="background-color:royalblue"></a>
-				<a href="https://www.addtoany.com/add_to/reddit?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension" target="_blank"><img src="https://static.addtoany.com/buttons/reddit.svg" width="28" height="28" style="background-color:royalblue"></a>
-				
+				<a
+					href="https://www.addtoany.com/add_to/facebook?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+					target="_blank"
+					><img
+						src="https://static.addtoany.com/buttons/facebook.svg"
+						width="28"
+						height="28"
+						style="background-color: royalblue"
+				/></a>
+				<a
+					href="https://www.addtoany.com/add_to/twitter?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+					target="_blank"
+					><img
+						src="https://static.addtoany.com/buttons/twitter.svg"
+						width="28"
+						height="28"
+						style="background-color: royalblue"
+				/></a>
+				<a
+					href="https://www.addtoany.com/add_to/whatsapp?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+					target="_blank"
+					><img
+						src="https://static.addtoany.com/buttons/whatsapp.svg"
+						width="28"
+						height="28"
+						style="background-color: royalblue"
+				/></a>
+				<a
+					href="https://www.addtoany.com/add_to/telegram?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+					target="_blank"
+					><img
+						src="https://static.addtoany.com/buttons/telegram.svg"
+						width="28"
+						height="28"
+						style="background-color: royalblue"
+				/></a>
+				<a
+					href="https://www.addtoany.com/add_to/linkedin?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+					target="_blank"
+					><img
+						src="https://static.addtoany.com/buttons/linkedin.svg"
+						width="28"
+						height="28"
+						style="background-color: royalblue"
+				/></a>
+				<a
+					href="https://www.addtoany.com/add_to/reddit?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+					target="_blank"
+					><img
+						src="https://static.addtoany.com/buttons/reddit.svg"
+						width="28"
+						height="28"
+						style="background-color: royalblue"
+				/></a>
 			</div>
-		</div>
+
+			<div class="feedback">
+				We'd love to hear your feedback through our	<a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
+				<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
+			
+			</div>
 	</body>
 </html>

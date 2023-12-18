@@ -10,9 +10,10 @@ const refreshableSettings = [
 	"unblurImages",
 	"unblurVideos",
 	"blurryStartMode",
+	"strictness",
 ];
 
-const allSettings = ["status", "blurAmount", ...refreshableSettings];
+const allSettings = ["status", "blurAmount", "gray", ...refreshableSettings];
 
 var refreshMessage, container;
 
@@ -57,6 +58,11 @@ function displaySettings(settings) {
 		settings.blurAmount;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
 		settings.blurAmount + "px";
+	document.querySelector("input[name=gray]").checked = settings.gray ?? true;
+	document.querySelector("input[name=strictness]").value =
+		+settings.strictness;
+	document.querySelector("span[id=strictness-value]").innerHTML =
+		+settings.strictness * 100 + "%";
 	document.querySelector("input[name=blurImages]").checked =
 		settings.blurImages;
 	document.querySelector("input[name=blurVideos]").checked =
@@ -96,6 +102,12 @@ function addListeners() {
 		.querySelector("input[name=blurAmount]")
 		.addEventListener("change", updateBlurAmount);
 	document
+		.querySelector("input[name=gray]")
+		.addEventListener("change", updateCheckbox("gray"));
+	document
+		.querySelector("input[name=strictness]")
+		.addEventListener("change", updateStrictness);
+	document
 		.querySelector("input[name=unblurImages]")
 		.addEventListener("change", updateCheckbox("unblurImages"));
 	document
@@ -123,6 +135,18 @@ function updateBlurAmount() {
 	sendUpdatedSettings("blurAmount");
 }
 
+function updateStrictness() {
+	settings.strictness = document.querySelector(
+		"input[name=strictness]"
+	).value;
+
+	document.querySelector("span[id=strictness-value]").innerHTML =
+		+settings.strictness * 100 + "%";
+
+	chrome.storage.sync.set({ "hb-settings": settings });
+	sendUpdatedSettings("strictness");
+}
+
 function updateCheckbox(key) {
 	return function () {
 		settings[key] = document.querySelector(
@@ -135,17 +159,18 @@ function updateCheckbox(key) {
 
 /* sendUpdatedSettings - Send updated settings object to tab.js to modify active tab blur CSS */
 function sendUpdatedSettings(key) {
+	const message = {
+		type: "updateSettings",
+		newSetting: {
+			key: key,
+			value: settings[key],
+		},
+	};
+
+	chrome.runtime.sendMessage(message);
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		var activeTab = tabs[0];
-		chrome.tabs.sendMessage(activeTab.id, {
-			message: {
-				type: "updateSettings",
-				newSetting: {
-					key: key,
-					value: settings[key],
-				},
-			},
-		});
+		chrome.tabs.sendMessage(activeTab.id, message);
 
 		if (refreshableSettings.includes(key)) {
 			refreshMessage.classList.remove("hidden");
