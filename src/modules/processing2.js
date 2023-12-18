@@ -33,7 +33,7 @@ let requestCount = 0;
 let detectedCount = 0;
 let detectionStarted = false;
 let activeFrame = false;
-let canv, ctx;
+let canv, ctx, resolveFrame, videoPort;
 
 const flagDetectionStart = () => {
 	if (detectionStarted) return;
@@ -50,7 +50,7 @@ const processImage = (node, STATUSES) => {
 	try {
 		node.dataset.HBstatus = STATUSES.PROCESSING;
 		!detectionStarted && requestCount++;
-		chrome.runtime.sendMessage(
+		browser.runtime.sendMessage(
 			{
 				type: "imageDetection",
 				image: {
@@ -84,30 +84,34 @@ const processImage = (node, STATUSES) => {
 const processFrame = async (video, { width, height }) => {
 	return new Promise((resolve, reject) => {
 		if (!canv || canv.width !== width || canv.height !== height) {
-			canv = null; // free up memory (I think?)
+			// canv = null; // free up memory (I think?)
 			canv = getCanvas(width, height);
-			ctx = canv.getContext("2d", {willReadFrequently: true});
+			ctx = canv.getContext("2d", {
+				alpha: false,
+				anialias: false,
+				desynchronized: true,
+				depth: false,
+			});
 		}
-		ctx.clearRect(0, 0, width, height);
+		// ctx.clearRect(0, 0, width, height);
 		ctx.drawImage(video, 0, 0, width, height);
-
-		canv.convertToBlob({ type: "image/png" }).then((blob) => {
-			let data = URL.createObjectURL(blob);
-			chrome.runtime.sendMessage(
-				{
-					type: "videoDetection",
-					frame: {
-						data: data,
-						timestamp: video.currentTime,
-					},
+		// send image data to the background script
+		const imgBitmap = canv.transferToImageBitmap();
+		videoPort.postMessage(
+			{
+				type: "videoDetection",
+				frame: {
+					data: imgBitmap,
+					timestamp: video.currentTime,
 				},
-				(response) => {
-					// revoke the object url to free up memory
-					URL.revokeObjectURL(data);
-					resolve(response);
-				}
-			);
-		});
+			},
+			[imgBitmap]
+		);
+
+		resolveFrame = (response) => {
+			imgBitmap.close();
+			resolve(response);
+		};
 	});
 };
 
@@ -188,7 +192,13 @@ const videoDetectionLoop = async (video, { width, height }) => {
 		};
 	}
 };
-const processVideo = async (node, STATUSES) => {
+const processVideo = async (node, STATUSES, _videoPort) => {
+	// videoPort is of type MessagePort
+	videoPort = _videoPort;
+	if (videoPort)
+		videoPort.onmessage = (response) => {
+			resolveFrame?.(response?.data);
+		};
 	try {
 		node.dataset.HBstatus = STATUSES.LOADING;
 		await loadVideo(node);
@@ -201,9 +211,9 @@ const processVideo = async (node, STATUSES) => {
 		flagDetectionStart();
 		removeBlurryStart(node);
 
-		requestIdleCB(() => { // requestIdleCallback is used to prevent the video and dom from freezing (I think?)
-			videoDetectionLoop(node, { width: newWidth, height: newHeight });
-		}, {timeout: 1000});
+		// requestIdleCB(() => { // requestIdleCallback is used to prevent the video and dom from freezing (I think?)
+		videoDetectionLoop(node, { width: newWidth, height: newHeight });
+		// }, {timeout: 1000});
 	} catch (e) {
 		console.log("HB== processVideo error", e);
 	}

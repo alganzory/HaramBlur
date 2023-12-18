@@ -14,12 +14,13 @@ const defaultSettings = {
 	strictness: 0.5, // goes from 0 to 1
 };
 
-chrome.runtime.onInstalled.addListener(async function () {
+browser.runtime.onInstalled.addListener(async function () {
 	try {
 		const result = await browser.storage.sync.get(["hb-settings"]);
 		if (
 			result?.["hb-settings"] === undefined ||
-			result?.["hb-settings"] === null
+			result?.["hb-settings"] === null ||
+			Object.keys(result?.["hb-settings"]).length === 0
 		) {
 			await browser.storage.sync.set({ "hb-settings": defaultSettings });
 		} else {
@@ -33,39 +34,28 @@ chrome.runtime.onInstalled.addListener(async function () {
 	}
 });
 
-chrome?.offscreen
-	.createDocument({
-		url: chrome.runtime.getURL("src/offscreen.html"),
-		reasons: ["DOM_PARSER"],
-		justification: "Process Images",
-	})
-	.then((document) => {
-		console.log("offscreen document created");
-	})
-	.finally(() => {});
-
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.type === "getSettings") {
-		chrome.storage.sync.get(["hb-settings"], function (result) {
-			sendResponse(result["hb-settings"]);
-
+		browser.storage.sync.get(["hb-settings"]).then((result) => {
 			const isVideoEnabled =
-				result["hb-settings"].status &&
-				result["hb-settings"].blurVideos;
+			result["hb-settings"].status && result["hb-settings"].blurVideos;
 			chrome.contextMenus.update("enable-detection", {
 				enabled: isVideoEnabled,
 				checked: isVideoEnabled,
 				title: isVideoEnabled
-					? "Enabled for this video"
-					: "Please enable video detection in settings",
+				? "Enabled for this video"
+				: "Please enable video detection in settings",
 			});
-		});
+				
+				sendResponse(result["hb-settings"]);
+			}
+		);
 		return true;
 	} else if (request.type === "video-status") {
 		chrome.contextMenus.update("enable-detection", {
 			checked: request.status,
 		});
-		return true;
+		sendResponse({ wtf: "ok" });
 	}
 });
 
@@ -98,6 +88,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // on install, onboarding
 chrome.runtime.onInstalled.addListener(function (details) {
+	if (details.reason !== "install") {
+		return;
+	}
 	chrome.tabs.create({
 		url: "https://onboard.haramblur.com/",
 	});

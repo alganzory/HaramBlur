@@ -7,6 +7,7 @@ import { processImage, processVideo } from "./processing2.js";
 import { STATUSES } from "../constants.js";
 let mutationObserver, _settings;
 let videosInProcess = [];
+let videoPort;
 
 const startObserving = () => {
 	if (!mutationObserver) initMutationObserver();
@@ -20,7 +21,8 @@ const startObserving = () => {
 	});
 };
 
-const initMutationObserver = () => {
+const initMutationObserver = (_videoPort) => {
+	videoPort = _videoPort;
 	// if (mutationObserver) mutationObserver.disconnect();
 	mutationObserver = new MutationObserver((mutations) => {
 		mutations.forEach((mutation) => {
@@ -64,7 +66,7 @@ const attachObserversListener = () => {
 	});
 
 	// listen to message from background to tab
-	chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		if (request.type === "disable-detection") {
 			videosInProcess
 				.filter(
@@ -90,7 +92,6 @@ const attachObserversListener = () => {
 						enableVideo(video);
 				});
 		}
-		return true;
 	});
 };
 
@@ -120,7 +121,7 @@ function observeNode(node, srcAttribute) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
 		if (node.tagName === "IMG") processImage(node, STATUSES);
 		else if (node.tagName === "VIDEO") {
-			processVideo(node, STATUSES);
+			processVideo(node, STATUSES, videoPort);
 			videosInProcess.push(node);
 			updateBGvideoStatus(videosInProcess);
 		}

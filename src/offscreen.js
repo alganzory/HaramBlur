@@ -13,6 +13,23 @@ import Settings from "./modules/settings.js";
 
 var settings;
 var queue;
+let port;
+window.onmessage = (e) => {
+	if (e.data === new URLSearchParams(location.search).get("secret")) {
+		window.onmessage = null;
+		port = e.ports[0];
+		port.onmessage = onVideoPortMessage;
+	}
+};
+
+function onVideoPortMessage(e) {
+	//   console.log('from content:', e.data);
+	if (e.data.type === "videoDetection") {
+		handleVideoDetection(e.data, null, (response) => {
+			port.postMessage(response);
+		});
+	} else port.postMessage("ok");
+}
 
 const loadModels = async () => {
 	try {
@@ -35,7 +52,7 @@ const handleImageDetection = (request, sender, sendResponse) => {
 	);
 };
 let activeFrame = false;
-let frameImage = new Image();
+// let frameImage = new Image();
 
 const handleVideoDetection = async (request, sender, sendResponse) => {
 	const { frame } = request;
@@ -45,35 +62,35 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 		return;
 	}
 	activeFrame = true;
-	frameImage.onload = () => {
-		runDetection(frameImage, true)
-			.then((result) => {
-				activeFrame = false;
-				sendResponse({ type: "detectionResult", result, timestamp });
-			})
-			.catch((e) => {
-				console.log("HB== error in detectImage", e);
-				activeFrame = false;
-				sendResponse({ result: "error" });
-			})
-	};
-	frameImage.onerror = (e) => {
-		console.log("HB== image error", e);
-		activeFrame = false;
-		sendResponse({ result: "error" });
-	};
-	frameImage.src = data;
+	// frameImage.onload = () => {
+	runDetection(data, true)
+		.then((result) => {
+			activeFrame = false;
+			sendResponse({ type: "detectionResult", result, timestamp });
+		})
+		.catch((e) => {
+			console.log("HB== error in detectImage", e);
+			activeFrame = false;
+			sendResponse({ result: "error" });
+		});
+	// };
+	// frameImage.onerror = (e) => {
+	// 	console.log("HB== image error", e);
+	// 	activeFrame = false;
+	// 	sendResponse({ result: "error" });
+	// };
+	// frameImage.src = data;
 };
 
 const startListening = () => {
 	settings.listenForChanges();
-	chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		if (request.type === "imageDetection") {
 			handleImageDetection(request, sender, sendResponse);
 		}
-		if (request.type === "videoDetection") {
-			handleVideoDetection(request, sender, sendResponse);
-		}
+		// if (request.type === "videoDetection") {
+		// 	handleVideoDetection(request, sender, sendResponse);
+		// }
 		return true;
 	});
 };
@@ -92,13 +109,20 @@ const runDetection = async (img, isVideo = false) => {
 	const predictions = await humanModelClassify(tensor);
 	// console.log("offscreen human result", predictions);
 	human.tf.dispose(tensor);
-	if (containsGenderFace(predictions, settings.shouldDetectMale(), settings.shouldDetectFemale()))
+	if (
+		containsGenderFace(
+			predictions,
+			settings.shouldDetectMale(),
+			settings.shouldDetectFemale()
+		)
+	)
 		return "face";
 	return false;
 };
 
 const init = async () => {
-	settings = await Settings.init();
+	const _settings = await browser.storage.sync.get(["hb-settings"]);
+	settings = await Settings.init(_settings["hb-settings"]);
 	console.log("Settings loaded", settings);
 	await loadModels();
 	console.log("Models loaded", human, nsfwModel);

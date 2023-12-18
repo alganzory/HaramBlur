@@ -96,19 +96,18 @@ class Settings {
 	}
 
 	listenForChanges() {
-		chrome.runtime.onMessage.addListener(
+		browser.runtime.onMessage.addListener(
 			(request, sender, sendResponse) => {
 				if (request.type === "updateSettings") {
 					this.updateSettings(request.newSetting);
 				}
-				return true;
 			}
 		);
 	}
 	// this acts as an async constructor
-	static async init() {
-		const loadedSettings = await new Promise((resolve) => {
-			chrome.runtime.sendMessage({ type: "getSettings" }, (settings) => {
+	static async init(_loadedSettings = null) {
+		const loadedSettings = _loadedSettings ?? await new Promise((resolve) => {
+			browser.runtime.sendMessage({ type: "getSettings" }, (settings) => {
 				resolve(settings);
 			});
 		});

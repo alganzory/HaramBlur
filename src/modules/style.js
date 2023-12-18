@@ -4,16 +4,22 @@
 import { emitEvent, listenToEvent } from "./helpers.js";
 
 const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
-let hbStyleSheet,
-	blurryStartStyleSheet,
-	_settings;
+let hbStyleSheet, blurryStartStyleSheet, _settings;
 
-const initStylesheets = ({detail}) => {
+const initStylesheets = ({ detail }) => {
 	_settings = detail;
 	// console.log("HB==INIT STYLESHEETS")
 	hbStyleSheet = document.createElement("style");
 	hbStyleSheet.id = "hb-stylesheet";
-	document.head.appendChild(hbStyleSheet);
+
+	if (document.head) {
+		document.head.appendChild(hbStyleSheet);
+	} else {
+		document.addEventListener("DOMContentLoaded", () => {
+			document.head.appendChild(hbStyleSheet);
+		});
+	}
+
 	initBlurryMode();
 };
 
@@ -46,7 +52,7 @@ const initBlurryMode = () => {
 	}, BLURRY_START_MODE_TIMEOUT);
 };
 
-const setStyle = ({detail:settings}) => {
+const setStyle = ({ detail: settings }) => {
 	_settings = settings;
 	// console.log("HB==SET STYLE")
 	if (!hbStyleSheet) {
@@ -126,10 +132,8 @@ const applyBlurryStart = (node) => {
 };
 
 const removeBlurryStart = (node) => {
-
 	node.classList.remove("hb-blur-temp");
 };
-
 
 const attachStyleListener = () => {
 	listenToEvent("settingsLoaded", initStylesheets);

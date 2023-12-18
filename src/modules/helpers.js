@@ -166,9 +166,9 @@ const getCanvas = (width, height, offscreen = true) => {
 		// c.style.zIndex = 9999;
 
 		// if it's not appended to the DOM, append it
-		if (!c.parentElement) {
-			document.body.appendChild(c);
-		}
+		// if (!c.parentElement) {
+		// 	document.body.appendChild(c);
+		// }
 	} else {
 		c = new OffscreenCanvas(width, height);
 	}
@@ -195,7 +195,7 @@ function updateBGvideoStatus(videosInProcess) {
 				video.currentTime > 0
 		) ?? [];
 
-	chrome.runtime.sendMessage({
+	browser.runtime.sendMessage({
 		type: "video-status",
 		status: disabledVideos.length === 0,
 	});

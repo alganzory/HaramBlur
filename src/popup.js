@@ -143,7 +143,7 @@ function updateStrictness() {
 	document.querySelector("span[id=strictness-value]").innerHTML =
 		+settings.strictness * 100 + "%";
 
-	chrome.storage.sync.set({ "hb-settings": settings });
+	browser.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("strictness");
 }
 
@@ -167,7 +167,7 @@ function sendUpdatedSettings(key) {
 		},
 	};
 
-	chrome.runtime.sendMessage(message);
+	browser.runtime.sendMessage(message);
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		var activeTab = tabs[0];
 		chrome.tabs.sendMessage(activeTab.id, message);
