@@ -1,17 +1,16 @@
 {
-	"manifest_version": 3,
+	"manifest_version": 2,
 	"name": "HaramBlur",
 	"description": "Protect your privacy and uphold Islamic values by auto detecting & blurring images and videos of unwanted or impermissible content.",
-	"version": "0.1.8",
-	"permissions": ["storage", "offscreen","contextMenus"],
+	"version": "0.0.1",
+	"permissions": ["storage", "contextMenus", "*://*/*"],
 	"author": "md.alganzory@gmail.com",
-	"action": {
-		"default_title": "HaramBlur",
+	"browser_action": {
 		"default_popup": "src/popup.html"
 	},
-	"minimum_chrome_version": "109",
 	"background": {
-		"scripts": ["src/background.js"]
+		"page": "src/offscreen.html",
+		"persistent": true
 	},
 	"icons": {
 		"48": "src/assets/hb-icon-48.png",
@@ -26,13 +25,9 @@
 	],
 	"browser_specific_settings": {
 		"gecko": {
-			"id":  "addon@example.com"
+			"id": "info@haramblur.com"
 		}
 	},
-	"web_accessible_resources": [
-		{
-			"resources": ["src/assets/*"],
-			"matches": ["https://*/*", "http://*/*"]
-		}
-	]
+	"web_accessible_resources": ["src/assets/*"],
+	"content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'"
 }
