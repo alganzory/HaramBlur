@@ -43,7 +43,13 @@ const initBlurryMode = () => {
 	  }
 	`;
 
-	document.head.appendChild(blurryStartStyleSheet);
+	if (document.head) {
+		document.head.appendChild(blurryStartStyleSheet);
+	} else {
+		document.addEventListener("DOMContentLoaded", () => {
+			document.head.appendChild(hbStyleSheet);
+		});
+	}
 
 	// issue event turn off blurry start mode after 1 second
 	setTimeout(() => {

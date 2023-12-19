@@ -14,7 +14,7 @@ const defaultSettings = {
 	strictness: 0.5, // goes from 0 to 1
 };
 
-browser.runtime.onInstalled.addListener(async function () {
+chrome.runtime.onInstalled.addListener(async function () {
 	try {
 		const result = await browser.storage.sync.get(["hb-settings"]);
 		if (
@@ -43,8 +43,8 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 				enabled: isVideoEnabled,
 				checked: isVideoEnabled,
 				title: isVideoEnabled
-				? "Enabled for this video"
-				: "Please enable video detection in settings",
+				? "HaramBlur: Enabled for this video"
+				: "HaramBlur: Please enable video detection in settings",
 			});
 				
 				sendResponse(result["hb-settings"]);
@@ -55,14 +55,13 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		chrome.contextMenus.update("enable-detection", {
 			checked: request.status,
 		});
-		sendResponse({ wtf: "ok" });
 	}
 });
 
 // context menu: "enable detection on this video"
 chrome.contextMenus.create({
 	id: "enable-detection",
-	title: "Enable for this video",
+	title: "HaramBlur: Enable for this video",
 	contexts: ["all"],
 	type: "checkbox",
 	enabled: true,

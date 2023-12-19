@@ -52,7 +52,6 @@ const handleImageDetection = (request, sender, sendResponse) => {
 	);
 };
 let activeFrame = false;
-// let frameImage = new Image();
 
 const handleVideoDetection = async (request, sender, sendResponse) => {
 	const { frame } = request;
@@ -62,7 +61,6 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 		return;
 	}
 	activeFrame = true;
-	// frameImage.onload = () => {
 	runDetection(data, true)
 		.then((result) => {
 			activeFrame = false;
@@ -73,13 +71,6 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 			activeFrame = false;
 			sendResponse({ result: "error" });
 		});
-	// };
-	// frameImage.onerror = (e) => {
-	// 	console.log("HB== image error", e);
-	// 	activeFrame = false;
-	// 	sendResponse({ result: "error" });
-	// };
-	// frameImage.src = data;
 };
 
 const startListening = () => {
@@ -88,9 +79,6 @@ const startListening = () => {
 		if (request.type === "imageDetection") {
 			handleImageDetection(request, sender, sendResponse);
 		}
-		// if (request.type === "videoDetection") {
-		// 	handleVideoDetection(request, sender, sendResponse);
-		// }
 		return true;
 	});
 };

@@ -78,8 +78,8 @@ const calcResize = (width, height, type = "image") => {
 			actualMaxWidth / newWidth,
 			actualMaxHeight / newHeight
 		);
-		newWidth = newWidth * ratio;
-		newHeight = newHeight * ratio;
+		newWidth = Math.floor(newWidth * ratio);
+		newHeight = Math.floor(newHeight * ratio);
 	}
 
 	return { newWidth, newHeight };
@@ -155,7 +155,9 @@ const getCanvas = (width, height, offscreen = true) => {
 	let c;
 
 	if (!offscreen) {
-		c= document.getElementById("hb-in-canvas") ?? document.createElement("canvas");
+		c =
+			document.getElementById("hb-in-canvas") ??
+			document.createElement("canvas");
 		c.id = "hb-in-canvas";
 		c.width = width;
 		c.height = height;

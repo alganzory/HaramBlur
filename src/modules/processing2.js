@@ -13,7 +13,7 @@ const FRAME_RATE = 1000 / 25; // 25 fps
 // threshold for number of consecutive frames that need to be positive for the image to be considered positive
 const POSITIVE_THRESHOLD = 1; //at 25 fps, this is 0.04 seconds of consecutive positive detections
 // threshold for number of consecutive frames that need to be negative for the image to be considered negative
-const NEGATIVE_THRESHOLD = 4; //at 25 fps, this is 0.16 seconds of consecutive negative detections
+const NEGATIVE_THRESHOLD = 3; //at 25 fps, this is 0.12 seconds of consecutive negative detections
 /**
  * Object containing the possible results of image processing.
  * @typedef {Object} RESULTS
@@ -28,6 +28,7 @@ const RESULTS = {
 	FACE: "FACE",
 	ERROR: "ERROR",
 };
+
 
 let requestCount = 0;
 let detectedCount = 0;
@@ -84,13 +85,10 @@ const processImage = (node, STATUSES) => {
 const processFrame = async (video, { width, height }) => {
 	return new Promise((resolve, reject) => {
 		if (!canv || canv.width !== width || canv.height !== height) {
-			// canv = null; // free up memory (I think?)
 			canv = getCanvas(width, height);
 			ctx = canv.getContext("2d", {
+				willReadFrequently: true,
 				alpha: false,
-				anialias: false,
-				desynchronized: true,
-				depth: false,
 			});
 		}
 		// ctx.clearRect(0, 0, width, height);
