@@ -109,7 +109,10 @@ const runDetection = async (img, isVideo = false) => {
 };
 
 const init = async () => {
-	const _settings = await browser.storage.sync.get(["hb-settings"]);
+	let _settings = await browser.storage.sync.get(["hb-settings"]);
+	while (_settings?.["hb-settings"] === undefined) {
+		_settings = await browser.storage.sync.get(["hb-settings"]);
+	}
 	settings = await Settings.init(_settings["hb-settings"]);
 	console.log("Settings loaded", settings);
 	await loadModels();
