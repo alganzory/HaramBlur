@@ -4,9 +4,15 @@
 const modelsUrl = chrome.runtime.getURL("src/assets/models/human");
 const nsfwUrl = chrome.runtime.getURL("src/assets/models/nsfwjs/model.json");
 
+const backend = () => {	
+	if (!navigator.gpu) {
+		return "humangl";
+	}
+	return "webgpu";
+};
 const HUMAN_CONFIG = {
 	modelBasePath: modelsUrl,
-	backend: "humangl",
+	backend,
 	// debug: true,
 	cacheSensitivity: 0.9,
 	warmup: "none",
