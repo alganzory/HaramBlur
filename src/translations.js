@@ -4,8 +4,8 @@ document.getElementById('language').addEventListener('change', function() {
   });
 
 // Language dictionary containing translations for English and Arabic
-var language = {
-	eng: {
+const language = {
+	en: {
 		// English translations
 		title: "HaramBlur Extension",
 		settings: "Settings",
@@ -46,42 +46,18 @@ var language = {
 };
 
 // Default language set to English
-var defaultLanguage = 'eng';
-document.getElementById('title').textContent = language[defaultLanguage].title;
-document.getElementById('settings').textContent = language[defaultLanguage].settings;
-document.getElementById('blurryStart').textContent = language[defaultLanguage].blurryStart;
-document.getElementById('blurAmount').textContent = language[defaultLanguage].blurAmount;
-document.getElementById('strictness').textContent = language[defaultLanguage].strictness;
-document.getElementById('grayscale').textContent = language[defaultLanguage].grayscale;
-document.getElementById('mediaToBlur').textContent = language[defaultLanguage].mediaToBlur;
-document.getElementById('blurImages').textContent = language[defaultLanguage].blurImages;
-document.getElementById('blurVideos').textContent = language[defaultLanguage].blurVideos;
-document.getElementById('facesToBlur').textContent = language[defaultLanguage].facesToBlur;
-document.getElementById('blurMale').textContent = language[defaultLanguage].blurMale;
-document.getElementById('blurFemale').textContent = language[defaultLanguage].blurFemale;
-document.getElementById('unblurOnHover').textContent = language[defaultLanguage].unblurOnHover;
-document.getElementById('unblurImages').textContent = language[defaultLanguage].unblurImages;
-document.getElementById('unblurVideos').textContent = language[defaultLanguage].unblurVideos;
+var defaultLanguage = 'en';
 
 function changeLanguage(lang) {
 	console.log('Changing language to:', lang);
-	  // Loop through each element with a language key and update its text content
-	document.getElementById('title').textContent = language[lang].title;
-	document.getElementById('settings').textContent = language[lang].settings;
-	document.getElementById('blurryStart').textContent = language[lang].blurryStart;
-	document.getElementById('blurAmount').textContent = language[lang].blurAmount;
-	document.getElementById('strictness').textContent = language[lang].strictness;
-	document.getElementById('grayscale').textContent = language[lang].grayscale;
-	document.getElementById('mediaToBlur').textContent = language[lang].mediaToBlur;
-	document.getElementById('blurImages').textContent = language[lang].blurImages;
-	document.getElementById('blurVideos').textContent = language[lang].blurVideos;
-	document.getElementById('facesToBlur').textContent = language[lang].facesToBlur;
-	document.getElementById('blurMale').textContent = language[lang].blurMale;
-	document.getElementById('blurFemale').textContent = language[lang].blurFemale;
-	document.getElementById('unblurOnHover').textContent = language[lang].unblurOnHover;
-	document.getElementById('unblurImages').textContent = language[lang].unblurImages;
-	document.getElementById('unblurVideos').textContent = language[lang].unblurVideos;
-	// Update other elements similarly
+	
+	const ids = Object.keys(language[lang]);
+	ids.forEach(id => {
+		const element = document.getElementById(id);
+		if (element) {
+			element.innerText = language[lang][id];
+		}
+	});	
 }
 
 
