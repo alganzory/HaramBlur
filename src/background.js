@@ -95,6 +95,9 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 
 // on install, onboarding
 chrome.runtime.onInstalled.addListener(function (details) {
+	if (details?.reason !== "install") {
+		return;
+	}
 	chrome.tabs.create({
 		url: "https://onboard.haramblur.com/",
 	});
