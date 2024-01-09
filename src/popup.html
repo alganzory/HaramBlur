@@ -15,7 +15,12 @@
 				font-family: Poppins, sans-serif;
 				margin: 0;
 			}
-
+			@media (prefers-color-scheme: dark) {
+			body {
+				background-color: #141414;
+				color: #f9f9f9;
+			}
+		}
 			.container {
 				min-width: 350px;
 				padding:3.75rem 2rem 0.5rem 2rem;
@@ -283,7 +288,11 @@
 				width: 100%;
 				padding: 0.5rem 0 0.5rem 0;
 			}
-
+			@media (prefers-color-scheme: dark) {
+				.footer {
+				background-color: #212121;
+			}
+		}
 			.bmc-btn {
 				font-size: 1rem !important;
 				height: unset !important;
