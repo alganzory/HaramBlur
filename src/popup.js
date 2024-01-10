@@ -21,14 +21,16 @@ function initPopup() {
 	// console.log("HB==initPopup");
 	loadLocalSettings().then(function () {
 		if (document.readyState === "complete" || "interactive") {
-			changeLanguage(settings.language);
+			const browserLang = navigator.language?.split("-")[0] ?? "en";
+			changeLanguage(settings.language ?? browserLang, settings);
 			displaySettings(settings);
 			addListeners();
 		} else {
 			document.addEventListener("DOMContentLoaded", function () {
+				const browserLang = navigator.language?.split("-")[0] ?? "en";
 				displaySettings(settings);
 				addListeners();
-				changeLanguage(settings.language);
+				changeLanguage(settings.language ?? browserLang, settings);
 			});
 		}
 	});
@@ -117,7 +119,7 @@ function addListeners() {
 		.querySelector("input[name=unblurVideos]")
 		.addEventListener("change", updateCheckbox("unblurVideos"));
 	document.getElementById("language").addEventListener("change", function () {
-		changeLanguage(this.value);
+		changeLanguage(this.value, settings);
 	});
 
 	refreshMessage = document.querySelector("#refresh-message");
@@ -165,14 +167,16 @@ function updateCheckbox(key) {
 
 
 
-function changeLanguage(lang) {	
+function changeLanguage(lang, settings) {	
 	document.body.lang = lang;
 	document.getElementById('container').dir = HB_TRANSLATIONS_DIR[lang];
-	const keys = Object.keys(HB_TRANSLATIONS[lang]);
+	
+	const translations = getTranslations(settings)?.[lang];
+	const keys = Object.keys(translations);
 	keys.forEach(key => {
 		const elements = document.querySelectorAll(key);
 		elements.forEach(element => {
-			element.innerHTML = HB_TRANSLATIONS[lang][key];
+			element.innerHTML = translations[key];
 			// change direction of element 
 			if (HB_TRANSLATIONS_DIR[lang]) {
 				element.dir = HB_TRANSLATIONS_DIR[lang];
