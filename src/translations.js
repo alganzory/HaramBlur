@@ -5,7 +5,7 @@ const getTranslations = (settings) => {
 			// English translations
 			"#settings": "Settings",
 			"#blurryStart": "Blur media on load:",
-			"#toolTipText":
+			".tooltiptext":
 				"When enabled, all images and videos will be blurred by default until detection starts.",
 			"#blurAmount": `
 			Blur Amount:
@@ -36,7 +36,7 @@ const getTranslations = (settings) => {
 			// Arabic translations
 			"#settings": "الإعدادات",
 			"#blurryStart": "تشويش الوسائط مسبقا:",
-			"#toolTipText":
+			".tooltiptext":
 				"عند تفعيل هذا الخيار سيتم تشويش جميع الصور ومقاطع الفيديو مسبقا حتى يبدأ الكشف.",
 			"#blurAmount": `
 			كمية التشويش:
@@ -63,10 +63,42 @@ const getTranslations = (settings) => {
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
 		`,
 		},
+		// turkish
+		tr: {
+			"#settings": "Ayarlar",
+			"#blurryStart": "Yüklenirken bulanıklaştı",
+			".tooltiptext":
+				"Etkinleştirildiğinde, tüm resimler ve videolar, algılama başlayana kadar varsayılan olarak bulanıklaştırılır.",
+			"#blurAmount": `
+			Bulanıklaştırma seviyesi:
+			<span id="blur-amount-value">${settings.blurAmount}%</span>
+		`,
+			"#grayscale": "Gri:",
+			"#strictness": `Katılık:
+		<span id="strictness-value">${settings.strictness * 100}%</span>
+		`,
+			"#mediaToBlur": "Bulanıklaştırılacak medya",
+			"#blurImages": "Resimler",
+			"#blurVideos": "Videolar",
+			"#facesToBlur": "Bulanıklaştırılacak yüzler",
+			"#blurMale": "Erkek",
+			"#blurFemale": "Kadın",
+			"#unblurOnHover": "Üzerine gelindiğinde bulanıklığı kaldır",
+			"#unblurImages": "Resimler",
+			"#unblurVideos": "Videolar",
+			".refresh": " (sayfa yenileme gerektirir):",
+			"#refresh-message": "Değişiklikleri görmek için sayfayı yenile.",
+			".bmc-btn-text": "Bize devam etmemize yardım et",
+			".feedback": `
+			<span> Geri bildirimlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> veya
+			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ❤️
+		`,
+		},
 	};
 };
 
 const HB_TRANSLATIONS_DIR = {
 	en: "ltr",
+	tr: "ltr",
 	ar: "rtl",
 };
