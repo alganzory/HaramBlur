@@ -2,6 +2,7 @@
 
 const defaultSettings = {
 	status: true,
+	language: "en",
 	blurryStartMode: false,
 	blurAmount: 20,
 	blurImages: true,

@@ -3,27 +3,32 @@
 	<head>
 		<meta charset="utf-8" />
 		<title>HaramBlur Extension</title>
-		<script src="popup.js"></script>
 		<script async defer src="./assets/github-button.js"></script>
 		<style>
-		body {
+			body {
 				background-color: #f7fafc;
 				color: #374151;
 				font-family: sans-serif;
-				font-size: 16px;
+				font-size: 15px;
 				line-height: 1.5;
 				font-family: Poppins, sans-serif;
 				margin: 0;
 			}
-			@media (prefers-color-scheme: dark) {
-			body {
-				background-color: #141414;
-				color: #f9f9f9;
+
+			/* change body font to Tahoma if arabic */
+			:lang(ar) body {
+				font-family: Tahoma, sans-serif;
 			}
-		}
+
+			@media (prefers-color-scheme: dark) {
+				body {
+					background-color: #141414;
+					color: #f9f9f9;
+				}
+			}
 			.container {
 				min-width: 350px;
-				padding:3.75rem 2rem 0.5rem 2rem;
+				padding:0rem 2rem 0.5rem 2rem;
 			}
 
 			.header {
@@ -33,16 +38,28 @@
 				background-color: royalblue;
 				color: #fff;
 				padding: 1rem;
-				position: fixed;
+				position: sticky;
 				top: 0;
 				left: 0;
 				right: 0;
+				border-radius: 0px 0px 25px 25px;
 			}
 
 			.header h1 {
-				font-size: 1.25rem;
+				font-size: 1.35rem;
 				font-weight: bold;
 				margin: 0;
+				text-align: center;
+				font-family: Poppins, sans-serif !important;
+			}
+
+			.header > * {
+				flex: 1;
+			}
+
+			/* last child self align right */
+			.header > *:last-child {
+				text-align: right;
 			}
 
 			.switch {
@@ -71,6 +88,7 @@
 				background-color: #ccc;
 				-webkit-transition: 0.4s;
 				transition: 0.4s;
+				border-radius: 25px;
 			}
 
 			.slider:before {
@@ -83,6 +101,7 @@
 				background-color: white;
 				-webkit-transition: 0.4s;
 				transition: 0.4s;
+				border-radius: 50%;
 			}
 
 			.slider.small::before {
@@ -287,20 +306,51 @@
 				left: 0;
 				width: 100%;
 				padding: 0.5rem 0 0.5rem 0;
+				border-radius: 30px 30px 0px 0px
 			}
 			@media (prefers-color-scheme: dark) {
 				.footer {
 				background-color: #212121;
+				}
 			}
-		}
+
+			.footer  img {
+				border-radius: 0.25rem;
+			}
 			.bmc-btn {
 				font-size: 1rem !important;
 				height: unset !important;
-				padding: 5px 24px !important;
+				padding: 5px 10px !important;
+				min-width: unset !important;
+				text-align: left !important;
 			}
 			.bmc-btn:hover {
 				opacity: 0.85 !important;
+				animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 			}
+			@keyframes shake {
+				10%,
+				90% {
+					transform: translate3d(0, -1px, 0);
+				}
+
+				20%,
+				80% {
+					transform: translate3d(0, 2px, 0);
+				}
+
+				30%,
+				50%,
+				70% {
+					transform: translate3d(0, -4px, 0);
+				}
+
+				40%,
+				60% {
+					transform: translate3d(0, 4px, 0);
+				}
+			}
+
 			.row {
 				display: flex;
 				justify-content: space-around;
@@ -345,7 +395,7 @@
 
 			.refresh {
 				/* blueish color */
-				font-size: 0.8rem;
+				font-size: 0.7rem;
 				color: #4299e1;
 			}
 
@@ -365,6 +415,10 @@
 			}
 			.mb-2 {
 				margin-bottom: 0.5rem;
+			}
+
+			.mb-3 { 
+				margin-bottom: 0.75rem;
 			}
 			.mt-4 {
 				margin-top: 1rem;
@@ -388,22 +442,44 @@
 				align-items: end;
 				margin-right: 0;
 			}
-			
+	
+			#language {
+				padding: 0.7em  0.25em 0.7em 1.8em;
+				background-color: #2196f3;
+				background-image: url( https://coothead.co.uk/images/world.png );
+				background-repeat: no-repeat;
+				background-size: 1.1em auto;
+				background-position: 0.7em center;
+				font-size: 0.8em;
+				font-family: inherit;
+				color: #fff;
+				border: none;
+				border-radius: 25px;
+			}
 			
 		</style>
 	</head>
 	<body>
 		<div class="header">
-			<h1 id="title" >HaramBlur Extension</h1>
-			<label for="language" class="hidden">Select Language:</label>
-			<select id="language">
-				<option value="eng">🇬🇧 English</option>
-				<option value="ar">🇸🇦 Arabic</option>
-			</select>
-			<label class="switch">
-				<input name="status" type="checkbox" />
-				<span class="slider"></span>
-			</label>
+			<!-- <label for="language" class="hidden">Select Language:</label> -->
+			<div>
+				<select id="language">
+					<!-- options with language and flag -->
+					<option value="en">
+						English
+					</option>
+					<option value="ar">
+						العربية
+					</option>
+				</select>
+			</div>
+			<h1>HaramBlur</h1>
+			<div>
+				<label class="switch">
+					<input name="status" type="checkbox" />
+					<span class="slider"></span>
+				</label>
+			</div>
 		</div>
 		<div class="container" id="container">
 			<div class="mb-4">
@@ -447,12 +523,10 @@
 			
 			<div class="mt-4">
 					<div class="mb-2">
-						<label for="blur-amount" id="blurAmount"
-						>Blur amount:
-						<span id="blur-amount-value">20</span>
-					</label>
-					<div class="row space-between">
-
+						<label for="blur-amount" id="blurAmount">Blur amount:
+							<span id="blur-amount-value">20</span>
+						</label>
+					<div class="row space-between" style="gap: 1rem;">
 						<input
 						type="range"
 						id="blur-amount"
@@ -461,6 +535,7 @@
 						max="30"
 						value="20"
 						class="form-range"
+						width="50px"
 						/>
 						<!-- checkbox for "grayscale?" -->
 				<div class="mb-2 ml-4">
@@ -497,8 +572,8 @@
 			</div>
 
 			<div class="mb-2">
-				<label id="mediaToBlur"
-					>Media to Blur
+				<label>
+					<span id="mediaToBlur"> Media to Blur </span>
 					<span class="refresh"> (requires page refresh): </span>
 				</label>
 				<div class="options-grid">
@@ -523,8 +598,8 @@
 				</div>
 			</div>
 			<div class="mb-2">
-				<label id="facesToBlur"
-					>Faces to Blur
+				<label> 
+					<span id="facesToBlur">Faces to Blur </span>
 					<span class="refresh"> (requires page refresh): </span>
 				</label>
 				<div class="options-grid">
@@ -550,8 +625,8 @@
 			</div>
 
 			<div class="mb-4">
-				<label id="unblurOnHover"
-					>Unblur on hover
+				<label> 
+					<span id="unblurOnHover">Unblur on hover </span>
 					<span class="refresh"> (requires page refresh): </span>
 				</label>
 				<div class="options-grid">
@@ -578,7 +653,7 @@
 		</div>
 		<div class="footer">
 			<!-- 3 buttons/links 1- share 2- github 3- support -->
-			<div class="row mb-2">
+			<div class="row mb-3">
 				<script
 					type="text/javascript"
 					src="./assets/buymeacoffee.min.js"
@@ -659,12 +734,12 @@
 			</div>
 
 			<div class="feedback">
-				We'd love to hear your feedback through our	<a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
-				<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
-			
+				<span> We love to hear your feedback through our </span>
+				<a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank" data-trans="form-label">Form</a> or 
+				<a href="mailto:md.alganzory@gmail.com" target="_blank" data-trans="email-label">Email</a> ❤️
 			</div>
 
-<script src="translations.js"></script>
-
+			<script src="translations.js"></script>
+			<script src="popup.js"></script>
 	</body>
 </html>

@@ -13,7 +13,7 @@ const refreshableSettings = [
 	"strictness",
 ];
 
-const allSettings = ["status", "blurAmount", "gray", ...refreshableSettings];
+const allSettings = ["blurAmount", "gray", ...refreshableSettings];
 
 var refreshMessage, container;
 
@@ -21,12 +21,14 @@ function initPopup() {
 	// console.log("HB==initPopup");
 	loadLocalSettings().then(function () {
 		if (document.readyState === "complete" || "interactive") {
+			changeLanguage(settings.language);
 			displaySettings(settings);
 			addListeners();
 		} else {
 			document.addEventListener("DOMContentLoaded", function () {
 				displaySettings(settings);
 				addListeners();
+				changeLanguage(settings.language);
 			});
 		}
 	});
@@ -46,21 +48,19 @@ function toggleAllInputs() {
 		container.style.opacity = settings.status ? 1 : 0.5;
 	}
 	allSettings.forEach(function (setting) {
-		if (setting !== "status") {
-			document.querySelector("input[name=" + setting + "]").disabled =
-				!settings.status;
-		}
+		document.querySelector("input[name=" + setting + "]").disabled =
+			!settings.status;
 	});
 }
 
 function displaySettings(settings) {
+	console.log ("display settings", settings);
 	document.querySelector("input[name=status]").checked = settings.status;
 	document.querySelector("input[name=blurryStartMode]").checked =
 		settings.blurryStartMode;
 	document.querySelector("input[name=blurAmount]").value =
 		settings.blurAmount;
-	document.querySelector("span[id=blur-amount-value]").innerHTML =
-		settings.blurAmount + "px";
+	document.getElementById("blur-amount-value").innerHTML = `${settings.blurAmount}%`;
 	document.querySelector("input[name=gray]").checked = settings.gray ?? true;
 	document.querySelector("input[name=strictness]").value =
 		+settings.strictness;
@@ -77,7 +77,7 @@ function displaySettings(settings) {
 		settings.unblurImages;
 	document.querySelector("input[name=unblurVideos]").checked =
 		settings.unblurVideos;
-
+	document.getElementById("language").value = settings.language;
 	toggleAllInputs();
 }
 
@@ -116,6 +116,9 @@ function addListeners() {
 	document
 		.querySelector("input[name=unblurVideos]")
 		.addEventListener("change", updateCheckbox("unblurVideos"));
+	document.getElementById("language").addEventListener("change", function () {
+		changeLanguage(this.value);
+	});
 
 	refreshMessage = document.querySelector("#refresh-message");
 	container = document.querySelector("#container");
@@ -133,7 +136,7 @@ function updateBlurAmount() {
 		"input[name=blurAmount]"
 	).value;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
-		settings.blurAmount + "px";
+		settings.blurAmount + "%";
 	chrome.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("blurAmount");
 }
@@ -159,6 +162,28 @@ function updateCheckbox(key) {
 		sendUpdatedSettings(key);
 	};
 }
+
+
+
+function changeLanguage(lang) {	
+	document.body.lang = lang;
+	document.getElementById('container').dir = HB_TRANSLATIONS_DIR[lang];
+	const keys = Object.keys(HB_TRANSLATIONS[lang]);
+	keys.forEach(key => {
+		const elements = document.querySelectorAll(key);
+		elements.forEach(element => {
+			element.innerHTML = HB_TRANSLATIONS[lang][key];
+			// change direction of element 
+			if (HB_TRANSLATIONS_DIR[lang]) {
+				element.dir = HB_TRANSLATIONS_DIR[lang];
+			}
+		})
+	});	
+
+	settings.language = lang;
+	chrome.storage.sync.set({ "hb-settings": settings });
+}
+
 
 /* sendUpdatedSettings - Send updated settings object to tab.js to modify active tab blur CSS */
 function sendUpdatedSettings(key) {
