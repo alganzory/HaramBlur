@@ -3,7 +3,7 @@
 
 import { emitEvent, listenToEvent } from "./helpers.js";
 
-const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
+const BLURRY_START_MODE_TIMEOUT = 5000; // TODO: make this a setting maybe?
 let hbStyleSheet,
 	blurryStartStyleSheet,
 	_settings;
@@ -14,36 +14,6 @@ const initStylesheets = ({detail}) => {
 	hbStyleSheet = document.createElement("style");
 	hbStyleSheet.id = "hb-stylesheet";
 	document.head.appendChild(hbStyleSheet);
-	initBlurryMode();
-};
-
-const initBlurryMode = () => {
-	if (!_settings.shouldDetect() || !_settings.isBlurryStartMode()) return;
-	blurryStartStyleSheet = document.createElement("style");
-	blurryStartStyleSheet.id = "hb-blurry-start-stylesheet";
-	blurryStartStyleSheet.innerHTML = `
-	  img, video{
-		filter: blur(${_settings.getBlurAmount()}px) ${
-		_settings.isGray() ? "grayscale(100%)" : ""
-	} !important;
-		transition: filter 0.1s ease !important;
-		opacity: unset !important;
-	  }
-
-	  img:hover, video:hover{
-		filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""} !important;
-		transition: filter 0.5s ease !important;
-		transition-delay: 0.5s !important;
-	  }
-	`;
-
-	document.head.appendChild(blurryStartStyleSheet);
-
-	// issue event turn off blurry start mode after 1 second
-	setTimeout(() => {
-		if (!blurryStartStyleSheet?.innerHTML) return; // if blurryStartStyleSheet wasn't instantiated/was removed, return
-		emitEvent("blurryStartModeTimeout", "timeout");
-	}, BLURRY_START_MODE_TIMEOUT);
 };
 
 const setStyle = ({detail:settings}) => {
@@ -113,12 +83,6 @@ const setStyle = ({detail:settings}) => {
 	}
   `;
 };
-
-const turnOffBlurryStart = (e) => {
-	if (!blurryStartStyleSheet?.innerHTML) return; // if blurryStartStyleSheet wasn't instantiated/was removed, return
-	blurryStartStyleSheet.innerHTML = "";
-};
-
 const applyBlurryStart = (node) => {
 	if (_settings?.isBlurryStartMode()) {
 		node.classList.add("hb-blur-temp");
@@ -136,9 +100,6 @@ const attachStyleListener = () => {
 	listenToEvent("toggleOnOffStatus", setStyle);
 	listenToEvent("changeBlurAmount", setStyle);
 	listenToEvent("changeGray", setStyle);
-	listenToEvent("detectionStarted", turnOffBlurryStart);
-	// listenToEvent("queuingStarted", turnOffBlurryStart);
-	listenToEvent("blurryStartModeTimeout", turnOffBlurryStart);
 };
 
 export { attachStyleListener, applyBlurryStart, removeBlurryStart };
