@@ -66,14 +66,14 @@ const getTranslations = (settings) => {
 		// turkish
 		tr: {
 			"#settings": "Ayarlar",
-			"#blurryStart": "Yüklenirken bulanıklaştı",
+			"#blurryStart": "Yüklenirken bulanıklaştır",
 			".tooltiptext":
 				"Etkinleştirildiğinde, tüm resimler ve videolar, algılama başlayana kadar varsayılan olarak bulanıklaştırılır.",
 			"#blurAmount": `
 			Bulanıklaştırma seviyesi:
 			<span id="blur-amount-value">${settings.blurAmount}%</span>
 		`,
-			"#grayscale": "Gri:",
+			"#grayscale": "Grileştir:",
 			"#strictness": `Katılık:
 		<span id="strictness-value">${settings.strictness * 100}%</span>
 		`,
@@ -88,10 +88,10 @@ const getTranslations = (settings) => {
 			"#unblurVideos": "Videolar",
 			".refresh": " (sayfa yenileme gerektirir):",
 			"#refresh-message": "Değişiklikleri görmek için sayfayı yenile.",
-			".bmc-btn-text": "Bize devam etmemize yardım et",
+			".bmc-btn-text": "Devam etmemize yardımcı olun",
 			".feedback": `
-			<span> Geri bildirimlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> veya
-			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ❤️
+			<span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
+			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
 		`,
 		},
 	};
