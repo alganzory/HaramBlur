@@ -53,7 +53,7 @@
 			}
 
 			.header h1 {
-				font-size: 1.30rem;
+				font-size: 1.32rem;
 				font-weight: bold;
 				margin: 0;
 				text-align: center;
@@ -441,7 +441,10 @@
 			.mb-4 {
 				margin-bottom: 1rem;
 			}
-			
+		
+			.ml-2 {
+				margin-left: 0.5rem;
+			}
 			.ml-4 {
 				margin-left: 1rem;
 			}
@@ -479,9 +482,8 @@
 				background-color: #fff;
 				border-radius: 25px;
 				padding: 1rem;
-				margin-bottom: 1rem;
 				box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05),
-					0 1px 2px 0 rgba(0, 0, 0, 0.05);
+					0 1px 2px 0 rgba(0, 	0, 0, 0.05);
 			}
 
 			@media (prefers-color-scheme: dark) {
@@ -498,8 +500,8 @@
 			}
 
 			#whitelist-desc {
-				font-size: 0.8rem;
-				margin: 0.2em 0em;
+				font-size: 0.7rem;
+				margin: 0em;
 			}
 		</style>
 	</head>
@@ -529,7 +531,7 @@
 			</div>
 		</div>
 		<div class="container" id="container">
-			<div class="mb-4">
+			<div class="mb-3 ml-2">
 				<h2 id="settings">Settings</h2>
 				<!-- refresh to see changes -->
 				<div class="hidden mt--4 refresh" id="refresh-message">
@@ -537,12 +539,17 @@
 				</div>
 			</div>
 
-			<div class="card">
+			<div class="card mb-3">
 				<div class="row space-between">
-					<label for="whitelist" id="whitelist-label"><span id="website-name">bing.com</span>
-					 <p id="whitelist-desc"> Detection is <span id="whitelist-status" class="blue-text"> on </span> for this website </p>
-					</label>
-					<label class="switch small">
+					<div>
+						<label for="whitelist" id="whitelist-label"><span id="website-name">bing.com</span>
+						</label>
+						<p id="whitelist-desc"> Detection is 
+							<span id="whitelist-status-on" class="blue-text"> On </span> 
+							<span id="whitelist-status-off" class="red-text hidden" > Off </span> 
+							for this website </p>
+					</div>
+					 <label class="switch small">
 						<input name="whitelist" id="whitelist" type="checkbox" />
 						<span class="slider small"></span>
 					</label>
@@ -550,7 +557,7 @@
 			</div>
 			<div class="card">
 				<!-- blurryStart mode setting toggle switch -->
-				<div class="mb-4">
+				<div class="mb-2">
 					<div class="row space-between">
 						<label for="blurryStart-mode"> 
 							<span id="blurryStart"> Blur media on load: </span>
@@ -578,10 +585,10 @@
 						</label>
 					</div>
 				</div>
+
 				<!-- blur amount setting slider -->
-				
-				<div class="mt-4">
-						<div class="mb-2">
+				<div>
+						<div class="">
 							<label for="blur-amount" id="blurAmount">Blur amount:
 								<span id="blur-amount-value">20</span>
 							</label>

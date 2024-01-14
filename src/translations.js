@@ -30,7 +30,13 @@ const getTranslations = (settings) => {
 			".feedback": `
 			<span> We love to hear your feedback through our </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
-		`,
+			`,
+			"#whitelist-desc": `
+				<p id="whitelist-desc"> Detection is 
+				<span id="whitelist-status-on" class="blue-text"> On </span> 
+				<span id="whitelist-status-off" class="red-text hidden" > Off </span> 
+				for this website </p>
+			`
 		},
 		ar: {
 			// Arabic translations
@@ -61,7 +67,13 @@ const getTranslations = (settings) => {
 			".feedback": `
 			<span> نحب أن نسمع رأيك عبر </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">الاستمارة</a> أو 
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
-		`,
+			`,
+			"#whitelist-desc": `
+				<p id="whitelist-desc"> الفحص 
+				<span id="whitelist-status-on" class="blue-text"> مفعل </span> 
+				<span id="whitelist-status-off" class="red-text hidden" > معطل </span> 
+				لهذا الموقع </p>
+			`
 		},
 		// turkish
 		tr: {
@@ -92,7 +104,13 @@ const getTranslations = (settings) => {
 			".feedback": `
 			<span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
-		`,
+			`,
+			"#whitelist-desc": `
+				<p id="whitelist-desc"> Bu web sitesi için algılama
+				<span id="whitelist-status-on" class="blue-text"> Açık </span> 
+				<span id="whitelist-status-off" class="red-text hidden" > Kapalı </span> 
+				</p>
+			`
 		},
 	};
 };

@@ -148,18 +148,18 @@ function addListeners() {
 function displayWhiteList(skipSet = false) {
 	const whiteList = document.getElementById("whitelist");
 	const websiteName = document.getElementById("website-name")
-	const whiteListStatus = document.getElementById("whitelist-status")
+	const whiteListStatusOn = document.getElementById("whitelist-status-on")
+	const whiteListStatusOff = document.getElementById("whitelist-status-off")
 	if (!skipSet) {
 		websiteName.innerHTML = currentWebsite;
 		whiteList.checked = !settings.whitelist.includes(currentWebsite);
 	}
-	whiteListStatus.innerHTML = whiteList.checked ? "On": "Off";
 	if (whiteList.checked) {
-		whiteListStatus.classList.remove("red-text");
-		whiteListStatus.classList.add("blue-text");
+		whiteListStatusOn.classList.remove("hidden");
+		whiteListStatusOff.classList.add("hidden");
 	} else {
-		whiteListStatus.classList.remove("blue-text");
-		whiteListStatus.classList.add("red-text");
+		whiteListStatusOn.classList.add("hidden");
+		whiteListStatusOff.classList.remove("hidden");
 	}
 }
 
