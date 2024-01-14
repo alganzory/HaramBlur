@@ -11,28 +11,43 @@ const refreshableSettings = [
 	"unblurVideos",
 	"blurryStartMode",
 	"strictness",
+	"whitelist",
 ];
 
 const allSettings = ["blurAmount", "gray", ...refreshableSettings];
 
-var refreshMessage, container;
+var currentWebsite, refreshMessage, container;
+
+const initCalls = () => {
+	const browserLang = navigator.language?.split("-")[0] ?? "en";
+	changeLanguage(settings.language ?? browserLang, settings);
+	displaySettings(settings);
+	addListeners();
+}
 
 function initPopup() {
-	// console.log("HB==initPopup");
-	loadLocalSettings().then(function () {
+	loadLocalSettings().then(() => getCurrentWebsite()).then(
+		() => {
 		if (document.readyState === "complete" || "interactive") {
-			const browserLang = navigator.language?.split("-")[0] ?? "en";
-			changeLanguage(settings.language ?? browserLang, settings);
-			displaySettings(settings);
-			addListeners();
+			initCalls();
 		} else {
-			document.addEventListener("DOMContentLoaded", function () {
-				const browserLang = navigator.language?.split("-")[0] ?? "en";
-				displaySettings(settings);
-				addListeners();
-				changeLanguage(settings.language ?? browserLang, settings);
-			});
+			document.addEventListener("DOMContentLoaded", initCalls);
 		}
+	});
+}
+
+function getCurrentWebsite() {
+	return new Promise(function (resolve) {
+		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+			chrome.tabs.sendMessage(
+				tabs[0].id,
+				{ type: "getCurrentWebsite" },
+				function (response) {
+					currentWebsite = response.currentWebsite?.split("www.")?.[1] ?? response.currentWebsite;
+					resolve(response.currentWebsite);
+				}
+			);
+		});
 	});
 }
 
@@ -80,6 +95,7 @@ function displaySettings(settings) {
 	document.querySelector("input[name=unblurVideos]").checked =
 		settings.unblurVideos;
 	document.getElementById("language").value = settings.language;
+	displayWhiteList();
 	toggleAllInputs();
 }
 
@@ -118,19 +134,42 @@ function addListeners() {
 	document
 		.querySelector("input[name=unblurVideos]")
 		.addEventListener("change", updateCheckbox("unblurVideos"));
-	document.getElementById("language").addEventListener("change", function () {
+	document.getElementById("language")
+		.addEventListener("change", function () {
 		changeLanguage(this.value, settings);
-	});
+		});
+	document.getElementById("whitelist")
+			.addEventListener("change", updateWhitelist);
 
 	refreshMessage = document.querySelector("#refresh-message");
 	container = document.querySelector("#container");
 }
+
+function displayWhiteList(skipSet = false) {
+	const whiteList = document.getElementById("whitelist");
+	const websiteName = document.getElementById("website-name")
+	const whiteListStatus = document.getElementById("whitelist-status")
+	if (!skipSet) {
+		websiteName.innerHTML = currentWebsite;
+		whiteList.checked = !settings.whitelist.includes(currentWebsite);
+	}
+	whiteListStatus.innerHTML = whiteList.checked ? "On": "Off";
+	if (whiteList.checked) {
+		whiteListStatus.classList.remove("red-text");
+		whiteListStatus.classList.add("blue-text");
+	} else {
+		whiteListStatus.classList.remove("blue-text");
+		whiteListStatus.classList.add("red-text");
+	}
+}
+
 
 function updateStatus() {
 	settings.status = document.querySelector("input[name=status]").checked;
 	chrome.storage.sync.set({ "hb-settings": settings });
 	toggleAllInputs();
 	sendUpdatedSettings("status");
+	showRefreshMessage("status");
 }
 
 function updateBlurAmount() {
@@ -141,6 +180,7 @@ function updateBlurAmount() {
 		settings.blurAmount + "%";
 	chrome.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("blurAmount");
+	showRefreshMessage("blurAmount");
 }
 
 function updateStrictness() {
@@ -153,6 +193,7 @@ function updateStrictness() {
 
 	chrome.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("strictness");
+	showRefreshMessage("strictness");
 }
 
 function updateCheckbox(key) {
@@ -162,10 +203,9 @@ function updateCheckbox(key) {
 		).checked;
 		chrome.storage.sync.set({ "hb-settings": settings });
 		sendUpdatedSettings(key);
+		showRefreshMessage(key);
 	};
 }
-
-
 
 function changeLanguage(lang, settings) {	
 	document.body.lang = lang;
@@ -188,6 +228,18 @@ function changeLanguage(lang, settings) {
 	chrome.storage.sync.set({ "hb-settings": settings });
 }
 
+function updateWhitelist (e) {
+	if (e.target.checked){
+		settings.whitelist = settings.whitelist.filter(item => item !== currentWebsite);
+	} else {
+		settings.whitelist.push(currentWebsite);
+	}
+	chrome.storage.sync.set({ "hb-settings": settings });
+	sendUpdatedSettings("whitelist");
+	showRefreshMessage("whitelist");
+	displayWhiteList(true);
+}
+
 
 /* sendUpdatedSettings - Send updated settings object to tab.js to modify active tab blur CSS */
 function sendUpdatedSettings(key) {
@@ -203,9 +255,11 @@ function sendUpdatedSettings(key) {
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		var activeTab = tabs[0];
 		chrome.tabs.sendMessage(activeTab.id, message);
-
-		if (refreshableSettings.includes(key)) {
-			refreshMessage.classList.remove("hidden");
-		}
 	});
+}
+
+function showRefreshMessage(key) {
+	if (refreshableSettings.includes(key)) {
+		refreshMessage.classList.remove("hidden");
+	}
 }

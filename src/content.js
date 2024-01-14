@@ -9,6 +9,13 @@ const attachAllListeners = () => {
 	// Listen for more settings
 	attachStyleListener();
 	attachObserversListener();
+
+	// listen for getCurrentWebsite from popup.js
+	chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+		if (request.type === "getCurrentWebsite") {
+			sendResponse({ currentWebsite: window.location.hostname });
+		}
+	});
 };
 
 if (window.self === window.top) {

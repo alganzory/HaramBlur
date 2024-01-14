@@ -9,7 +9,7 @@
 				background-color: #f7fafc;
 				color: #374151;
 				font-family: sans-serif;
-				font-size: 15px;
+				font-size: 14px;
 				line-height: 1.5;
 				font-family: Poppins, sans-serif;
 				margin: 0;
@@ -27,8 +27,8 @@
 				}
 			}
 			.container {
-				min-width: 350px;
-				padding:0rem 2rem 0.5rem 2rem;
+				min-width: 370px;
+				padding:0rem 1rem 0.5rem 1rem;
 			}
 
 			.header {
@@ -43,10 +43,17 @@
 				left: 0;
 				right: 0;
 				border-radius: 0px 0px 25px 25px;
+				z-index: 2;
+			}
+			
+			@media (prefers-color-scheme: dark) {
+				.header {
+					box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+				}
 			}
 
 			.header h1 {
-				font-size: 1.35rem;
+				font-size: 1.30rem;
 				font-weight: bold;
 				margin: 0;
 				text-align: center;
@@ -300,17 +307,21 @@
 			}
 
 			.footer {
-				background-color: #edf2f7;
+				background-color: #f7fafc;
 				position: sticky;
 				bottom: 0;
 				left: 0;
 				width: 100%;
 				padding: 0.5rem 0 0.5rem 0;
-				border-radius: 30px 30px 0px 0px
+				border-radius: 25px 25px 0px 0px;
+				/* box shadown on the top */
+				box-shadow: 0 0 15px 5px rgba(0, 0, 0, 0.05),
+					0 1px 2px 0 rgba(0, 0, 0, 0.05);
 			}
 			@media (prefers-color-scheme: dark) {
 				.footer {
-				background-color: #212121;
+					background-color: #212121;
+					box-shadow: 0px -2px 4px -1px rgba(0, 0, 0, 0.2), 0px -4px 5px 0px rgba(0, 0, 0, 0.14), 0px -1px 10px 0px rgba(0, 0, 0, 0.12);
 				}
 			}
 
@@ -318,7 +329,7 @@
 				border-radius: 0.25rem;
 			}
 			.bmc-btn {
-				font-size: 1rem !important;
+				font-size: 0.9rem !important;
 				height: unset !important;
 				padding: 5px 10px !important;
 				min-width: unset !important;
@@ -435,6 +446,13 @@
 				margin-left: 1rem;
 			}
 
+			.blue-text {
+				color: #4299e1;
+			}
+			.red-text {
+				color: #f56565;
+			}
+
 			/* grayscale checkbox: we want the label to be above the checkbox not below it */
 			#grayscale-label {
 				display: flex;
@@ -456,7 +474,33 @@
 				border: none;
 				border-radius: 25px;
 			}
+
+			.card {
+				background-color: #fff;
+				border-radius: 25px;
+				padding: 1rem;
+				margin-bottom: 1rem;
+				box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05),
+					0 1px 2px 0 rgba(0, 0, 0, 0.05);
+			}
+
+			@media (prefers-color-scheme: dark) {
+				.card {
+					background-color: #212121;
+					color: #fff;
+					box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+				}
+			}
 			
+			#website-name {
+				font-weight: bold;
+				font-size: 1rem;
+			}
+
+			#whitelist-desc {
+				font-size: 0.8rem;
+				margin: 0.2em 0em;
+			}
 		</style>
 	</head>
 	<body>
@@ -493,164 +537,177 @@
 				</div>
 			</div>
 
-			<!-- blurryStart mode setting toggle switch -->
-			<div class="mb-4">
+			<div class="card">
 				<div class="row space-between">
-					<label for="blurryStart-mode"> 
-						<span id="blurryStart"> Blur media on load: </span>
-						<!-- i icon tooltip -->
-						<span class="tooltip">
-							<svg
-								xmlns="http://www.w3.org/2000/svg"
-								height="1em"
-								viewBox="0 0 512 512"
-							>
-								<path
-									fill="#2196f3"
-									d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"
-								/>
-							</svg>
-							<span class="tooltiptext">
-								When enabled, all images and videos will be
-								blurred by default until detection starts.
-							</span>
-						</span>
+					<label for="whitelist" id="whitelist-label"><span id="website-name">bing.com</span>
+					 <p id="whitelist-desc"> Detection is <span id="whitelist-status" class="blue-text"> on </span> for this website </p>
 					</label>
 					<label class="switch small">
-						<input name="blurryStartMode" type="checkbox" />
+						<input name="whitelist" id="whitelist" type="checkbox" />
 						<span class="slider small"></span>
 					</label>
 				</div>
 			</div>
-			<!-- blur amount setting slider -->
-			
-			<div class="mt-4">
-					<div class="mb-2">
-						<label for="blur-amount" id="blurAmount">Blur amount:
-							<span id="blur-amount-value">20</span>
+			<div class="card">
+				<!-- blurryStart mode setting toggle switch -->
+				<div class="mb-4">
+					<div class="row space-between">
+						<label for="blurryStart-mode"> 
+							<span id="blurryStart"> Blur media on load: </span>
+							<!-- i icon tooltip -->
+							<span class="tooltip">
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									height="1em"
+									viewBox="0 0 512 512"
+								>
+									<path
+										fill="#2196f3"
+										d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"
+									/>
+								</svg>
+								<span class="tooltiptext">
+									When enabled, all images and videos will be
+									blurred by default until detection starts.
+								</span>
+							</span>
 						</label>
-					<div class="row space-between" style="gap: 1rem;">
-						<input
-						type="range"
-						id="blur-amount"
-						name="blurAmount"
-						min="10"
-						max="30"
-						value="20"
-						class="form-range"
-						width="50px"
-						/>
-						<!-- checkbox for "grayscale?" -->
-				<div class="mb-2 ml-4">
-					<label class="form-checkbox-label" id="grayscale-label">
-						<span id="grayscale" >Grayscale:</span>
-						<input
-						type="checkbox"
-						class="form-checkbox"
-						name="gray"
-						id="grayscale-checkbox"
-						/>
-					</label>
+						<label class="switch small">
+							<input name="blurryStartMode" type="checkbox" />
+							<span class="slider small"></span>
+						</label>
+					</div>
 				</div>
-			</div>
-				</div>
+				<!-- blur amount setting slider -->
 				
-			</div>
-			<!-- strictness slider -->
-			<div class="mb-2">
-				<label for="blur-amount" id="strictness"
-					>Strictness:
-					<span id="strictness-value">30%</span>
-				</label>
-				<input
-					type="range"
-					id="strictness"
-					name="strictness"
-					min="0.1"
-					max="1"
-					value="0.5"
-					step="0.1"
-					class="form-range"
-				/>
-			</div>
-
-			<div class="mb-2">
-				<label>
-					<span id="mediaToBlur"> Media to Blur </span>
-					<span class="refresh"> (requires page refresh): </span>
-				</label>
-				<div class="options-grid">
-					<label class="form-checkbox-label">
-						<input
+				<div class="mt-4">
+						<div class="mb-2">
+							<label for="blur-amount" id="blurAmount">Blur amount:
+								<span id="blur-amount-value">20</span>
+							</label>
+						<div class="row space-between" style="gap: 1rem;">
+							<input
+							type="range"
+							id="blur-amount"
+							name="blurAmount"
+							min="10"
+							max="30"
+							value="20"
+							class="form-range"
+							width="50px"
+							/>
+							<!-- checkbox for "grayscale?" -->
+					<div class="mb-2 ml-4">
+						<label class="form-checkbox-label" id="grayscale-label">
+							<span id="grayscale" >Grayscale:</span>
+							<input
 							type="checkbox"
 							class="form-checkbox"
-							name="blurImages"
-							value="images"
-						/>
-						<span id="blurImages">Images</span>
-					</label>
-					<label class="form-checkbox-label">
-						<input
-							type="checkbox"
-							class="form-checkbox"
-							name="blurVideos"
-							value="videos"
-						/>
-						<span id="blurVideos">Videos</span>
-					</label>
+							name="gray"
+							id="grayscale-checkbox"
+							/>
+						</label>
+					</div>
 				</div>
-			</div>
-			<div class="mb-2">
-				<label> 
-					<span id="facesToBlur">Faces to Blur </span>
-					<span class="refresh"> (requires page refresh): </span>
-				</label>
-				<div class="options-grid">
-					<label class="form-checkbox-label">
-						<input
-							type="checkbox"
-							class="form-checkbox"
-							name="blurMale"
-							value="male"
-						/>
-						<span id="blurMale">Male</span>
-					</label>
-					<label class="form-checkbox-label">
-						<input
-							type="checkbox"
-							class="form-checkbox"
-							name="blurFemale"
-							value="female"
-						/>
-						<span id="blurFemale">Female</span>
-					</label>
+					</div>
+					
 				</div>
-			</div>
+				<!-- strictness slider -->
+				<div class="mb-2">
+					<label for="blur-amount" id="strictness"
+						>Strictness:
+						<span id="strictness-value">30%</span>
+					</label>
+					<input
+						type="range"
+						id="strictness"
+						name="strictness"
+						min="0.1"
+						max="1"
+						value="0.5"
+						step="0.1"
+						class="form-range"
+					/>
+				</div>
 
-			<div class="mb-4">
-				<label> 
-					<span id="unblurOnHover">Unblur on hover </span>
-					<span class="refresh"> (requires page refresh): </span>
-				</label>
-				<div class="options-grid">
-					<label class="form-checkbox-label">
-						<input
-							type="checkbox"
-							class="form-checkbox"
-							name="unblurImages"
-							value="images"
-						/>
-						<span id="unblurImages">Images</span>
+				<div class="mb-2">
+					<label>
+						<span id="mediaToBlur"> Media to Blur </span>
+						<span class="refresh"> (requires page refresh): </span>
 					</label>
-					<label class="form-checkbox-label">
-						<input
-							type="checkbox"
-							class="form-checkbox"
-							name="unblurVideos"
-							value="videos"
-						/>
-						<span id="unblurVideos">Videos</span>
+					<div class="options-grid">
+						<label class="form-checkbox-label">
+							<input
+								type="checkbox"
+								class="form-checkbox"
+								name="blurImages"
+								value="images"
+							/>
+							<span id="blurImages">Images</span>
+						</label>
+						<label class="form-checkbox-label">
+							<input
+								type="checkbox"
+								class="form-checkbox"
+								name="blurVideos"
+								value="videos"
+							/>
+							<span id="blurVideos">Videos</span>
+						</label>
+					</div>
+				</div>
+				<div class="mb-2">
+					<label> 
+						<span id="facesToBlur">Faces to Blur </span>
+						<span class="refresh"> (requires page refresh): </span>
 					</label>
+					<div class="options-grid">
+						<label class="form-checkbox-label">
+							<input
+								type="checkbox"
+								class="form-checkbox"
+								name="blurMale"
+								value="male"
+							/>
+							<span id="blurMale">Male</span>
+						</label>
+						<label class="form-checkbox-label">
+							<input
+								type="checkbox"
+								class="form-checkbox"
+								name="blurFemale"
+								value="female"
+							/>
+							<span id="blurFemale">Female</span>
+						</label>
+					</div>
+				</div>
+
+				<div class="mb-4">
+					<label> 
+						<span id="unblurOnHover">Unblur on hover </span>
+						<span class="refresh"> (requires page refresh): </span>
+					</label>
+					<div class="options-grid">
+						<label class="form-checkbox-label">
+							<input
+								type="checkbox"
+								class="form-checkbox"
+								name="unblurImages"
+								value="images"
+							/>
+							<span id="unblurImages">Images</span>
+						</label>
+						<label class="form-checkbox-label">
+							<input
+								type="checkbox"
+								class="form-checkbox"
+								name="unblurVideos"
+								value="videos"
+							/>
+							<span id="unblurVideos">Videos</span>
+						</label>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -741,8 +798,9 @@
 				<a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank" data-trans="form-label">Form</a> or 
 				<a href="mailto:md.alganzory@gmail.com" target="_blank" data-trans="email-label">Email</a> ❤️
 			</div>
+		</div>
 
-			<script src="translations.js"></script>
-			<script src="popup.js"></script>
+		<script src="translations.js"></script>
+		<script src="popup.js"></script>
 	</body>
 </html>
