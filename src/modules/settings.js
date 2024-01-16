@@ -83,6 +83,11 @@ class Settings {
 		if (!this.shouldDetect()) return false;
 		return this._settings.gray;
 	}
+
+	getWhitelist() {
+		return this._settings.whitelist;
+	}
+
 	getSettings() {
 		return this._settings;
 	}
@@ -92,7 +97,9 @@ class Settings {
 	}
 
 	toggleOnOffStatus() {
-		emitEvent("toggleOnOffStatus", this);
+		if (!this._settings.whitelist?.includes(window.location.hostname?.split("www.")?.[1] ?? window.location.hostname)) {
+			emitEvent("toggleOnOffStatus", this);
+		}
 	}
 
 	listenForChanges() {
