@@ -25,7 +25,8 @@ HaramBlur currently used face detection and recognition features provided by [Hu
 
 ## Option 1: Using the Plugin from the extensions store
 
-1. Visit the [Haramblur extension on the Chrome Web Store](https://chrome.google.com/webstore/detail/haramblur/pbcoegikffnadpahojjhgdladmmddeji).
+1. Visit the [Haramblur extension on the Chrome Web Store](https://chrome.google.com/webstore/detail/haramblur/pbcoegikffnadpahojjhgdladmmddeji) or the [Firefox Add-ons Store](https://addons.mozilla.org/addon/haramblur/)
+
 2. Follow the installation instructions on the page.
 
 ## Option 2: Compiling it On Your Own
@@ -36,8 +37,15 @@ If you want to compile the extension on your own, follow these steps:
 
 Clone the HaramBlur repository to your local machine:
 
+#### Chromium
 ```bash
 git clone https://github.com/alganzory/HaramBlur.git
+```
+
+### Firefox
+
+```bash
+git clone -b firefox-main --single-branch https://github.com/alganzory/HaramBlur.git
 ```
 
 ### Step 2: Install Dependencies
@@ -58,10 +66,6 @@ Make the necessary modifications or enhancements to the code.
   ```bash
   npm run build
   ```
-- Load the extension in Chrome:
-  - Go to `chrome://extensions/`.
-  - Enable "Developer mode".
-  - Click "Load unpacked" and select the project folder.
 
 ### Step 5: Generate a Release (Optional)
 
@@ -70,6 +74,18 @@ Generate a release zip file to be uploaded to the browser/store:
 ```bash
 npm run release
 ```
+
+### Load the extension in Chromium browsers
+  - Go to `chrome://extensions/`.
+  - Enable "Developer mode".
+  - Click "Load unpacked" and select the project folder.
+
+### Load the extension in Firefox
+- Go to `about:addons`
+- Press the gear icon.
+- Click "Install Add-on from file"
+- Select the zip file that you generated in Step 5.
+
 
 ## Improvements
 
