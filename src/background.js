@@ -64,6 +64,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			checked: request.status,
 		});
 		return true;
+	} else if (request.type === "restartExtension") {
+		chrome.runtime.reload();
 	}
 });
 
