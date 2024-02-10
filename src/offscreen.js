@@ -18,18 +18,10 @@ const loadModels = async () => {
 	try {
 		await initHuman();
 		await initNsfwModel();
-		console.log ("HB== models loaded", human.events);
-		human.events?.addEventListener("result", (e) => {
-			console.log("HB== human error caught", e);
-			// send message to background_script to reload the extension
-			chrome.runtime.sendMessage({ type: "reloadExtension" });
+		human.events?.addEventListener("error", (e) => {
+			// TODO: find a way to handle detection errors other than reloading the extension
+			chrome.runtime.sendMessage({ type: "reloadExtension" });			
 		});
-		human.events?.addEventListener("image", (e) => {
-			console.log("HB== human image caught", e);
-			// send message to background_script to reload the extension
-			chrome.runtime.sendMessage({ type: "reloadExtension" });
-		});
-
 	} catch (e) {
 		console.log("Error loading models", e);
 	}

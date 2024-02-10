@@ -64,7 +64,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			checked: request.status,
 		});
 		return true;
-	} else if (request.type === "restartExtension") {
+	}
+	else if (request.type === "reloadExtension") {
 		chrome.runtime.reload();
 	}
 });
@@ -103,9 +104,13 @@ chrome.runtime.onInstalled.addListener(function (details) {
 			url: "https://onboard.haramblur.com/",
 		});
 	} else if (details?.reason === "update") {
-		chrome.tabs.create({
-			url: "https://update.haramblur.com/",
-		});
+		const currentVersion = chrome.runtime.getManifest().version;
+		const previousVersion = details.previousVersion;
+		if (currentVersion != previousVersion) {
+			chrome.tabs.create({
+				url: "https://update.haramblur.com/",
+			});
+		}
 	}
 });
 
