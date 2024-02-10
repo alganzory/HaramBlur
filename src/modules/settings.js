@@ -113,8 +113,8 @@ class Settings {
 		);
 	}
 	// this acts as an async constructor
-	static async init() {
-		const loadedSettings = await new Promise((resolve) => {
+	static async init(_loadedSettings = null) {
+		const loadedSettings = _loadedSettings ?? await new Promise((resolve) => {
 			chrome.runtime.sendMessage({ type: "getSettings" }, (settings) => {
 				resolve(settings);
 			});

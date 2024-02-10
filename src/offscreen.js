@@ -102,7 +102,12 @@ const runDetection = async (img, isVideo = false) => {
 };
 
 const init = async () => {
-	settings = await Settings.init();
+	let _settings = await new Promise((resolve) => {
+		chrome.runtime.sendMessage({ type: "getSettings" }, (settings) => {
+			resolve(settings);
+		});
+	});
+	settings = await Settings.init(_settings["hb-settings"]);
 	console.log("Settings loaded", settings);
 	await loadModels();
 	console.log("Models loaded", human, nsfwModel);
