@@ -56,12 +56,7 @@ class Settings {
 	
 	shouldDetect() {
 		if (!this._settings.status) return false;
-		if (!this.shouldDetectImages() && !this.shouldDetectVideos())
-			return false;
-
-		// at least 1 gender should be selected for detection to start,
-		// this could change in the future (if we wanna allow nsfw only detection)
-		return this.shouldDetectGender();
+		return (this.shouldDetectImages() || this.shouldDetectVideos());
 	}
 
 	isBlurryStartMode() {
