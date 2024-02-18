@@ -143,6 +143,10 @@ const initNsfwModel = async () => {
 		await nsfwModel.save("indexeddb://nsfw-model");
 	}
 	// console.log("HB==NSFW MODEL", nsfwModel);
+	const tensor = human.tf.zeros([1, 224, 224, 3]);
+	await nsfwModel.predict(tensor);
+	human.tf.dispose(tensor);
+	console.log("HB==NSFW model warmed up");
 };
 
 const nsfwModelSkip = async (input, config) => {
