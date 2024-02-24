@@ -319,6 +319,11 @@ const containsGenderFace = (detections, detectMale, detectFemale) => {
 	}
 
 	const faces = detections.face;
+	if (detectMale && detectFemale)
+		return faces.some(
+			(face) =>
+				face.age > 20 
+		);
 	if (detectMale || detectFemale)
 		return faces.some(
 			(face) =>
@@ -330,7 +335,7 @@ const containsGenderFace = (detections, detectMale, detectFemale) => {
 					detectFemale
 				)
 		);
-	else return true; // If no gender specified, return true cause there's a face
+	else return false;
 };
 // export the human variable and the HUMAN_CONFIG object
 export {
