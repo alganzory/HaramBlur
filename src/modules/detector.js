@@ -67,22 +67,22 @@ const getNsfwClasses = (factor = 0) => {
 		1: {
 			className: "Hentai",
 			nsfw: true,
-			thresh: 0.5 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.5 + (1 - factor) * 0.5, // decrease the factor to make it less strict
 		},
 		2: {
 			className: "Neutral",
 			nsfw: false,
-			thresh: 0.5 + factor * 0.5, // the higher the factor, the higher the thresh, the less "strict" the filter
+			thresh: 0.5 + factor * 0.5, // increase the factor to make it less strict
 		},
 		3: {
 			className: "Porn",
 			nsfw: true,
-			thresh: 0.1 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.1 + (1 - factor) * 0.4, // decrease the factor to make it less strict
 		},
 		4: {
 			className: "Sexy",
 			nsfw: true,
-			thresh: 0.1 + (1 - factor) * 0.7, // the higher the factor, the lower the thresh, the more "strict" the filter
+			thresh: 0.1 + (1 - factor) * 0.4, // decrease the factor to make it less strict
 		},
 	};
 };
@@ -143,6 +143,10 @@ const initNsfwModel = async () => {
 		await nsfwModel.save("indexeddb://nsfw-model");
 	}
 	// console.log("HB==NSFW MODEL", nsfwModel);
+	const tensor = human.tf.zeros([1, 224, 224, 3]);
+	await nsfwModel.predict(tensor);
+	human.tf.dispose(tensor);
+	console.log("HB==NSFW model warmed up");
 };
 
 const nsfwModelSkip = async (input, config) => {

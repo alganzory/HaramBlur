@@ -3,7 +3,7 @@
 
 import { emitEvent, listenToEvent } from "./helpers.js";
 
-const BLURRY_START_MODE_TIMEOUT = 5000; // TODO: make this a setting maybe?
+const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
 let hbStyleSheet,
 	blurryStartStyleSheet,
 	_settings;
