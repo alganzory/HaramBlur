@@ -31,7 +31,9 @@ chrome.runtime.onInstalled.addListener(function () {
 	});
 });
 
-chrome?.offscreen
+
+const createOffscreenDoc = () => {
+	chrome?.offscreen
 	.createDocument({
 		url: chrome.runtime.getURL("src/offscreen.html"),
 		reasons: ["DOM_PARSER"],
@@ -41,6 +43,9 @@ chrome?.offscreen
 		console.log("offscreen document created");
 	})
 	.finally(() => {});
+}
+
+createOffscreenDoc();
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 	if (request.type === "getSettings") {
@@ -66,7 +71,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		return true;
 	}
 	else if (request.type === "reloadExtension") {
-		chrome.runtime.reload();
+		// kill the offscreen document
+		chrome?.offscreen?.closeDocument();
+		// recreate the offscreen document
+		createOffscreenDoc();
 	}
 });
 
