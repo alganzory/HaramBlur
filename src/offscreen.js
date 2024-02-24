@@ -18,6 +18,10 @@ const loadModels = async () => {
 	try {
 		await initHuman();
 		await initNsfwModel();
+		human.events?.addEventListener("error", (e) => {
+			// TODO: find a way to handle detection errors other than reloading the extension
+			chrome.runtime.sendMessage({ type: "reloadExtension" });			
+		});
 	} catch (e) {
 		console.log("Error loading models", e);
 	}
@@ -98,7 +102,12 @@ const runDetection = async (img, isVideo = false) => {
 };
 
 const init = async () => {
-	settings = await Settings.init();
+	let _settings = await new Promise((resolve) => {
+		chrome.runtime.sendMessage({ type: "getSettings" }, (settings) => {
+			resolve(settings);
+		});
+	});
+	settings = await Settings.init(_settings["hb-settings"]);
 	console.log("Settings loaded", settings);
 	await loadModels();
 	console.log("Models loaded", human, nsfwModel);
