@@ -38,13 +38,14 @@ function initPopup() {
 
 function getCurrentWebsite() {
 	return new Promise(function (resolve) {
-		chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+		chrome.tabs?.query({ active: true, currentWindow: true }, function (tabs) {
 			chrome.tabs.sendMessage(
 				tabs[0].id,
 				{ type: "getCurrentWebsite" },
 				function (response) {
-					currentWebsite = response.currentWebsite?.split("www.")?.[1] ?? response.currentWebsite;
-					resolve(response.currentWebsite);
+					console.log("🚀 ~ response:", response)
+					currentWebsite = response?.currentWebsite?.split("www.")?.[1] ?? response?.currentWebsite ?? null;
+					resolve()
 				}
 			);
 		});
@@ -146,10 +147,17 @@ function addListeners() {
 }
 
 function displayWhiteList(skipSet = false) {
+	const whiteListContainer = document.getElementById("whitelist-container");
 	const whiteList = document.getElementById("whitelist");
 	const websiteName = document.getElementById("website-name")
 	const whiteListStatusOn = document.getElementById("whitelist-status-on")
 	const whiteListStatusOff = document.getElementById("whitelist-status-off")
+	if (!currentWebsite) {
+		whiteListContainer.classList.add("hidden");
+		return;
+	} else {
+		whiteListContainer.classList.remove("hidden");
+	}
 	if (!skipSet) {
 		websiteName.innerHTML = currentWebsite;
 		whiteList.checked = !settings.whitelist.includes(currentWebsite);
