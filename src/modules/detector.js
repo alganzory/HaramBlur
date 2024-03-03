@@ -324,16 +324,19 @@ const containsNsfw = (nsfwDetections, strictness) => {
 };
 
 const genderPredicate = (gender, score, detectMale, detectFemale) => {
-	if (detectMale && detectFemale) return gender !== "unknown";
+	
+	const mPredicate = (gender === "male" && score > 0.3) ||
+	(gender === "female" && score < 0.2)
+
+	const fePredicate = (gender === "female" && score > 0.25)
+
+	if (detectMale && detectFemale) return mPredicate || fePredicate;
 
 	if (detectMale && !detectFemale) {
-		return (
-			(gender === "male" && score > 0.3) ||
-			(gender === "female" && score < 0.2)
-		);
+		return mPredicate
 	}
 	if (!detectMale && detectFemale) {
-		return gender === "female" && score > 0.25;
+		return fePredicate
 	}
 
 	return false;
@@ -345,7 +348,6 @@ const containsGenderFace = (detections, detectMale, detectFemale) => {
 	}
 
 	const faces = detections.face;
-	if (detectMale && detectFemale) return faces.some((face) => face.age > 20);
 	if (detectMale || detectFemale)
 		return faces.some(
 			(face) =>
