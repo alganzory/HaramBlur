@@ -176,6 +176,22 @@ const getCanvas = (width, height, offscreen = true) => {
 	return c;
 };
 
+const canvToBlob = (canv, options) => {
+//if it's an offscreen canvas
+if (canv.convertToBlob) {
+	return canv.convertToBlob(options);
+}
+return new Promise((resolve, reject) => {
+	canv.toBlob(
+		(blob) => {
+			resolve(blob);
+		},
+		options?.type || "image/jpeg",
+		options?.quality || 0.8
+	);
+});
+};
+
 const disableVideo = (video) => {
 	video.dataset.HBstatus = STATUSES.DISABLED;
 	video.classList.remove("hb-blur");
@@ -239,4 +255,5 @@ export {
 	updateBGvideoStatus,
 	requestIdleCB,
 	cancelIdleCB,
+	canvToBlob,
 };

@@ -4,6 +4,7 @@ import {
 	getCanvas,
 	emitEvent,
 	requestIdleCB,
+	canvToBlob,
 } from "./helpers";
 import { removeBlurryStart } from "./style";
 import { STATUSES } from "../constants.js";
@@ -31,7 +32,6 @@ const RESULTS = {
 
 let activeFrame = false;
 let canv, ctx;
-
 
 const processImage = (node, STATUSES) => {
 	try {
@@ -67,31 +67,37 @@ const processImage = (node, STATUSES) => {
 };
 
 const processFrame = async (video, { width, height }) => {
-	return new Promise((resolve, reject) => {
-		if (!canv || canv.width !== width || canv.height !== height) {
-			canv = null; // free up memory (I think?)
-			canv = getCanvas(width, height);
-			ctx = canv.getContext("2d", {willReadFrequently: true});
+	return new Promise(async (resolve, reject) => {
+		const start = performance.now();
+		if (canv.width !== width || canv.height !== height) {
+			canv.width = width;
+			canv.height = height;
 		}
+
 		ctx.drawImage(video, 0, 0, width, height);
 
-		canv.convertToBlob({ type: "image/jpeg", quality: 0.8 }).then((blob) => {
-			let data = URL.createObjectURL(blob);
-			chrome.runtime.sendMessage(
-				{
-					type: "videoDetection",
-					frame: {
-						data: data,
-						timestamp: video.currentTime,
-					},
-				},
-				(response) => {
-					// revoke the object url to free up memory
-					URL.revokeObjectURL(data);
-					resolve(response);
-				}
-			);
+		const blob = await canvToBlob(canv, {
+			type: "image/jpeg",
+			quality: 0.6,
 		});
+		let data = URL.createObjectURL(blob);
+
+		const end = performance.now();
+		console.log(`Time taken: ${end - start}ms`);
+		chrome.runtime.sendMessage(
+			{
+				type: "videoDetection",
+				frame: {
+					data: data,
+					timestamp: video.currentTime,
+				},
+			},
+			(response) => {
+				// revoke the object url to free up memory
+				URL.revokeObjectURL(data);
+				resolve(response);
+			}
+		);
 	});
 };
 
@@ -178,15 +184,27 @@ const processVideo = async (node, STATUSES) => {
 		await loadVideo(node);
 		node.dataset.HBstatus = STATUSES.PROCESSING;
 		const { newWidth, newHeight } = calcResize(
-			node.videoWidth ?? node.width,
-			node.videoHeight ?? node.height,
+			node.videoWidth ?? node.clientWidth,
+			node.videoHeight ?? node.clientHeight,
 			"video"
 		);
+		if (!canv) {
+			canv = getCanvas(newWidth, newHeight, true);
+			ctx = canv.getContext("2d", {
+				alpha: false,
+				willReadFrequently: true,
+			});
+		}
+		// set the width and height of the video
+		node.width = newWidth;
+		node.height = newHeight;
+
 		removeBlurryStart(node);
 
-		requestIdleCB(() => { // requestIdleCallback is used to prevent the video and dom from freezing (I think?)
+		// start the video detection loop but don't block the main thread
+		requestIdleCB(() => {
 			videoDetectionLoop(node, { width: newWidth, height: newHeight });
-		}, {timeout: 1000});
+		});
 	} catch (e) {
 		console.log("HB== processVideo error", e);
 	}
