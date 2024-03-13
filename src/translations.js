@@ -26,7 +26,7 @@ const getTranslations = (settings) => {
 			"#unblurVideos": "Videos",
 			".refresh": " (requires page refresh):",
 			"#refresh-message": "Refresh the page to see the changes.",
-			".bmc-btn-text": "Help keep us going",
+			".bmc-btn-text": "Support the project",
 			".feedback": `
 			<span> We love to hear your feedback through our </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
@@ -63,7 +63,7 @@ const getTranslations = (settings) => {
 			"#unblurVideos": "مقاطع الفيديو",
 			".refresh": " (يتطلب إعادة تحميل الصفحة):",
 			"#refresh-message": "أعد تحميل الصفحة لترى التغييرات.",
-			".bmc-btn-text": "ساعدنا على الاستمرار",
+			".bmc-btn-text": "دعم المشروع",
 			".feedback": `
 			<span> نحب أن نسمع رأيك عبر </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">الاستمارة</a> أو 
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
@@ -100,7 +100,7 @@ const getTranslations = (settings) => {
 			"#unblurVideos": "Videolar",
 			".refresh": " (sayfa yenileme gerektirir):",
 			"#refresh-message": "Değişiklikleri görmek için sayfayı yenile.",
-			".bmc-btn-text": "Devam etmemize yardımcı olun",
+			".bmc-btn-text": "Projeyi destekle",
 			".feedback": `
 			<span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
 			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
