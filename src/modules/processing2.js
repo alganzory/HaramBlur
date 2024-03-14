@@ -68,7 +68,7 @@ const processImage = (node, STATUSES) => {
 
 const processFrame = async (video, { width, height }) => {
 	return new Promise(async (resolve, reject) => {
-		const start = performance.now();
+		// const start = performance.now();
 		if (canv.width !== width || canv.height !== height) {
 			canv.width = width;
 			canv.height = height;
@@ -82,8 +82,8 @@ const processFrame = async (video, { width, height }) => {
 		});
 		let data = URL.createObjectURL(blob);
 
-		const end = performance.now();
-		console.log(`Time taken: ${end - start}ms`);
+		// const end = performance.now();
+		// console.log(`Time taken: ${end - start}ms`);
 		chrome.runtime.sendMessage(
 			{
 				type: "videoDetection",
