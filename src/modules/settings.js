@@ -56,12 +56,7 @@ class Settings {
 	
 	shouldDetect() {
 		if (!this._settings.status) return false;
-		if (!this.shouldDetectImages() && !this.shouldDetectVideos())
-			return false;
-
-		// at least 1 gender should be selected for detection to start,
-		// this could change in the future (if we wanna allow nsfw only detection)
-		return this.shouldDetectGender();
+		return (this.shouldDetectImages() || this.shouldDetectVideos());
 	}
 
 	isBlurryStartMode() {
@@ -83,6 +78,11 @@ class Settings {
 		if (!this.shouldDetect()) return false;
 		return this._settings.gray;
 	}
+
+	getWhitelist() {
+		return this._settings.whitelist;
+	}
+
 	getSettings() {
 		return this._settings;
 	}
@@ -92,7 +92,9 @@ class Settings {
 	}
 
 	toggleOnOffStatus() {
-		emitEvent("toggleOnOffStatus", this);
+		if (!this._settings.whitelist?.includes(window.location.hostname?.split("www.")?.[1] ?? window.location.hostname)) {
+			emitEvent("toggleOnOffStatus", this);
+		}
 	}
 
 	listenForChanges() {

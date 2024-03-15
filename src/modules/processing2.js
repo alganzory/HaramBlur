@@ -4,6 +4,7 @@ import {
 	getCanvas,
 	emitEvent,
 	requestIdleCB,
+	canvToBlob,
 } from "./helpers";
 import { removeBlurryStart } from "./style";
 import { STATUSES } from "../constants.js";
@@ -29,28 +30,12 @@ const RESULTS = {
 	ERROR: "ERROR",
 };
 
-
-let requestCount = 0;
-let detectedCount = 0;
-let detectionStarted = false;
 let activeFrame = false;
 let canv, ctx, resolveFrame, videoPort;
-
-const flagDetectionStart = () => {
-	if (detectionStarted) return;
-	// detection is marked as started when at least 1/8th of the images have been processed (arbitrary number)
-	if (detectedCount >= requestCount / 8 && !detectionStarted) {
-		detectionStarted = true;
-		console.log("HaramBlur: Detection started");
-		emitEvent("detectionStarted");
-	}
-	detectedCount++;
-};
 
 const processImage = (node, STATUSES) => {
 	try {
 		node.dataset.HBstatus = STATUSES.PROCESSING;
-		!detectionStarted && requestCount++;
 		browser.runtime.sendMessage(
 			{
 				type: "imageDetection",
@@ -61,7 +46,6 @@ const processImage = (node, STATUSES) => {
 				},
 			},
 			(response) => {
-				flagDetectionStart();
 				removeBlurryStart(node);
 				if (
 					response === "face" ||
@@ -83,15 +67,13 @@ const processImage = (node, STATUSES) => {
 };
 
 const processFrame = async (video, { width, height }) => {
-	return new Promise((resolve, reject) => {
-		if (!canv || canv.width !== width || canv.height !== height) {
-			canv = getCanvas(width, height);
-			ctx = canv.getContext("2d", {
-				willReadFrequently: true,
-				alpha: false,
-			});
+	return new Promise(async (resolve, reject) => {
+		// const start = performance.now();
+		if (canv.width !== width || canv.height !== height) {
+			canv.width = width;
+			canv.height = height;
 		}
-		// ctx.clearRect(0, 0, width, height);
+
 		ctx.drawImage(video, 0, 0, width, height);
 		// send image data to the background script
 		const imgBitmap = canv.transferToImageBitmap();
@@ -110,6 +92,7 @@ const processFrame = async (video, { width, height }) => {
 			imgBitmap.close();
 			resolve(response);
 		};
+
 	});
 };
 
@@ -117,12 +100,12 @@ const videoDetectionLoop = async (video, { width, height }) => {
 	// get the current timestamp
 	const currTime = performance.now();
 
-	if (!video.dataset.HBprevTime) {
-		video.dataset.HBprevTime = currTime;
+	if (!video.HBprevTime) {
+		video.HBprevTime = currTime;
 	}
 
 	// calculate the time difference
-	const diffTime = currTime - video.dataset.HBprevTime;
+	const diffTime = currTime - video.HBprevTime;
 
 	if (video.dataset.HBstatus === STATUSES.DISABLED) {
 		video.classList.remove("hb-blur");
@@ -131,7 +114,7 @@ const videoDetectionLoop = async (video, { width, height }) => {
 		try {
 			if (diffTime >= FRAME_RATE) {
 				// store the current timestamp
-				video.dataset.HBprevTime = currTime;
+				video.HBprevTime = currTime;
 
 				if (!activeFrame) {
 					activeFrame = true;
@@ -174,17 +157,17 @@ const videoDetectionLoop = async (video, { width, height }) => {
 	if (video.dataset.HBerrored > 10) {
 		// remove onplay listener
 		video.onplay = null;
-		cancelAnimationFrame(video.dataset.HBrafId);
+		cancelAnimationFrame(video.HBrafId);
 		video.removeAttribute("crossorigin");
 		return;
 	}
 	if (!video.paused) {
-		video.dataset.HBrafId = requestAnimationFrame(() =>
+		video.HBrafId = requestAnimationFrame(() =>
 			videoDetectionLoop(video, { width, height })
 		);
 	} else {
 		video.onplay = () => {
-			video.dataset.HBrafId = requestAnimationFrame(() =>
+			video.HBrafId = requestAnimationFrame(() =>
 				videoDetectionLoop(video, { width, height })
 			);
 		};
@@ -202,16 +185,27 @@ const processVideo = async (node, STATUSES, _videoPort) => {
 		await loadVideo(node);
 		node.dataset.HBstatus = STATUSES.PROCESSING;
 		const { newWidth, newHeight } = calcResize(
-			node.videoWidth ?? node.width,
-			node.videoHeight ?? node.height,
+			node.videoWidth ?? node.clientWidth,
+			node.videoHeight ?? node.clientHeight,
 			"video"
 		);
-		flagDetectionStart();
+		if (!canv) {
+			canv = getCanvas(newWidth, newHeight, true);
+			ctx = canv.getContext("2d", {
+				alpha: false,
+				willReadFrequently: true,
+			});
+		}
+		// set the width and height of the video
+		node.width = newWidth;
+		node.height = newHeight;
+
 		removeBlurryStart(node);
 
-		// requestIdleCB(() => { // requestIdleCallback is used to prevent the video and dom from freezing (I think?)
-		videoDetectionLoop(node, { width: newWidth, height: newHeight });
-		// }, {timeout: 1000});
+		// start the video detection loop but don't block the main thread
+		// requestIdleCB(() => {
+			videoDetectionLoop(node, { width: newWidth, height: newHeight });
+		// });
 	} catch (e) {
 		console.log("HB== processVideo error", e);
 	}
@@ -220,38 +214,38 @@ const processVideo = async (node, STATUSES, _videoPort) => {
 const processVideoDetections = (result, video) => {
 	const prevResult = video.dataset.HBresult;
 	const isPrevResultClear = prevResult === RESULTS.CLEAR || !prevResult;
-	const currentPositiveCount = parseInt(video.dataset.positiveCount ?? 0);
-	const currentNegativeCount = parseInt(video.dataset.negativeCount ?? 0);
+	const currentPositiveCount = parseInt(video.HBpositiveCount ?? 0);
+	const currentNegativeCount = parseInt(video.HBnegativeCount ?? 0);
 	let shouldBlur = null;
 
 	if (result === "nsfw") {
 		video.dataset.HBresult = RESULTS.NSFW;
-		video.dataset.positiveCount = currentPositiveCount + !isPrevResultClear;
-		video.dataset.negativeCount = 0;
+		video.HBpositiveCount = currentPositiveCount + !isPrevResultClear;
+		video.HBnegativeCount = 0;
 		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
 		if (currentPositiveCount + !isPrevResultClear >= POSITIVE_THRESHOLD) {
 			// video.pause()
 			shouldBlur = true;
-			video.dataset.positiveCount = 0;
+			video.HBpositiveCount = 0;
 		}
 	} else if (result === "face") {
 		video.dataset.HBresult = RESULTS.FACE;
-		video.dataset.positiveCount = currentPositiveCount + !isPrevResultClear;
-		video.dataset.negativeCount = 0;
+		video.HBpositiveCount = currentPositiveCount + !isPrevResultClear;
+		video.HBnegativeCount = 0;
 		// if the positive count is greater than the threshold (i.e it's not a momentary blip), add the blur
 		if (currentPositiveCount + !isPrevResultClear >= POSITIVE_THRESHOLD) {
 			// video.pause()
 			shouldBlur = true;
-			video.dataset.positiveCount = 0;
+			video.HBpositiveCount = 0;
 		}
 	} else {
 		video.dataset.HBresult = RESULTS.CLEAR;
-		video.dataset.negativeCount = currentNegativeCount + isPrevResultClear;
-		video.dataset.positiveCount = 0;
+		video.HBnegativeCount = currentNegativeCount + isPrevResultClear;
+		video.HBpositiveCount = 0;
 		// if the negative count is greater than the threshold (i.e it's not a momentary blip), remove the blur
 		if (currentNegativeCount + isPrevResultClear >= NEGATIVE_THRESHOLD) {
 			shouldBlur = false;
-			video.dataset.negativeCount = 0;
+			video.HBnegativeCount = 0;
 		}
 	}
 

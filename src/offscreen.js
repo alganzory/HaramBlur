@@ -1,12 +1,7 @@
 import {
-	human,
-	nsfwModel,
-	initHuman,
-	initNsfwModel,
-	humanModelClassify,
-	nsfwModelClassify,
 	containsNsfw,
 	containsGenderFace,
+	Detector,
 } from "./modules/detector.js";
 import Queue from "./modules/queues.js";
 import Settings from "./modules/settings.js";
@@ -30,11 +25,15 @@ function onVideoPortMessage(e) {
 		});
 	} else port.postMessage("ok");
 }
+var detector = new Detector(); 
 
 const loadModels = async () => {
 	try {
-		await initHuman();
-		await initNsfwModel();
+		await detector.initHuman();
+		await detector.initNsfwModel();
+		detector.human.events?.addEventListener("error", (e) => {
+			chrome.runtime.sendMessage({ type: "reloadExtension" });			
+		});
 	} catch (e) {
 		console.log("Error loading models", e);
 	}
@@ -85,25 +84,21 @@ const startListening = () => {
 
 const runDetection = async (img, isVideo = false) => {
 	if (!settings?.shouldDetect() || !img) return false;
-	const tensor = human.tf.browser.fromPixels(img);
+	const tensor = detector.human.tf.browser.fromPixels(img);
 	// console.log("tensors count", human.tf.memory().numTensors);
-	const nsfwResult = await nsfwModelClassify(tensor);
+	const nsfwResult = await detector.nsfwModelClassify(tensor);
 	// console.log("offscreen nsfw result", nsfwResult);
 	const strictness = settings.getStrictness() * (isVideo ? 0.75 : 1); // makes detection less strict for videos (to reduce false positives)
+	activeFrame = false;
 	if (containsNsfw(nsfwResult, strictness)) {
-		human.tf.dispose(tensor);
+		detector.human.tf.dispose(tensor);
 		return "nsfw";
 	}
-	const predictions = await humanModelClassify(tensor);
+	if (!settings.shouldDetectGender()) return false; // no need to run gender detection if it's not enabled
+	const predictions = await detector.humanModelClassify(tensor);
 	// console.log("offscreen human result", predictions);
-	human.tf.dispose(tensor);
-	if (
-		containsGenderFace(
-			predictions,
-			settings.shouldDetectMale(),
-			settings.shouldDetectFemale()
-		)
-	)
+	detector.human.tf.dispose(tensor);
+	if (containsGenderFace(predictions, settings.shouldDetectMale(), settings.shouldDetectFemale()))
 		return "face";
 	return false;
 };
@@ -115,8 +110,15 @@ const init = async () => {
 	}
 	settings = await Settings.init(_settings["hb-settings"]);
 	console.log("Settings loaded", settings);
-	await loadModels();
-	console.log("Models loaded", human, nsfwModel);
+	try{
+		await loadModels();
+		console.log("Models loaded", detector.human, detector.nsfwModel);
+	} catch (error) {
+		console.log("Error loading models", error);
+		chrome.runtime.sendMessage({ type: "reloadExtension" });
+		return;
+	}
+	
 	queue = new Queue(runDetection);
 	startListening();
 };

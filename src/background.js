@@ -11,7 +11,8 @@ const defaultSettings = {
 	unblurImages: false,
 	unblurVideos: false,
 	gray: true,
-	strictness: 0.5, // goes from 0 to 1
+	strictness: 0.5, // goes from 0 to 1,
+	whitelist: [],
 };
 
 const initSettings = async () => {
@@ -62,6 +63,12 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			checked: request.status,
 		});
 	}
+	else if (request.type === "reloadExtension") {
+		// kill the offscreen document
+		chrome?.offscreen?.closeDocument();
+		// recreate the offscreen document
+		createOffscreenDoc();
+	}
 });
 
 // context menu: "enable detection on this video"
@@ -92,13 +99,20 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 });
 
 // on install, onboarding
-chrome.runtime.onInstalled.addListener(function (details) {
-	if (details.reason !== "install") {
-		return;
+browser.runtime.onInstalled.addListener(function (details) {
+	if (details?.reason === "install") {
+		chrome.tabs.create({
+			url: "https://onboard.haramblur.com/",
+		});
+	} else if (details?.reason === "update") {
+		const currentVersion = chrome.runtime.getManifest().version;
+		const previousVersion = details.previousVersion;
+		if (currentVersion != previousVersion) {
+			chrome.tabs.create({
+				url: "https://update.haramblur.com/",
+			});
+		}
 	}
-	chrome.tabs.create({
-		url: "https://onboard.haramblur.com/",
-	});
 });
 
 // on uninstall

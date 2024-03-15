@@ -105,10 +105,12 @@ function observeNode(node, srcAttribute) {
 		)
 	)
 		return;
+
+	let sourceChildren = node.tagName === "VIDEO" ? node.getElementsByTagName("source")?.length : 0; //some videos have source instead of src attribute
 	const conditions =
 		(srcAttribute || !node.dataset.HBstatus) &&
-		node.src?.length > 0 &&
-		(!isImageTooSmall(node) || node.height === 0 || node.width === 0);
+		(node.src?.length > 0 || sourceChildren > 0) &&
+		(!isImageTooSmall(node) || node.height === 0 || node.width === 0); //
 
 	if (!conditions) {
 		return;
@@ -117,7 +119,7 @@ function observeNode(node, srcAttribute) {
 	applyBlurryStart(node);
 
 	node.dataset.HBstatus = STATUSES.OBSERVED;
-	if (node.src?.length) {
+	if (node.src?.length || sourceChildren > 0) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
 		if (node.tagName === "IMG") processImage(node, STATUSES);
 		else if (node.tagName === "VIDEO") {

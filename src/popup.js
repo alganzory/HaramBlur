@@ -11,23 +11,27 @@ const refreshableSettings = [
 	"unblurVideos",
 	"blurryStartMode",
 	"strictness",
+	"whitelist",
 ];
 
-const allSettings = ["status", "blurAmount", "gray", ...refreshableSettings];
+const allSettings = ["blurAmount", "gray", ...refreshableSettings];
 
-var refreshMessage, container;
+var currentWebsite, refreshMessage, container;
+
+const initCalls = () => {
+	const browserLang = navigator.language?.split("-")[0] ?? "en";
+	changeLanguage(settings.language ?? browserLang, settings);
+	displaySettings(settings);
+	addListeners();
+}
 
 function initPopup() {
-	// console.log("HB==initPopup");
-	loadLocalSettings().then(function () {
+	loadLocalSettings().then(() => getCurrentWebsite()).then(
+		() => {
 		if (document.readyState === "complete" || "interactive") {
-			displaySettings(settings);
-			addListeners();
+			initCalls();
 		} else {
-			document.addEventListener("DOMContentLoaded", function () {
-				displaySettings(settings);
-				addListeners();
-			});
+			document.addEventListener("DOMContentLoaded", initCalls);
 		}
 	});
 }
@@ -38,26 +42,41 @@ async function loadLocalSettings() {
 	settings = storage["hb-settings"];
 }
 
+function getCurrentWebsite() {
+	return new Promise(function (resolve) {
+		chrome.tabs?.query({ active: true, currentWindow: true }, function (tabs) {
+			chrome.tabs.sendMessage(
+				tabs[0].id,
+				{ type: "getCurrentWebsite" },
+				function (response) {
+					console.log("🚀 ~ response:", response)
+					currentWebsite = response?.currentWebsite?.split("www.")?.[1] ?? response?.currentWebsite ?? null;
+					resolve()
+				}
+			);
+		});
+	});
+}
+
+
 function toggleAllInputs() {
 	if (container) {
 		container.style.opacity = settings.status ? 1 : 0.5;
 	}
 	allSettings.forEach(function (setting) {
-		if (setting !== "status") {
-			document.querySelector("input[name=" + setting + "]").disabled =
-				!settings.status;
-		}
+		document.querySelector("input[name=" + setting + "]").disabled =
+			!settings.status;
 	});
 }
 
 function displaySettings(settings) {
+	console.log ("display settings", settings);
 	document.querySelector("input[name=status]").checked = settings.status;
 	document.querySelector("input[name=blurryStartMode]").checked =
 		settings.blurryStartMode;
 	document.querySelector("input[name=blurAmount]").value =
 		settings.blurAmount;
-	document.querySelector("span[id=blur-amount-value]").innerHTML =
-		settings.blurAmount + "px";
+	document.getElementById("blur-amount-value").innerHTML = `${settings.blurAmount}%`;
 	document.querySelector("input[name=gray]").checked = settings.gray ?? true;
 	document.querySelector("input[name=strictness]").value =
 		+settings.strictness;
@@ -74,7 +93,8 @@ function displaySettings(settings) {
 		settings.unblurImages;
 	document.querySelector("input[name=unblurVideos]").checked =
 		settings.unblurVideos;
-
+	document.getElementById("language").value = settings.language;
+	displayWhiteList();
 	toggleAllInputs();
 }
 
@@ -113,16 +133,49 @@ function addListeners() {
 	document
 		.querySelector("input[name=unblurVideos]")
 		.addEventListener("change", updateCheckbox("unblurVideos"));
+	document.getElementById("language")
+		.addEventListener("change", function () {
+		changeLanguage(this.value, settings);
+		});
+	document.getElementById("whitelist")
+			.addEventListener("change", updateWhitelist);
 
 	refreshMessage = document.querySelector("#refresh-message");
 	container = document.querySelector("#container");
 }
+
+function displayWhiteList(skipSet = false) {
+	const whiteListContainer = document.getElementById("whitelist-container");
+	const whiteList = document.getElementById("whitelist");
+	const websiteName = document.getElementById("website-name")
+	const whiteListStatusOn = document.getElementById("whitelist-status-on")
+	const whiteListStatusOff = document.getElementById("whitelist-status-off")
+	if (!currentWebsite) {
+		whiteListContainer.classList.add("hidden");
+		return;
+	} else {
+		whiteListContainer.classList.remove("hidden");
+	}
+	if (!skipSet) {
+		websiteName.innerHTML = currentWebsite;
+		whiteList.checked = !settings.whitelist.includes(currentWebsite);
+	}
+	if (whiteList.checked) {
+		whiteListStatusOn.classList.remove("hidden");
+		whiteListStatusOff.classList.add("hidden");
+	} else {
+		whiteListStatusOn.classList.add("hidden");
+		whiteListStatusOff.classList.remove("hidden");
+	}
+}
+
 
 function updateStatus() {
 	settings.status = document.querySelector("input[name=status]").checked;
 	browser.storage.sync.set({ "hb-settings": settings });
 	toggleAllInputs();
 	sendUpdatedSettings("status");
+	showRefreshMessage("status");
 }
 
 function updateBlurAmount() {
@@ -130,9 +183,10 @@ function updateBlurAmount() {
 		"input[name=blurAmount]"
 	).value;
 	document.querySelector("span[id=blur-amount-value]").innerHTML =
-		settings.blurAmount + "px";
+		settings.blurAmount + "%";
 	browser.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("blurAmount");
+	showRefreshMessage("blurAmount");
 }
 
 function updateStrictness() {
@@ -145,6 +199,7 @@ function updateStrictness() {
 
 	browser.storage.sync.set({ "hb-settings": settings });
 	sendUpdatedSettings("strictness");
+	showRefreshMessage("strictness");
 }
 
 function updateCheckbox(key) {
@@ -154,8 +209,43 @@ function updateCheckbox(key) {
 		).checked;
 		browser.storage.sync.set({ "hb-settings": settings });
 		sendUpdatedSettings(key);
+		showRefreshMessage(key);
 	};
 }
+
+function changeLanguage(lang, settings) {	
+	document.body.lang = lang;
+	document.getElementById('container').dir = HB_TRANSLATIONS_DIR[lang];
+	
+	const translations = getTranslations(settings)?.[lang];
+	const keys = Object.keys(translations);
+	keys.forEach(key => {
+		const elements = document.querySelectorAll(key);
+		elements.forEach(element => {
+			element.innerHTML = translations[key];
+			// change direction of element 
+			if (HB_TRANSLATIONS_DIR[lang]) {
+				element.dir = HB_TRANSLATIONS_DIR[lang];
+			}
+		})
+	});	
+
+	settings.language = lang;
+	chrome.storage.sync.set({ "hb-settings": settings });
+}
+
+function updateWhitelist (e) {
+	if (e.target.checked){
+		settings.whitelist = settings.whitelist.filter(item => item !== currentWebsite);
+	} else {
+		settings.whitelist.push(currentWebsite);
+	}
+	chrome.storage.sync.set({ "hb-settings": settings });
+	sendUpdatedSettings("whitelist");
+	showRefreshMessage("whitelist");
+	displayWhiteList(true);
+}
+
 
 /* sendUpdatedSettings - Send updated settings object to tab.js to modify active tab blur CSS */
 function sendUpdatedSettings(key) {
@@ -171,9 +261,11 @@ function sendUpdatedSettings(key) {
 	chrome.tabs.query({ currentWindow: true, active: true }, function (tabs) {
 		var activeTab = tabs[0];
 		chrome.tabs.sendMessage(activeTab.id, message);
-
-		if (refreshableSettings.includes(key)) {
-			refreshMessage.classList.remove("hidden");
-		}
 	});
+}
+
+function showRefreshMessage(key) {
+	if (refreshableSettings.includes(key)) {
+		refreshMessage.classList.remove("hidden");
+	}
 }
