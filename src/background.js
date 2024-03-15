@@ -113,6 +113,7 @@ chrome.runtime.onInstalled.addListener(function (details) {
 		});
 	} else if (details?.reason === "update") {
 		const currentVersion = chrome.runtime.getManifest().version;
+		if (currentVersion == "0.2.4" || currentVersion == "0.2.5") return; // no need to show update page for this version
 		const previousVersion = details.previousVersion;
 		if (currentVersion != previousVersion) {
 			chrome.tabs.create({
