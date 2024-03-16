@@ -69,7 +69,10 @@ const handleVideoDetection = async (request, sender, sendResponse) => {
 			console.log("HB== error in detectImage", e);
 			activeFrame = false;
 			sendResponse({ result: "error" });
-		});
+		})
+		.finally(() => {
+			frame.data.close();
+		})
 };
 
 const startListening = () => {

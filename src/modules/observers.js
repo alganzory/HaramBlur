@@ -96,29 +96,33 @@ const attachObserversListener = () => {
 };
 
 function observeNode(node, srcAttribute) {
+	const isVideo = node.tagName === "VIDEO";
 	if (
 		!(
-			(node.tagName === "IMG" &&
+			(!isVideo &&
 				(_settings ? _settings.shouldDetectImages() : true)) ||
-			(node.tagName === "VIDEO" &&
+			(isVideo &&
 				(_settings ? _settings.shouldDetectVideos() : true))
 		)
 	)
 		return;
 
-	let sourceChildren = node.tagName === "VIDEO" ? node.getElementsByTagName("source")?.length : 0; //some videos have source instead of src attribute
+	let sourceChildren = //some videos have source instead of src attribute
+	isVideo
+		? node.getElementsByTagName("source")?.length
+		: 0; 
 	const conditions =
-		(srcAttribute || !node.dataset.HBstatus) &&
-		(node.src?.length > 0 || sourceChildren > 0) &&
-		(!isImageTooSmall(node) || node.height === 0 || node.width === 0); //
+		(srcAttribute || !node.dataset.HBstatus) && // has to have a new src attribute or no HBstatus (not processed yet)
+		(node.src?.length > 0 || sourceChildren > 0) &&  // has to have a src attribute or source children
+		(isVideo? true : (!isImageTooSmall(node) || node.height === 0 || node.width === 0)); // if it's an image, it has to be big enough
 
 	if (!conditions) {
 		return;
 	}
 
 	applyBlurryStart(node);
-
 	node.dataset.HBstatus = STATUSES.OBSERVED;
+	
 	if (node.src?.length || sourceChildren > 0) {
 		// if there's no src attribute yet, wait for the mutation observer to catch it
 		if (node.tagName === "IMG") processImage(node, STATUSES);

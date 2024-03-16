@@ -90,7 +90,6 @@ const getNsfwClasses = (factor = 0) => {
 
 class Detector {
 	constructor() {
-		console.log ("human", Human);
 		this._human = null;
 		this._nsfwModel = null;
 		this.nsfwCache = {

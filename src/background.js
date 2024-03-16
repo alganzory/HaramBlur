@@ -64,10 +64,7 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		});
 	}
 	else if (request.type === "reloadExtension") {
-		// kill the offscreen document
-		chrome?.offscreen?.closeDocument();
-		// recreate the offscreen document
-		createOffscreenDoc();
+		chrome.runtime.reload();
 	}
 });
 

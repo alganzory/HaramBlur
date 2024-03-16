@@ -57,6 +57,9 @@ const processImage = (node, STATUSES) => {
 					if (response === "face" || response === "nsfw") {
 						node.classList.add("hb-blur");
 						node.dataset.HBresult = response;
+					}else {
+						node.classList.remove("hb-blur");
+						delete node.dataset.HBresult;
 					}
 				}
 			}
@@ -67,32 +70,38 @@ const processImage = (node, STATUSES) => {
 };
 
 const processFrame = async (video, { width, height }) => {
+	if (!video || video.ended) {
+		return;
+	}
 	return new Promise(async (resolve, reject) => {
-		// const start = performance.now();
-		if (canv.width !== width || canv.height !== height) {
-			canv.width = width;
-			canv.height = height;
-		}
+		let imgBitmap;
+		try {
 
-		ctx.drawImage(video, 0, 0, width, height);
-		// send image data to the background script
-		const imgBitmap = canv.transferToImageBitmap();
-		videoPort.postMessage(
-			{
-				type: "videoDetection",
-				frame: {
-					data: imgBitmap,
-					timestamp: video.currentTime,
+			imgBitmap = await createImageBitmap(video, {
+				resizeWidth: width,
+				resizeHeight: height,
+				resizeQuality: "high",
+			});
+			videoPort.postMessage(
+				{
+					type: "videoDetection",
+					frame: {
+						data: imgBitmap,
+						timestamp: video.currentTime,
+					},
 				},
-			},
-			[imgBitmap]
-		);
+				[imgBitmap]
+			);
 
-		resolveFrame = (response) => {
-			imgBitmap.close();
-			resolve(response);
-		};
-
+			resolveFrame = (response) => {
+				resolve(response);
+			};
+		} catch (e) {
+			reject(e);
+		}
+		finally {
+			if (imgBitmap) imgBitmap.close();
+		}
 	});
 };
 
@@ -100,7 +109,7 @@ const videoDetectionLoop = async (video, { width, height }) => {
 	// get the current timestamp
 	const currTime = performance.now();
 
-	if (!video.HBprevTime) {
+	if (!video?.HBprevTime) {
 		video.HBprevTime = currTime;
 	}
 
@@ -110,7 +119,7 @@ const videoDetectionLoop = async (video, { width, height }) => {
 	if (video.dataset.HBstatus === STATUSES.DISABLED) {
 		video.classList.remove("hb-blur");
 	}
-	if (!video.paused && video.dataset.HBstatus !== STATUSES.DISABLED) {
+	if (!video.ended && !video.paused && video.dataset.HBstatus !== STATUSES.DISABLED) {
 		try {
 			if (diffTime >= FRAME_RATE) {
 				// store the current timestamp
@@ -121,7 +130,7 @@ const videoDetectionLoop = async (video, { width, height }) => {
 					processFrame(video, { width, height })
 						.then(({ result, timestamp }) => {
 							if (result === "error") {
-								throw new Error("HB==Error in processFrame");
+								throw new Error("HB==Error from processFrame");
 							}
 
 							// if frame was skipped, don't process it
