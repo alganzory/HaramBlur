@@ -1,17 +1,17 @@
 // style.js
 // This module exports the style sheet and blur effect functions
 
-import { emitEvent, listenToEvent } from "./helpers.js";
+import {  listenToEvent } from "./helpers.js";
 
 const BLURRY_START_MODE_TIMEOUT = 7000; // TODO: make this a setting maybe?
-let hbStyleSheet, blurryStartStyleSheet, _settings;
+let hbStyleSheet, _settings;
 
 const initStylesheets = ({ detail }) => {
 	_settings = detail;
 	// console.log("HB==INIT STYLESHEETS")
 	hbStyleSheet = document.createElement("style");
 	hbStyleSheet.id = "hb-stylesheet";
-	document.head.appendChild(hbStyleSheet);
+	(document.head || document.documentElement).appendChild(hbStyleSheet);
 };
 
 const setStyle = ({ detail: settings }) => {
