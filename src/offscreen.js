@@ -97,7 +97,11 @@ const runDetection = async (img, isVideo = false) => {
 		detector.human.tf.dispose(tensor);
 		return "nsfw";
 	}
-	if (!settings.shouldDetectGender()) return false; // no need to run gender detection if it's not enabled
+	if (!settings.shouldDetectGender()) 
+	{
+		detector.human.tf.dispose(tensor);
+		return false; // no need to run gender detection if it's not enabled
+	}
 	const predictions = await detector.humanModelClassify(tensor);
 	// console.log("offscreen human result", predictions);
 	detector.human.tf.dispose(tensor);
