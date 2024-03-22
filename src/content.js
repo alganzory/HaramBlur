@@ -1,6 +1,7 @@
 import {
 	attachObserversListener,
 	initMutationObserver,
+	killObserver,
 } from "./modules/observers";
 import Settings from "./modules/settings";
 import { attachStyleListener } from "./modules/style";
@@ -20,12 +21,25 @@ const attachAllListeners = () => {
 
 if (window.self === window.top) {
 	attachAllListeners();
-	makeVideoFramePort('/src/offscreen.html').then((port) => {
-		initMutationObserver(port);
-	});
-
 	Settings.init()
 		.then((settings) => {
+			if (
+				settings
+					.getWhitelist()
+					.includes(
+						window.location.hostname?.split("www.")?.[1] ??
+							window.location.hostname
+					)
+			) {
+				console.log("HB==WHITELISTED SITE");
+				killObserver();
+				return;
+			}
+
+			makeVideoFramePort("/src/offscreen.html").then((port) => {
+				initMutationObserver(port);
+			});
+
 			// turn on/off the extension
 			settings.toggleOnOffStatus();
 		})
@@ -33,7 +47,6 @@ if (window.self === window.top) {
 			console.log("HB==INITIALIZATION ERROR", e);
 		});
 }
-
 
 async function makeVideoFramePort(path) {
 	const secret = Math.random().toString(36);

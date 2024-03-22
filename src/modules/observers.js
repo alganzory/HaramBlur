@@ -95,6 +95,11 @@ const attachObserversListener = () => {
 	});
 };
 
+const killObserver = () => {
+	mutationObserver?.disconnect();
+	mutationObserver = null;
+};
+
 function observeNode(node, srcAttribute) {
 	const isVideo = node.tagName === "VIDEO";
 	if (
@@ -137,4 +142,4 @@ function observeNode(node, srcAttribute) {
 	}
 }
 
-export { attachObserversListener, initMutationObserver, STATUSES };
+export { attachObserversListener, initMutationObserver, STATUSES, killObserver };
