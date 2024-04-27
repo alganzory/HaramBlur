@@ -1,12 +1,10 @@
 // detector.js
 // This module exports detector functions and variables
-
-import * as Human from "../../tfjs/human.esm.js";
 const modelsUrl = chrome.runtime.getURL("src/assets/models/human");
 const nsfwUrl = chrome.runtime.getURL("src/assets/models/nsfwjs/model.json");
 
 const HUMAN_CONFIG = {
-	modelBasePath: modelsUrl,
+	modelBasePath: 'https://cdn.jsdelivr.net/npm/@vladmandic/human/models/',
 	backend: "humangl",
 	// debug: true,
 	cacheSensitivity: 0.9,
