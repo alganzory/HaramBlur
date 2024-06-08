@@ -111,6 +111,44 @@ const getTranslations = (settings) => {
 				<span id="whitelist-status-off" class="red-text hidden" > Kapalı </span> 
 				</p>
 			`
+
+		},
+		//urdu
+		ur: {
+			"#settings": "ترتیبات",
+			"#blurryStart": "لوڈ پر میڈیا کو دھندلا کرنا:",
+			".tooltiptext":
+				"فعال ہونے پر، شناخت شروع ہونے تک تمام تصاویر اور ویڈیوز بطور ڈیفالٹ دھندلی ہو جائیں گی۔",
+			"#blurAmount": `
+			بلر کی مقدار:
+			<span id="blur-amount-value">${settings.blurAmount}%</span>
+		`,
+			"#grayscale": "مٹیالا پیمانہ:",
+			"#strictness": `سختی:
+		<span id="strictness-value">${settings.strictness * 100}%</span>
+		`,
+			"#mediaToBlur": "میڈیا کو دھندلا کرنا",
+			"#blurImages": "تصاویر",
+			"#blurVideos": "ویڈیوز",
+			"#facesToBlur": "چہرے کو دھندلا کرنا",
+			"#blurMale": "مرد",
+			"#blurFemale": "عورت",
+			"#unblurOnHover": "ہوور پر دھندلا پن ختم کریں",
+			"#unblurImages": "تصاویر",
+			"#unblurVideos": "ویڈیوز",
+			".refresh": " (صفحہ ریفریش کی ضرورت ہے):",
+			"#refresh-message": "تبدیلیاں دیکھنے کے لیے صفحہ کو ریفریش کریں۔",
+			".bmc-btn-text": "منصوبے کی حمایت کریں",
+			".feedback": `
+			<span> میں اپنے فارم کے ذریعے آپ کی رائے سننا پسند ہے </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank"></a> ve
+			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ای میل.❤️
+			`,
+			"#whitelist-desc": `
+				<p id="whitelist-desc"> کھوج ہے
+				<span id="whitelist-status-on" class="blue-text"> جلنا </span> 
+				<span id="whitelist-status-off" class="red-text hidden" > بند </span> 
+				</p>
+			`
 		},
 	};
 };
@@ -119,4 +157,5 @@ const HB_TRANSLATIONS_DIR = {
 	en: "ltr",
 	tr: "ltr",
 	ar: "rtl",
+	ur: "rtl",
 };
