@@ -2,140 +2,150 @@ import { emitEvent } from "./helpers.js";
 import { DEFAULT_SETTINGS } from "../constants.js";
 
 class Settings {
-	/*
-	 * @private
-	 */
-	constructor(settings = DEFAULT_SETTINGS) {
-		this._settings = settings;
-	}
+    /*
+     * @private
+     */
+    constructor(settings = DEFAULT_SETTINGS) {
+        this._settings = settings;
+    }
 
-	shouldDetectMale() {
-		if (!this._settings.status) return false;
-		return this._settings.blurMale;
-	}
+    shouldDetectMale() {
+        if (!this._settings.status) return false;
+        return this._settings.blurMale;
+    }
 
-	shouldDetectFemale() {
-		if (!this._settings.status) return false;
-		return this._settings.blurFemale;
-	}
+    shouldDetectFemale() {
+        if (!this._settings.status) return false;
+        return this._settings.blurFemale;
+    }
 
-	shouldDetectGender() {
-		if (!this._settings.status) return false;
-		return this.shouldDetectMale() || this.shouldDetectFemale();
-	}
+    shouldDetectGender() {
+        if (!this._settings.status) return false;
+        return this.shouldDetectMale() || this.shouldDetectFemale();
+    }
 
-	shouldDetectImages() {
-		if (!this._settings.status) return false;
-		return this._settings.blurImages;
-	}
+    shouldDetectImages() {
+        if (!this._settings.status) return false;
+        return this._settings.blurImages;
+    }
 
-	shouldDetectVideos() {
-		if (!this._settings.status) return false;
-		return this._settings.blurVideos;
-	}
+    shouldDetectVideos() {
+        if (!this._settings.status) return false;
+        return this._settings.blurVideos;
+    }
 
-	// alias
-	shouldBlurImages() {
-		return this.shouldDetectImages();
-	}
+    // alias
+    shouldBlurImages() {
+        return this.shouldDetectImages();
+    }
 
-	// alias
-	shouldBlurVideos() {
-		return this.shouldDetectVideos();
-	}
+    // alias
+    shouldBlurVideos() {
+        return this.shouldDetectVideos();
+    }
 
-	shouldUnblurImages() {
-		if (!this._settings.status) return false;
-		return this._settings.unblurImages;
-	}
+    shouldUnblurImages() {
+        if (!this._settings.status) return false;
+        return this._settings.unblurImages;
+    }
 
-	shouldUnblurVideos() {
-		if (!this._settings.status) return false;
-		return this._settings.unblurVideos;
-	}
-	
-	shouldDetect() {
-		if (!this._settings.status) return false;
-		return (this.shouldDetectImages() || this.shouldDetectVideos());
-	}
+    shouldUnblurVideos() {
+        if (!this._settings.status) return false;
+        return this._settings.unblurVideos;
+    }
 
-	isBlurryStartMode() {
-		if (!this.shouldDetect()) return false;
-		return this._settings.blurryStartMode;
-	}
+    shouldDetect() {
+        if (!this._settings.status) return false;
+        return this.shouldDetectImages() || this.shouldDetectVideos();
+    }
 
-	getBlurAmount() {
-		if (!this.shouldDetect()) return 0;
-		return this._settings.blurAmount;
-	}
+    isBlurryStartMode() {
+        if (!this.shouldDetect()) return false;
+        return this._settings.blurryStartMode;
+    }
 
-	getStrictness() {
-		if (!this.shouldDetect()) return 0;
-		return this._settings.strictness;
-	}
+    getBlurAmount() {
+        if (!this.shouldDetect()) return 0;
+        return this._settings.blurAmount;
+    }
 
-	isGray() {
-		if (!this.shouldDetect()) return false;
-		return this._settings.gray;
-	}
+    getStrictness() {
+        if (!this.shouldDetect()) return 0;
+        return this._settings.strictness;
+    }
 
-	getWhitelist() {
-		return this._settings.whitelist;
-	}
+    isGray() {
+        if (!this.shouldDetect()) return false;
+        return this._settings.gray;
+    }
 
-	getSettings() {
-		return this._settings;
-	}
+    getWhitelist() {
+        return this._settings.whitelist;
+    }
 
-	setSettings(settings) {
-		this._settings = settings;
-	}
+    getSettings() {
+        return this._settings;
+    }
 
-	toggleOnOffStatus() {
-		if (!this._settings.whitelist?.includes(window.location.hostname?.split("www.")?.[1] ?? window.location.hostname)) {
-			emitEvent("toggleOnOffStatus", this);
-		}
-	}
+    setSettings(settings) {
+        this._settings = settings;
+    }
 
-	listenForChanges() {
-		chrome.runtime.onMessage.addListener(
-			(request, sender, sendResponse) => {
-				if (request.type === "updateSettings") {
-					this.updateSettings(request.newSetting);
-				}
-				return true;
-			}
-		);
-	}
-	// this acts as an async constructor
-	static async init(_loadedSettings = null) {
-		const loadedSettings = _loadedSettings ?? await new Promise((resolve) => {
-			chrome.runtime.sendMessage({ type: "getSettings" }, (settings) => {
-				resolve(settings);
-			});
-		});
-		const settings = new Settings(loadedSettings);
-		settings.listenForChanges();
-		emitEvent("settingsLoaded", settings);
-		return settings;
-	}
+    toggleOnOffStatus() {
+        if (
+            !this._settings.whitelist?.includes(
+                window.location.hostname?.split("www.")?.[1] ??
+                    window.location.hostname
+            )
+        ) {
+            emitEvent("toggleOnOffStatus", this);
+        }
+    }
 
-	updateSettings(newSetting) {
-		const { key, value } = newSetting;
+    listenForChanges() {
+        chrome.runtime.onMessage.addListener(
+            (request, sender, sendResponse) => {
+                if (request.type === "updateSettings") {
+                    this.updateSettings(request.newSetting);
+                }
+                return true;
+            }
+        );
+    }
+    // this acts as an async constructor
+    static async init(_loadedSettings = null) {
+        const loadedSettings =
+            _loadedSettings ??
+            (await new Promise((resolve) => {
+                chrome.runtime.sendMessage(
+                    { type: "getSettings" },
+                    (settings) => {
+                        resolve(settings);
+                    }
+                );
+            }));
+        const settings = new Settings(loadedSettings);
+        settings.listenForChanges();
+        emitEvent("settingsLoaded", settings);
+        return settings;
+    }
 
-		this._settings[key] = value;
-		switch (key) {
-			case "status":
-				this.toggleOnOffStatus();
-				break;
-			case "blurAmount":
-				emitEvent("changeBlurAmount", this);
-				break;
-			case "gray":
-				emitEvent("changeGray", this);
-				break;
-		}
-	}
+    updateSettings(newSetting) {
+        const { key, value } = newSetting;
+
+        this._settings[key] = value;
+        switch (key) {
+            case "status":
+                this.toggleOnOffStatus();
+                break;
+            case "blurAmount":
+                emitEvent("changeBlurAmount", this);
+                break;
+            case "gray":
+                emitEvent("changeGray", this);
+                break;
+        }
+    }
 }
 
 export default Settings;

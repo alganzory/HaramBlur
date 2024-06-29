@@ -10,12 +10,12 @@ You can configure the type of detection you want and the amount of blur, the lev
 
 ## Features
 
-- Works on images and videos that contain unwanted or impermissible content
-- Works on most (if not all) websites and social media platforms
-- Configurable detection settings to tailor your browsing experience
-- Interactive pop-up for easy on/off toggling
-- Customizable hover to unblur feature
-- Decent speed and accuracy (continously improved)
+-   Works on images and videos that contain unwanted or impermissible content
+-   Works on most (if not all) websites and social media platforms
+-   Configurable detection settings to tailor your browsing experience
+-   Interactive pop-up for easy on/off toggling
+-   Customizable hover to unblur feature
+-   Decent speed and accuracy (continously improved)
 
 ## How it Works
 
@@ -38,6 +38,7 @@ If you want to compile the extension on your own, follow these steps:
 Clone the HaramBlur repository to your local machine:
 
 #### Chromium
+
 ```bash
 git clone https://github.com/alganzory/HaramBlur.git
 ```
@@ -62,10 +63,10 @@ Make the necessary modifications or enhancements to the code.
 
 ### Step 4: Build the Extension
 
-- Build the extension by running:
-  ```bash
-  npm run build
-  ```
+-   Build the extension by running:
+    ```bash
+    npm run build
+    ```
 
 ### Step 5: Generate a Release (Optional)
 
@@ -76,25 +77,26 @@ npm run release
 ```
 
 ### Load the extension in Chromium browsers
-  - Go to `chrome://extensions/`.
-  - Enable "Developer mode".
-  - Click "Load unpacked" and select the project folder.
+
+-   Go to `chrome://extensions/`.
+-   Enable "Developer mode".
+-   Click "Load unpacked" and select the project folder.
 
 ### Load the extension in Firefox
-- Go to `about:addons`
-- Press the gear icon.
-- Click "Install Add-on from file"
-- Select the zip file that you generated in Step 5.
 
+-   Go to `about:addons`
+-   Press the gear icon.
+-   Click "Install Add-on from file"
+-   Select the zip file that you generated in Step 5.
 
 ## Improvements
 
 Here are some planned improvements that could be made to HaramBlur:
 
-- Support for more browsers
-- Improve the speed of detection
-- Improve the accuracy of NSFW detection to reduce false positives and negatives
-- Make the extension more Shariah-compliant by adding additional privacy controls and customization options
+-   Support for more browsers
+-   Improve the speed of detection
+-   Improve the accuracy of NSFW detection to reduce false positives and negatives
+-   Make the extension more Shariah-compliant by adding additional privacy controls and customization options
 
 ## Open Source
 

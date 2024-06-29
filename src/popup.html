@@ -1,816 +1,850 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<title>HaramBlur Extension</title>
-		<script async defer src="./assets/github-button.js"></script>
-		<style>
-			body {
-				background-color: #f7fafc;
-				color: #374151;
-				font-family: sans-serif;
-				font-size: 14px;
-				line-height: 1.5;
-				font-family: Poppins, sans-serif;
-				margin: 0;
-			}
-
-			/* change body font to Tahoma if arabic */
-			:lang(ar) body {
-				font-family: Tahoma, sans-serif;
-			}
-
-			@media (prefers-color-scheme: dark) {
-				body {
-					background-color: #141414;
-					color: #f9f9f9;
-				}
-			}
-			.container {
-				min-width: 370px;
-				padding:0rem 1rem 0.5rem 1rem;
-			}
-
-			.header {
-				display: flex;
-				justify-content: space-between;
-				align-items: center;
-				background-color: royalblue;
-				color: #fff;
-				padding: 1rem;
-				position: sticky;
-				top: 0;
-				left: 0;
-				right: 0;
-				border-radius: 0px 0px 25px 25px;
-				z-index: 2;
-			}
-			
-			@media (prefers-color-scheme: dark) {
-				.header {
-					box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
-				}
-			}
-
-			.header h1 {
-				font-size: 1.32rem;
-				font-weight: bold;
-				margin: 0;
-				text-align: center;
-				font-family: Poppins, sans-serif !important;
-			}
-
-			.header > * {
-				flex: 1;
-			}
-
-			/* last child self align right */
-			.header > *:last-child {
-				text-align: right;
-			}
-
-			.switch {
-				position: relative;
-				display: inline-block;
-				width: 60px;
-				height: 34px;
-			}
-			.switch.small {
-				width: 50px;
-				height: 28px;
-			}
-
-			.switch input {
-				opacity: 0;
-				width: 0;
-				height: 0;
-			}
-			.slider {
-				position: absolute;
-				cursor: pointer;
-				top: 0;
-				left: 0;
-				right: 0;
-				bottom: 0;
-				background-color: #ccc;
-				-webkit-transition: 0.4s;
-				transition: 0.4s;
-				border-radius: 25px;
-			}
-
-			.slider:before {
-				position: absolute;
-				content: "";
-				height: 26px;
-				width: 26px;
-				left: 4px;
-				bottom: 4px;
-				background-color: white;
-				-webkit-transition: 0.4s;
-				transition: 0.4s;
-				border-radius: 50%;
-			}
-
-			.slider.small::before {
-				height: 20px;
-				width: 20px;
-			}
-
-			input:checked + .slider {
-				background-color: #2196f3;
-			}
-
-			input:focus + .slider {
-				box-shadow: 0 0 1px #2196f3;
-			}
-
-			input:checked + .slider:before {
-				-webkit-transform: translateX(100%);
-				-ms-transform: translateX(100%);
-				transform: translateX(100%);
-			}
-
-			.form-checkbox {
-				-webkit-appearance: none;
-				-moz-appearance: none;
-				appearance: none;
-				display: inline-block;
-				vertical-align: middle;
-				background-origin: border-box;
-				user-select: none;
-				flex-shrink: 0;
-				height: 1.2em;
-				width: 1.2em;
-				border: 1px solid #e2e8f0;
-				color: #4299e1;
-				border-radius: 0.25rem;
-				transition: background-color 0.2s ease-in-out,
-					border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-				background-color: #fff;
-				background-size: 100% 100%;
-				background-repeat: no-repeat;
-				background-position: center;
-			}
-
-			.form-checkbox:checked {
-				background-color: #4299e1;
-				border-color: #4299e1;
-				color: #fff;
-			}
-
-			.form-checkbox:focus {
-				outline: none;
-				box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-				border-color: #4299e1;
-			}
-
-			.form-checkbox:checked:focus {
-				box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-			}
-
-			.form-checkbox:checked:active {
-				background-color: #2b6cb0;
-				border-color: #2b6cb0;
-			}
-
-			.form-checkbox:disabled {
-				opacity: 0.5;
-				cursor: not-allowed;
-			}
-
-			.form-checkbox-label {
-				display: inline-block;
-				vertical-align: middle;
-				cursor: pointer;
-				margin-right: 2rem;
-			}
-
-			.form-range {
-				width: 100%;
-				height: 1.5rem;
-				background-color: #e2e8f0;
-				border-radius: 0.25rem;
-				outline: none;
-				opacity: 0.7;
-				-webkit-transition: opacity 0.2s ease-in-out;
-				transition: opacity 0.2s ease-in-out;
-			}
-
-			.form-range:hover {
-				opacity: 1;
-			}
-
-			.form-range::-webkit-slider-thumb {
-				-webkit-appearance: none;
-				appearance: none;
-				width: 1rem;
-				height: 1rem;
-				background-color: #4299e1;
-				border-radius: 50%;
-				cursor: pointer;
-			}
-
-			.form-range::-moz-range-thumb {
-				width: 1rem;
-				height: 1rem;
-				background-color: #4299e1;
-				border-radius: 50%;
-				cursor: pointer;
-			}
-
-			.form-range::-ms-thumb {
-				width: 1rem;
-				height: 1rem;
-				background-color: #4299e1;
-				border-radius: 50%;
-				cursor: pointer;
-			}
-
-			.form-range::-webkit-slider-runnable-track {
-				height: 0.5rem;
-				background-color: #e2e8f0;
-				border-radius: 0.25rem;
-			}
-
-			.form-range::-moz-range-track {
-				height: 0.5rem;
-				background-color: #e2e8f0;
-				border-radius: 0.25rem;
-			}
-
-			.form-range::-ms-track {
-				height: 0.5rem;
-				background-color: #e2e8f0;
-				border-radius: 0.25rem;
-			}
-
-			.form-range::-ms-fill-lower {
-				background-color: #4299e1;
-				border-radius: 0.25rem;
-			}
-
-			.form-range::-ms-fill-upper {
-				background-color: #e2e8f0;
-				border-radius: 0.25rem;
-			}
-
-			.form-range:focus::-webkit-slider-thumb {
-				box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-			}
-
-			.form-range:focus::-moz-range-thumb {
-				box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-			}
-
-			.form-range:focus::-ms-thumb {
-				box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
-			}
-
-			.options-grid {
-				display: grid;
-				grid-template-columns: 1fr 1fr;
-				grid-gap: 0.5rem;
-			}
-
-			.button {
-				display: inline-block;
-				background-color: #4299e1;
-				color: #fff;
-				font-weight: bold;
-				text-align: center;
-				text-decoration: none;
-				padding: 0.5rem 1rem;
-				border-radius: 0.25rem;
-				cursor: pointer;
-				transition: background-color 0.2s ease-in-out;
-			}
-
-			.button:hover {
-				background-color: #2b6cb0;
-			}
-
-			.button:active {
-				background-color: #2c5282;
-			}
-
-			.button-secondary {
-				background-color: #e2e8f0;
-				color: #4a5568;
-			}
-
-			.button-secondary:hover {
-				background-color: #cbd5e0;
-			}
-
-			.button-secondary:active {
-				background-color: #a0aec0;
-			}
-
-			.footer {
-				background-color: #f7fafc;
-				position: sticky;
-				bottom: 0;
-				left: 0;
-				width: 100%;
-				padding: 0.5rem 0 0.5rem 0;
-				border-radius: 25px 25px 0px 0px;
-				/* box shadown on the top */
-				box-shadow: 0 0 15px 5px rgba(0, 0, 0, 0.05),
-					0 1px 2px 0 rgba(0, 0, 0, 0.05);
-			}
-			@media (prefers-color-scheme: dark) {
-				.footer {
-					background-color: #212121;
-					box-shadow: 0px -2px 4px -1px rgba(0, 0, 0, 0.2), 0px -4px 5px 0px rgba(0, 0, 0, 0.14), 0px -1px 10px 0px rgba(0, 0, 0, 0.12);
-				}
-			}
-
-			.footer  img {
-				border-radius: 0.25rem;
-			}
-			.bmc-btn {
-				font-size: 0.9rem !important;
-				height: unset !important;
-				padding: 5px 10px !important;
-				min-width: unset !important;
-				text-align: left !important;
-			}
-			.bmc-btn:hover {
-				opacity: 0.85 !important;
-				animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
-			}
-			@keyframes shake {
-				10%,
-				90% {
-					transform: translate3d(0, -1px, 0);
-				}
-
-				20%,
-				80% {
-					transform: translate3d(0, 2px, 0);
-				}
-
-				30%,
-				50%,
-				70% {
-					transform: translate3d(0, -4px, 0);
-				}
-
-				40%,
-				60% {
-					transform: translate3d(0, 4px, 0);
-				}
-			}
-
-			.row {
-				display: flex;
-				justify-content: space-around;
-				/* align-items: center; */
-			}
-
-			.space-between {
-				justify-content: space-between;
-			}
-
-			.hidden {
-				display: none;
-			}
-
-			.tooltip {
-				position: relative;
-				display: inline-block;
-			}
-
-			.tooltip .tooltiptext {
-				visibility: hidden;
-				width: 200px;
-				background-color: #555;
-				color: #fff;
-				text-align: left;
-				border-radius: 6px;
-				padding: 5px;
-				position: absolute;
-				z-index: 1;
-				bottom: 125%;
-				left: 100%;
-				margin-left: -60px;
-				transition: opacity 0.3s;
-				font-size: 0.8rem;
-				opacity: 0;
-			}
-
-			.tooltip:hover .tooltiptext {
-				visibility: visible;
-				opacity: 0.9;
-			}
-
-			.refresh {
-				/* blueish color */
-				font-size: 0.7rem;
-				color: #4299e1;
-			}
-
-			.feedback {
-				text-align: center;
-				font-size: 0.8rem;
-				color: #4299e1;
-			}
-
-			.feedback a {
-				color: royalblue;
-				text-decoration: none;
-			}
-
-			.mt-2 {
-				margin-top: 0.5rem;
-			}
-			.mb-2 {
-				margin-bottom: 0.5rem;
-			}
-
-			.mb-3 { 
-				margin-bottom: 0.75rem;
-			}
-			.mt-4 {
-				margin-top: 1rem;
-			}
-
-			.mt--4 {
-				margin-top: -1.5rem;
-			}
-			.mb-4 {
-				margin-bottom: 1rem;
-			}
-		
-			.ml-2 {
-				margin-left: 0.5rem;
-			}
-			.ml-4 {
-				margin-left: 1rem;
-			}
-
-			.blue-text {
-				color: #4299e1;
-			}
-			.red-text {
-				color: #f56565;
-			}
-
-			/* grayscale checkbox: we want the label to be above the checkbox not below it */
-			#grayscale-label {
-				display: flex;
-				/* flex-direction: column; */
-				align-items: end;
-				margin-right: 0;
-			}
-	
-			#language {
-				padding: 0.7em  0.25em 0.7em 1.8em;
-				background-color: #2196f3;
-				background-image: url( https://coothead.co.uk/images/world.png );
-				background-repeat: no-repeat;
-				background-size: 1.1em auto;
-				background-position: 0.7em center;
-				font-size: 0.8em;
-				font-family: inherit;
-				color: #fff;
-				border: none;
-				border-radius: 25px;
-			}
-
-			.card {
-				background-color: #fff;
-				border-radius: 25px;
-				padding: 1rem;
-				box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.05),
-					0 1px 2px 0 rgba(0, 	0, 0, 0.05);
-			}
-
-			@media (prefers-color-scheme: dark) {
-				.card {
-					background-color: #212121;
-					color: #fff;
-					box-shadow: 0px 2px 4px -1px rgba(0, 0, 0, 0.2), 0px 4px 5px 0px rgba(0, 0, 0, 0.14), 0px 1px 10px 0px rgba(0, 0, 0, 0.12);
-				}
-			}
-			
-			#website-name {
-				font-weight: bold;
-				font-size: 1rem;
-			}
-
-			#whitelist-desc {
-				font-size: 0.7rem;
-				margin: 0em;
-			}
-		</style>
-	</head>
-	<body>
-		<div class="header">
-			<!-- <label for="language" class="hidden">Select Language:</label> -->
-			<div>
-				<select id="language">
-					<!-- options with language and flag -->
-					<option value="en">
-						English
-					</option>
-					<option value="ar">
-						العربية
-					</option>
-					<option value="tr">
-						Türkçe
-					</option>
-					<option value="ur">
-						اردو
-					</option>
-				</select>
-			</div>
-			<h1>HaramBlur</h1>
-			<div>
-				<label class="switch">
-					<input name="status" type="checkbox" />
-					<span class="slider"></span>
-				</label>
-			</div>
-		</div>
-		<div class="container" id="container">
-			<div class="mb-3 ml-2">
-				<h2 id="settings">Settings</h2>
-				<!-- refresh to see changes -->
-				<div class="hidden mt--4 refresh" id="refresh-message">
-					Refresh the page to see changes.
-				</div>
-			</div>
-
-			<div class="card mb-3" id="whitelist-container">
-				<div class="row space-between">
-					<div>
-						<label for="whitelist" id="whitelist-label"><span id="website-name">bing.com</span>
-						</label>
-						<p id="whitelist-desc"> Detection is 
-							<span id="whitelist-status-on" class="blue-text"> On </span> 
-							<span id="whitelist-status-off" class="red-text hidden" > Off </span> 
-							for this website </p>
-					</div>
-					 <label class="switch small">
-						<input name="whitelist" id="whitelist" type="checkbox" />
-						<span class="slider small"></span>
-					</label>
-				</div>
-			</div>
-			<div class="card">
-				<!-- blurryStart mode setting toggle switch -->
-				<div class="mb-2">
-					<div class="row space-between">
-						<label for="blurryStart-mode"> 
-							<span id="blurryStart"> Blur media on load: </span>
-							<!-- i icon tooltip -->
-							<span class="tooltip">
-								<svg
-									xmlns="http://www.w3.org/2000/svg"
-									height="1em"
-									viewBox="0 0 512 512"
-								>
-									<path
-										fill="#2196f3"
-										d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"
-									/>
-								</svg>
-								<span class="tooltiptext">
-									When enabled, all images and videos will be
-									blurred by default until detection starts.
-								</span>
-							</span>
-						</label>
-						<label class="switch small">
-							<input name="blurryStartMode" type="checkbox" />
-							<span class="slider small"></span>
-						</label>
-					</div>
-				</div>
-
-				<!-- blur amount setting slider -->
-				<div>
-						<div class="">
-							<label for="blur-amount" id="blurAmount">Blur amount:
-								<span id="blur-amount-value">20</span>
-							</label>
-						<div class="row space-between" style="gap: 1rem;">
-							<input
-							type="range"
-							id="blur-amount"
-							name="blurAmount"
-							min="10"
-							max="30"
-							value="20"
-							class="form-range"
-							width="50px"
-							/>
-							<!-- checkbox for "grayscale?" -->
-					<div class="mb-2 ml-4">
-						<label class="form-checkbox-label" id="grayscale-label">
-							<span id="grayscale" >Grayscale:</span>
-							<input
-							type="checkbox"
-							class="form-checkbox"
-							name="gray"
-							id="grayscale-checkbox"
-							/>
-						</label>
-					</div>
-				</div>
-					</div>
-					
-				</div>
-				<!-- strictness slider -->
-				<div class="mb-2">
-					<label for="blur-amount" id="strictness"
-						>Strictness:
-						<span id="strictness-value">30%</span>
-					</label>
-					<input
-						type="range"
-						id="strictness"
-						name="strictness"
-						min="0.1"
-						max="1"
-						value="0.5"
-						step="0.1"
-						class="form-range"
-					/>
-				</div>
-
-				<div class="mb-2">
-					<label>
-						<span id="mediaToBlur"> Media to Blur </span>
-						<span class="refresh"> (requires page refresh): </span>
-					</label>
-					<div class="options-grid">
-						<label class="form-checkbox-label">
-							<input
-								type="checkbox"
-								class="form-checkbox"
-								name="blurImages"
-								value="images"
-							/>
-							<span id="blurImages">Images</span>
-						</label>
-						<label class="form-checkbox-label">
-							<input
-								type="checkbox"
-								class="form-checkbox"
-								name="blurVideos"
-								value="videos"
-							/>
-							<span id="blurVideos">Videos</span>
-						</label>
-					</div>
-				</div>
-				<div class="mb-2">
-					<label> 
-						<span id="facesToBlur">Faces to Blur </span>
-						<span class="refresh"> (requires page refresh): </span>
-					</label>
-					<div class="options-grid">
-						<label class="form-checkbox-label">
-							<input
-								type="checkbox"
-								class="form-checkbox"
-								name="blurMale"
-								value="male"
-							/>
-							<span id="blurMale">Male</span>
-						</label>
-						<label class="form-checkbox-label">
-							<input
-								type="checkbox"
-								class="form-checkbox"
-								name="blurFemale"
-								value="female"
-							/>
-							<span id="blurFemale">Female</span>
-						</label>
-					</div>
-				</div>
-
-				<div class="mb-4">
-					<label> 
-						<span id="unblurOnHover">Unblur on hover </span>
-						<span class="refresh"> (requires page refresh): </span>
-					</label>
-					<div class="options-grid">
-						<label class="form-checkbox-label">
-							<input
-								type="checkbox"
-								class="form-checkbox"
-								name="unblurImages"
-								value="images"
-							/>
-							<span id="unblurImages">Images</span>
-						</label>
-						<label class="form-checkbox-label">
-							<input
-								type="checkbox"
-								class="form-checkbox"
-								name="unblurVideos"
-								value="videos"
-							/>
-							<span id="unblurVideos">Videos</span>
-						</label>
-					</div>
-				</div>
-			</div>
-		</div>
-		<div class="footer">
-			<!-- 3 buttons/links 1- share 2- github 3- support -->
-			<div class="row mb-3">
-				<script
-					type="text/javascript"
-					src="./assets/buymeacoffee.min.js"
-					data-name="bmc-button"
-					data-slug="alganzory"
-					data-color="#FFDD00"
-					data-emoji=""
-					data-font="Poppins"
-					data-text="Support this Project"
-					data-outline-color="#000000"
-					data-font-color="#000000"
-					data-coffee-color="#ffffff"
-				></script>
-			</div>
-
-			<div class="row">
-				<a
-					class="github-button"
-					href="https://github.com/alganzory/HaramBlur"
-					data-size="large"
-					aria-label="Star HaramBlur on GitHub"
-					>Star</a
-				>
-				<a
-					href="https://www.addtoany.com/add_to/facebook?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
-					target="_blank"
-					><img
-						src="https://static.addtoany.com/buttons/facebook.svg"
-						width="28"
-						height="28"
-						style="background-color: royalblue"
-				/></a>
-				<a
-					href="https://www.addtoany.com/add_to/twitter?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
-					target="_blank"
-					><img
-						src="https://static.addtoany.com/buttons/twitter.svg"
-						width="28"
-						height="28"
-						style="background-color: royalblue"
-				/></a>
-				<a
-					href="https://www.addtoany.com/add_to/whatsapp?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
-					target="_blank"
-					><img
-						src="https://static.addtoany.com/buttons/whatsapp.svg"
-						width="28"
-						height="28"
-						style="background-color: royalblue"
-				/></a>
-				<a
-					href="https://www.addtoany.com/add_to/telegram?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
-					target="_blank"
-					><img
-						src="https://static.addtoany.com/buttons/telegram.svg"
-						width="28"
-						height="28"
-						style="background-color: royalblue"
-				/></a>
-				<a
-					href="https://www.addtoany.com/add_to/linkedin?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
-					target="_blank"
-					><img
-						src="https://static.addtoany.com/buttons/linkedin.svg"
-						width="28"
-						height="28"
-						style="background-color: royalblue"
-				/></a>
-				<a
-					href="https://www.addtoany.com/add_to/reddit?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
-					target="_blank"
-					><img
-						src="https://static.addtoany.com/buttons/reddit.svg"
-						width="28"
-						height="28"
-						style="background-color: royalblue"
-				/></a>
-			</div>
-
-			<div class="feedback">
-				<span> We love to hear your feedback through our </span>
-				<a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank" data-trans="form-label">Form</a> or 
-				<a href="mailto:md.alganzory@gmail.com" target="_blank" data-trans="email-label">Email</a> ❤️
-			</div>
-		</div>
-
-		<script src="translations.js"></script>
-		<script src="popup.js"></script>
-	</body>
+    <head>
+        <meta charset="utf-8" />
+        <title>HaramBlur Extension</title>
+        <script async defer src="./assets/github-button.js"></script>
+        <style>
+            body {
+                background-color: #f7fafc;
+                color: #374151;
+                font-family: sans-serif;
+                font-size: 14px;
+                line-height: 1.5;
+                font-family: Poppins, sans-serif;
+                margin: 0;
+            }
+
+            /* change body font to Tahoma if arabic */
+            :lang(ar) body {
+                font-family: Tahoma, sans-serif;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                body {
+                    background-color: #141414;
+                    color: #f9f9f9;
+                }
+            }
+            .container {
+                min-width: 370px;
+                padding: 0rem 1rem 0.5rem 1rem;
+            }
+
+            .header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                background-color: royalblue;
+                color: #fff;
+                padding: 1rem;
+                position: sticky;
+                top: 0;
+                left: 0;
+                right: 0;
+                border-radius: 0px 0px 25px 25px;
+                z-index: 2;
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .header {
+                    box-shadow:
+                        0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+                        0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+                }
+            }
+
+            .header h1 {
+                font-size: 1.32rem;
+                font-weight: bold;
+                margin: 0;
+                text-align: center;
+                font-family: Poppins, sans-serif !important;
+            }
+
+            .header > * {
+                flex: 1;
+            }
+
+            /* last child self align right */
+            .header > *:last-child {
+                text-align: right;
+            }
+
+            .switch {
+                position: relative;
+                display: inline-block;
+                width: 60px;
+                height: 34px;
+            }
+            .switch.small {
+                width: 50px;
+                height: 28px;
+            }
+
+            .switch input {
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            .slider {
+                position: absolute;
+                cursor: pointer;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: #ccc;
+                -webkit-transition: 0.4s;
+                transition: 0.4s;
+                border-radius: 25px;
+            }
+
+            .slider:before {
+                position: absolute;
+                content: "";
+                height: 26px;
+                width: 26px;
+                left: 4px;
+                bottom: 4px;
+                background-color: white;
+                -webkit-transition: 0.4s;
+                transition: 0.4s;
+                border-radius: 50%;
+            }
+
+            .slider.small::before {
+                height: 20px;
+                width: 20px;
+            }
+
+            input:checked + .slider {
+                background-color: #2196f3;
+            }
+
+            input:focus + .slider {
+                box-shadow: 0 0 1px #2196f3;
+            }
+
+            input:checked + .slider:before {
+                -webkit-transform: translateX(100%);
+                -ms-transform: translateX(100%);
+                transform: translateX(100%);
+            }
+
+            .form-checkbox {
+                -webkit-appearance: none;
+                -moz-appearance: none;
+                appearance: none;
+                display: inline-block;
+                vertical-align: middle;
+                background-origin: border-box;
+                user-select: none;
+                flex-shrink: 0;
+                height: 1.2em;
+                width: 1.2em;
+                border: 1px solid #e2e8f0;
+                color: #4299e1;
+                border-radius: 0.25rem;
+                transition:
+                    background-color 0.2s ease-in-out,
+                    border-color 0.2s ease-in-out,
+                    box-shadow 0.2s ease-in-out;
+                background-color: #fff;
+                background-size: 100% 100%;
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+
+            .form-checkbox:checked {
+                background-color: #4299e1;
+                border-color: #4299e1;
+                color: #fff;
+            }
+
+            .form-checkbox:focus {
+                outline: none;
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+                border-color: #4299e1;
+            }
+
+            .form-checkbox:checked:focus {
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+            }
+
+            .form-checkbox:checked:active {
+                background-color: #2b6cb0;
+                border-color: #2b6cb0;
+            }
+
+            .form-checkbox:disabled {
+                opacity: 0.5;
+                cursor: not-allowed;
+            }
+
+            .form-checkbox-label {
+                display: inline-block;
+                vertical-align: middle;
+                cursor: pointer;
+                margin-right: 2rem;
+            }
+
+            .form-range {
+                width: 100%;
+                height: 1.5rem;
+                background-color: #e2e8f0;
+                border-radius: 0.25rem;
+                outline: none;
+                opacity: 0.7;
+                -webkit-transition: opacity 0.2s ease-in-out;
+                transition: opacity 0.2s ease-in-out;
+            }
+
+            .form-range:hover {
+                opacity: 1;
+            }
+
+            .form-range::-webkit-slider-thumb {
+                -webkit-appearance: none;
+                appearance: none;
+                width: 1rem;
+                height: 1rem;
+                background-color: #4299e1;
+                border-radius: 50%;
+                cursor: pointer;
+            }
+
+            .form-range::-moz-range-thumb {
+                width: 1rem;
+                height: 1rem;
+                background-color: #4299e1;
+                border-radius: 50%;
+                cursor: pointer;
+            }
+
+            .form-range::-ms-thumb {
+                width: 1rem;
+                height: 1rem;
+                background-color: #4299e1;
+                border-radius: 50%;
+                cursor: pointer;
+            }
+
+            .form-range::-webkit-slider-runnable-track {
+                height: 0.5rem;
+                background-color: #e2e8f0;
+                border-radius: 0.25rem;
+            }
+
+            .form-range::-moz-range-track {
+                height: 0.5rem;
+                background-color: #e2e8f0;
+                border-radius: 0.25rem;
+            }
+
+            .form-range::-ms-track {
+                height: 0.5rem;
+                background-color: #e2e8f0;
+                border-radius: 0.25rem;
+            }
+
+            .form-range::-ms-fill-lower {
+                background-color: #4299e1;
+                border-radius: 0.25rem;
+            }
+
+            .form-range::-ms-fill-upper {
+                background-color: #e2e8f0;
+                border-radius: 0.25rem;
+            }
+
+            .form-range:focus::-webkit-slider-thumb {
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+            }
+
+            .form-range:focus::-moz-range-thumb {
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+            }
+
+            .form-range:focus::-ms-thumb {
+                box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.5);
+            }
+
+            .options-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-gap: 0.5rem;
+            }
+
+            .button {
+                display: inline-block;
+                background-color: #4299e1;
+                color: #fff;
+                font-weight: bold;
+                text-align: center;
+                text-decoration: none;
+                padding: 0.5rem 1rem;
+                border-radius: 0.25rem;
+                cursor: pointer;
+                transition: background-color 0.2s ease-in-out;
+            }
+
+            .button:hover {
+                background-color: #2b6cb0;
+            }
+
+            .button:active {
+                background-color: #2c5282;
+            }
+
+            .button-secondary {
+                background-color: #e2e8f0;
+                color: #4a5568;
+            }
+
+            .button-secondary:hover {
+                background-color: #cbd5e0;
+            }
+
+            .button-secondary:active {
+                background-color: #a0aec0;
+            }
+
+            .footer {
+                background-color: #f7fafc;
+                position: sticky;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                padding: 0.5rem 0 0.5rem 0;
+                border-radius: 25px 25px 0px 0px;
+                /* box shadown on the top */
+                box-shadow:
+                    0 0 15px 5px rgba(0, 0, 0, 0.05),
+                    0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            }
+            @media (prefers-color-scheme: dark) {
+                .footer {
+                    background-color: #212121;
+                    box-shadow:
+                        0px -2px 4px -1px rgba(0, 0, 0, 0.2),
+                        0px -4px 5px 0px rgba(0, 0, 0, 0.14),
+                        0px -1px 10px 0px rgba(0, 0, 0, 0.12);
+                }
+            }
+
+            .footer img {
+                border-radius: 0.25rem;
+            }
+            .bmc-btn {
+                font-size: 0.9rem !important;
+                height: unset !important;
+                padding: 5px 10px !important;
+                min-width: unset !important;
+                text-align: left !important;
+            }
+            .bmc-btn:hover {
+                opacity: 0.85 !important;
+                animation: shake 0.82s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
+            }
+            @keyframes shake {
+                10%,
+                90% {
+                    transform: translate3d(0, -1px, 0);
+                }
+
+                20%,
+                80% {
+                    transform: translate3d(0, 2px, 0);
+                }
+
+                30%,
+                50%,
+                70% {
+                    transform: translate3d(0, -4px, 0);
+                }
+
+                40%,
+                60% {
+                    transform: translate3d(0, 4px, 0);
+                }
+            }
+
+            .row {
+                display: flex;
+                justify-content: space-around;
+                /* align-items: center; */
+            }
+
+            .space-between {
+                justify-content: space-between;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            .tooltip {
+                position: relative;
+                display: inline-block;
+            }
+
+            .tooltip .tooltiptext {
+                visibility: hidden;
+                width: 200px;
+                background-color: #555;
+                color: #fff;
+                text-align: left;
+                border-radius: 6px;
+                padding: 5px;
+                position: absolute;
+                z-index: 1;
+                bottom: 125%;
+                left: 100%;
+                margin-left: -60px;
+                transition: opacity 0.3s;
+                font-size: 0.8rem;
+                opacity: 0;
+            }
+
+            .tooltip:hover .tooltiptext {
+                visibility: visible;
+                opacity: 0.9;
+            }
+
+            .refresh {
+                /* blueish color */
+                font-size: 0.7rem;
+                color: #4299e1;
+            }
+
+            .feedback {
+                text-align: center;
+                font-size: 0.8rem;
+                color: #4299e1;
+            }
+
+            .feedback a {
+                color: royalblue;
+                text-decoration: none;
+            }
+
+            .mt-2 {
+                margin-top: 0.5rem;
+            }
+            .mb-2 {
+                margin-bottom: 0.5rem;
+            }
+
+            .mb-3 {
+                margin-bottom: 0.75rem;
+            }
+            .mt-4 {
+                margin-top: 1rem;
+            }
+
+            .mt--4 {
+                margin-top: -1.5rem;
+            }
+            .mb-4 {
+                margin-bottom: 1rem;
+            }
+
+            .ml-2 {
+                margin-left: 0.5rem;
+            }
+            .ml-4 {
+                margin-left: 1rem;
+            }
+
+            .blue-text {
+                color: #4299e1;
+            }
+            .red-text {
+                color: #f56565;
+            }
+
+            /* grayscale checkbox: we want the label to be above the checkbox not below it */
+            #grayscale-label {
+                display: flex;
+                /* flex-direction: column; */
+                align-items: end;
+                margin-right: 0;
+            }
+
+            #language {
+                padding: 0.7em 0.25em 0.7em 1.8em;
+                background-color: #2196f3;
+                background-image: url(https://coothead.co.uk/images/world.png);
+                background-repeat: no-repeat;
+                background-size: 1.1em auto;
+                background-position: 0.7em center;
+                font-size: 0.8em;
+                font-family: inherit;
+                color: #fff;
+                border: none;
+                border-radius: 25px;
+            }
+
+            .card {
+                background-color: #fff;
+                border-radius: 25px;
+                padding: 1rem;
+                box-shadow:
+                    0 0 0 1px rgba(0, 0, 0, 0.05),
+                    0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            }
+
+            @media (prefers-color-scheme: dark) {
+                .card {
+                    background-color: #212121;
+                    color: #fff;
+                    box-shadow:
+                        0px 2px 4px -1px rgba(0, 0, 0, 0.2),
+                        0px 4px 5px 0px rgba(0, 0, 0, 0.14),
+                        0px 1px 10px 0px rgba(0, 0, 0, 0.12);
+                }
+            }
+
+            #website-name {
+                font-weight: bold;
+                font-size: 1rem;
+            }
+
+            #whitelist-desc {
+                font-size: 0.7rem;
+                margin: 0em;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="header">
+            <!-- <label for="language" class="hidden">Select Language:</label> -->
+            <div>
+                <select id="language">
+                    <!-- options with language and flag -->
+                    <option value="en">English</option>
+                    <option value="ar">العربية</option>
+                    <option value="tr">Türkçe</option>
+                    <option value="ur">اردو</option>
+                </select>
+            </div>
+            <h1>HaramBlur</h1>
+            <div>
+                <label class="switch">
+                    <input name="status" type="checkbox" />
+                    <span class="slider"></span>
+                </label>
+            </div>
+        </div>
+        <div class="container" id="container">
+            <div class="mb-3 ml-2">
+                <h2 id="settings">Settings</h2>
+                <!-- refresh to see changes -->
+                <div class="hidden mt--4 refresh" id="refresh-message">
+                    Refresh the page to see changes.
+                </div>
+            </div>
+
+            <div class="card mb-3" id="whitelist-container">
+                <div class="row space-between">
+                    <div>
+                        <label for="whitelist" id="whitelist-label"
+                            ><span id="website-name">bing.com</span>
+                        </label>
+                        <p id="whitelist-desc">
+                            Detection is
+                            <span id="whitelist-status-on" class="blue-text">
+                                On
+                            </span>
+                            <span
+                                id="whitelist-status-off"
+                                class="red-text hidden"
+                            >
+                                Off
+                            </span>
+                            for this website
+                        </p>
+                    </div>
+                    <label class="switch small">
+                        <input
+                            name="whitelist"
+                            id="whitelist"
+                            type="checkbox"
+                        />
+                        <span class="slider small"></span>
+                    </label>
+                </div>
+            </div>
+            <div class="card">
+                <!-- blurryStart mode setting toggle switch -->
+                <div class="mb-2">
+                    <div class="row space-between">
+                        <label for="blurryStart-mode">
+                            <span id="blurryStart"> Blur media on load: </span>
+                            <!-- i icon tooltip -->
+                            <span class="tooltip">
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    height="1em"
+                                    viewBox="0 0 512 512"
+                                >
+                                    <path
+                                        fill="#2196f3"
+                                        d="M256 512A256 256 0 1 0 256 0a256 256 0 1 0 0 512zM216 336h24V272H216c-13.3 0-24-10.7-24-24s10.7-24 24-24h48c13.3 0 24 10.7 24 24v88h8c13.3 0 24 10.7 24 24s-10.7 24-24 24H216c-13.3 0-24-10.7-24-24s10.7-24 24-24zm40-208a32 32 0 1 1 0 64 32 32 0 1 1 0-64z"
+                                    />
+                                </svg>
+                                <span class="tooltiptext">
+                                    When enabled, all images and videos will be
+                                    blurred by default until detection starts.
+                                </span>
+                            </span>
+                        </label>
+                        <label class="switch small">
+                            <input name="blurryStartMode" type="checkbox" />
+                            <span class="slider small"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- blur amount setting slider -->
+                <div>
+                    <div class="">
+                        <label for="blur-amount" id="blurAmount"
+                            >Blur amount:
+                            <span id="blur-amount-value">20</span>
+                        </label>
+                        <div class="row space-between" style="gap: 1rem">
+                            <input
+                                type="range"
+                                id="blur-amount"
+                                name="blurAmount"
+                                min="10"
+                                max="30"
+                                value="20"
+                                class="form-range"
+                                width="50px"
+                            />
+                            <!-- checkbox for "grayscale?" -->
+                            <div class="mb-2 ml-4">
+                                <label
+                                    class="form-checkbox-label"
+                                    id="grayscale-label"
+                                >
+                                    <span id="grayscale">Grayscale:</span>
+                                    <input
+                                        type="checkbox"
+                                        class="form-checkbox"
+                                        name="gray"
+                                        id="grayscale-checkbox"
+                                    />
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- strictness slider -->
+                <div class="mb-2">
+                    <label for="blur-amount" id="strictness"
+                        >Strictness:
+                        <span id="strictness-value">30%</span>
+                    </label>
+                    <input
+                        type="range"
+                        id="strictness"
+                        name="strictness"
+                        min="0.1"
+                        max="1"
+                        value="0.5"
+                        step="0.1"
+                        class="form-range"
+                    />
+                </div>
+
+                <div class="mb-2">
+                    <label>
+                        <span id="mediaToBlur"> Media to Blur </span>
+                        <span class="refresh"> (requires page refresh): </span>
+                    </label>
+                    <div class="options-grid">
+                        <label class="form-checkbox-label">
+                            <input
+                                type="checkbox"
+                                class="form-checkbox"
+                                name="blurImages"
+                                value="images"
+                            />
+                            <span id="blurImages">Images</span>
+                        </label>
+                        <label class="form-checkbox-label">
+                            <input
+                                type="checkbox"
+                                class="form-checkbox"
+                                name="blurVideos"
+                                value="videos"
+                            />
+                            <span id="blurVideos">Videos</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label>
+                        <span id="facesToBlur">Faces to Blur </span>
+                        <span class="refresh"> (requires page refresh): </span>
+                    </label>
+                    <div class="options-grid">
+                        <label class="form-checkbox-label">
+                            <input
+                                type="checkbox"
+                                class="form-checkbox"
+                                name="blurMale"
+                                value="male"
+                            />
+                            <span id="blurMale">Male</span>
+                        </label>
+                        <label class="form-checkbox-label">
+                            <input
+                                type="checkbox"
+                                class="form-checkbox"
+                                name="blurFemale"
+                                value="female"
+                            />
+                            <span id="blurFemale">Female</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label>
+                        <span id="unblurOnHover">Unblur on hover </span>
+                        <span class="refresh"> (requires page refresh): </span>
+                    </label>
+                    <div class="options-grid">
+                        <label class="form-checkbox-label">
+                            <input
+                                type="checkbox"
+                                class="form-checkbox"
+                                name="unblurImages"
+                                value="images"
+                            />
+                            <span id="unblurImages">Images</span>
+                        </label>
+                        <label class="form-checkbox-label">
+                            <input
+                                type="checkbox"
+                                class="form-checkbox"
+                                name="unblurVideos"
+                                value="videos"
+                            />
+                            <span id="unblurVideos">Videos</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="footer">
+            <!-- 3 buttons/links 1- share 2- github 3- support -->
+            <div class="row mb-3">
+                <script
+                    type="text/javascript"
+                    src="./assets/buymeacoffee.min.js"
+                    data-name="bmc-button"
+                    data-slug="alganzory"
+                    data-color="#FFDD00"
+                    data-emoji=""
+                    data-font="Poppins"
+                    data-text="Support this Project"
+                    data-outline-color="#000000"
+                    data-font-color="#000000"
+                    data-coffee-color="#ffffff"
+                ></script>
+            </div>
+
+            <div class="row">
+                <a
+                    class="github-button"
+                    href="https://github.com/alganzory/HaramBlur"
+                    data-size="large"
+                    aria-label="Star HaramBlur on GitHub"
+                    >Star</a
+                >
+                <a
+                    href="https://www.addtoany.com/add_to/facebook?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+                    target="_blank"
+                    ><img
+                        src="https://static.addtoany.com/buttons/facebook.svg"
+                        width="28"
+                        height="28"
+                        style="background-color: royalblue"
+                /></a>
+                <a
+                    href="https://www.addtoany.com/add_to/twitter?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+                    target="_blank"
+                    ><img
+                        src="https://static.addtoany.com/buttons/twitter.svg"
+                        width="28"
+                        height="28"
+                        style="background-color: royalblue"
+                /></a>
+                <a
+                    href="https://www.addtoany.com/add_to/whatsapp?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+                    target="_blank"
+                    ><img
+                        src="https://static.addtoany.com/buttons/whatsapp.svg"
+                        width="28"
+                        height="28"
+                        style="background-color: royalblue"
+                /></a>
+                <a
+                    href="https://www.addtoany.com/add_to/telegram?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+                    target="_blank"
+                    ><img
+                        src="https://static.addtoany.com/buttons/telegram.svg"
+                        width="28"
+                        height="28"
+                        style="background-color: royalblue"
+                /></a>
+                <a
+                    href="https://www.addtoany.com/add_to/linkedin?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+                    target="_blank"
+                    ><img
+                        src="https://static.addtoany.com/buttons/linkedin.svg"
+                        width="28"
+                        height="28"
+                        style="background-color: royalblue"
+                /></a>
+                <a
+                    href="https://www.addtoany.com/add_to/reddit?linkurl=https%3A%2F%2Fchrome.google.com%2Fwebstore%2Fdetail%2Fharamblur%2Fpbcoegikffnadpahojjhgdladmmddeji&amp;linkname=Download%20HaramBlur%20Extension"
+                    target="_blank"
+                    ><img
+                        src="https://static.addtoany.com/buttons/reddit.svg"
+                        width="28"
+                        height="28"
+                        style="background-color: royalblue"
+                /></a>
+            </div>
+
+            <div class="feedback">
+                <span> We love to hear your feedback through our </span>
+                <a
+                    href="https://forms.gle/mDDjh44MKRVemWX86"
+                    target="_blank"
+                    data-trans="form-label"
+                    >Form</a
+                >
+                or
+                <a
+                    href="mailto:md.alganzory@gmail.com"
+                    target="_blank"
+                    data-trans="email-label"
+                    >Email</a
+                >
+                ❤️
+            </div>
+        </div>
+
+        <script src="translations.js"></script>
+        <script src="popup.js"></script>
+    </body>
 </html>

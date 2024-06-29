@@ -1,0 +1,5 @@
+node_modules
+dist
+tfjs
+package-lock.json
+src/assets
