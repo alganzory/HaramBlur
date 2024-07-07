@@ -17,8 +17,11 @@ class Queue {
             const node = await loadImage(img.src, img.width, img.height);
             this.processNextElement(node, onSuccess, onError);
         } catch (error) {
-            console.warn("HB=== image failed to load", img);
-            onError(error);
+            console.error("HB=== image failed to load", img.src);
+            onError({
+                message: "Failed to load image",
+                error,
+            });
         } finally {
             this.activeLoading--;
             // if there are more images to load, load them
@@ -35,7 +38,10 @@ class Queue {
             onSuccess(result);
         } catch (error) {
             console.error("Offscreen== handleElementProcessing error", error);
-            onError(error);
+            onError({
+                message: "Failed to process image",
+                error,
+            });
         } finally {
             this.activeProcessing--;
             node.src = "";

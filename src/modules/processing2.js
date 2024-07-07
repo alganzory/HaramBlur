@@ -46,21 +46,27 @@ const processImage = (node, STATUSES) => {
                 },
             },
             (response) => {
+                // console.log("HB== handleElementProcessing", response, node)
                 removeBlurryStart(node);
-                if (
-                    response === "face" ||
-                    response === "nsfw" ||
-                    response == false
-                ) {
-                    // console.log("HB== handleElementProcessing", response);
+                if (response.type === "error") {
+                    console.warn("HB==Error while processing image", response);
+                    node.dataset.HBstatus = STATUSES.ERROR;
+                    return;
+                }
+                if (response === "face" || response === "nsfw") {
                     node.dataset.HBstatus = STATUSES.PROCESSED;
-                    if (response === "face" || response === "nsfw") {
-                        node.classList.add("hb-blur");
-                        node.dataset.HBresult = response;
-                    } else {
-                        node.classList.remove("hb-blur");
-                        delete node.dataset.HBresult;
-                    }
+                    node.classList.add("hb-blur");
+                    node.dataset.HBresult = response;
+                } else if (response == false) {
+                    node.dataset.HBstatus = STATUSES.PROCESSED;
+                    node.classList.remove("hb-blur");
+                    delete node.dataset.HBresult;
+                } else {
+                    console.warn(
+                        "HB==Unknown response from processing image",
+                        response
+                    );
+                    node.dataset.HBstatus = STATUSES.ERROR;
                 }
             }
         );
@@ -183,7 +189,7 @@ const videoDetectionLoop = async (video, { width, height }) => {
         };
     }
 };
-const processVideo = async (node, STATUSES) => {
+const processVideo = async (node) => {
     try {
         node.dataset.HBstatus = STATUSES.LOADING;
         await loadVideo(node);

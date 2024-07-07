@@ -1,6 +1,5 @@
 // detector.js
 // This module exports detector functions and variables
-const modelsUrl = chrome.runtime.getURL("src/assets/models/human");
 const nsfwUrl = chrome.runtime.getURL("src/assets/models/nsfwjs/model.json");
 
 const HUMAN_CONFIG = {

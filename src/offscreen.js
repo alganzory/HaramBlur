@@ -29,6 +29,7 @@ const handleImageDetection = (request, sender, sendResponse) => {
             sendResponse(result);
         },
         (error) => {
+            error.type = "error";
             sendResponse(error);
         }
     );
