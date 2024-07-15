@@ -8,6 +8,10 @@ You can configure the type of detection you want and the amount of blur, the lev
 
 ![HaramBlur Demo](demos/demo1.png)
 
+## Translations
+
+- ‎[عربي](اقرأني.md)
+
 ## Features
 
 -   Works on images and videos that contain unwanted or impermissible content
