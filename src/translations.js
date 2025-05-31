@@ -149,6 +149,44 @@ const getTranslations = (settings) => {
 				</p>
 			`,
         },
+        // French
+        fr: {
+            "#settings": "Paramètres",
+            "#blurryStart": "Flouter les médias au chargement :",
+            ".tooltiptext":
+                "Lorsque cette option est activée, toutes les images et vidéos seront floutées par défaut jusqu'au début de la détection.",
+            "#blurAmount": `
+			Intensité du flou :
+			<span id="blur-amount-value">${settings.blurAmount}%</span>
+		`,
+            "#grayscale": "Noir et blanc :",
+            "#strictness": `Rigueur :
+		<span id="strictness-value">${settings.strictness * 100}%</span>
+		`,
+            "#mediaToBlur": "Médias à flouter",
+            "#blurImages": "Images",
+            "#blurVideos": "Vidéos",
+            "#facesToBlur": "Visages à flouter",
+            "#blurMale": "Hommes",
+            "#blurFemale": "Femmes",
+            "#unblurOnHover": "Afficher au survol",
+            "#unblurImages": "Images",
+            "#unblurVideos": "Vidéos",
+            ".refresh": " (nécessite un rafraîchissement de la page) :",
+            "#refresh-message":
+                "Rafraîchissez la page pour voir les changements.",
+            ".bmc-btn-text": "Soutenir le projet",
+            ".feedback": `
+			<span> Nous aimons recevoir vos commentaires via notre </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Formulaire</a> ou 
+			<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
+			`,
+            "#whitelist-desc": `
+				<p id="whitelist-desc"> La détection est 
+				<span id="whitelist-status-on" class="blue-text"> Activée </span> 
+				<span id="whitelist-status-off" class="red-text hidden" > Désactivée </span> 
+				pour ce site web </p>
+			`,
+        },
     };
 };
 
@@ -157,4 +195,5 @@ const HB_TRANSLATIONS_DIR = {
     tr: "ltr",
     ar: "rtl",
     ur: "rtl",
+    fr: "ltr",
 };
