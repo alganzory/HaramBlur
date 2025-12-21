@@ -149,6 +149,44 @@ const getTranslations = (settings) => {
 				</p>
 			`,
         },
+        // german
+        de: {
+            "#settings": "Einstellungen",
+            "#blurryStart": "Medien beim Laden verwischen:",
+            ".tooltiptext":
+                "Wenn diese Option aktiviert ist, werden alle Bilder und Videos standardmäßig verwischt, bis die Erkennung startet.",
+            "#blurAmount": `
+                Unschärfestärke:
+            <span id="blur-amount-value">${settings.blurAmount}%</span>
+        `,
+            "#grayscale": "Graustufen:",
+            "#strictness": `Strenge:
+        <span id="strictness-value">${settings.strictness * 100}%</span>
+        `,
+            "#mediaToBlur": "Zu verwischende Medien",
+            "#blurImages": "Bilder",
+            "#blurVideos": "Videos",
+            "#facesToBlur": "Zu verwischende Gesichter",
+            "#blurMale": "Männlich",
+            "#blurFemale": "Weiblich",
+            "#unblurOnHover": "Beim Darüberfahren scharf anzeigen",
+            "#unblurImages": "Bilder",
+            "#unblurVideos": "Videos",
+            ".refresh": " (Seitenaktualisierung erforderlich):",
+            "#refresh-message": "Aktualisieren Sie die Seite, um die Änderungen zu sehen.",
+            ".bmc-btn-text": "Projekt unterstützen",
+            ".feedback": `
+                <span> Wir freuen uns über Ihr Feedback über unser </span>
+                <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Formular</a> oder per
+                <a href="mailto:md.alganzory@gmail.com" target="_blank">E-Mail</a> ❤️
+            `,
+            "#whitelist-desc": `
+                <p id="whitelist-desc"> Erkennung ist
+                <span id="whitelist-status-on" class="blue-text"> Aktiv </span>
+                <span id="whitelist-status-off" class="red-text hidden"> Inaktiv </span>
+                für diese Website </p>
+            `,
+        },
     };
 };
 
@@ -157,4 +195,5 @@ const HB_TRANSLATIONS_DIR = {
     tr: "ltr",
     ar: "rtl",
     ur: "rtl",
+    de: "ltr",
 };
