@@ -21,7 +21,8 @@ const attachAllListeners = () => {
 
 if (window.self === window.top) {
     attachAllListeners();
-    initMutationObserver();
+
+    // Initialize settings first, observer only after whitelist check
     Settings.init()
         .then((settings) => {
             if (
@@ -36,6 +37,9 @@ if (window.self === window.top) {
                 killObserver();
                 return;
             }
+
+            // Only init observer after whitelist check passes
+            initMutationObserver();
 
             // turn on/off the extension
             settings.toggleOnOffStatus();
