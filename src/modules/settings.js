@@ -83,6 +83,10 @@ class Settings {
         return this._settings.whitelist;
     }
 
+    isWhitelisted(hostname) {
+        return this._settings.whitelist?.includes(hostname);
+    }
+
     getSettings() {
         return this._settings;
     }
