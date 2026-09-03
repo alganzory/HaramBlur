@@ -36,9 +36,9 @@ const setStyle = ({ detail: settings }) => {
 
     let unblurSelectors = [];
     if (shouldUnblurImagesOnHover)
-        unblurSelectors.push("img" + ".hb-blur:hover");
+        unblurSelectors.push("img.hb-blur:hover", "img.hb-blur:focus");
     if (shouldUnblurVideosOnHover)
-        unblurSelectors.push("video" + ".hb-blur:hover");
+        unblurSelectors.push("video.hb-blur:hover", "video.hb-blur:focus");
     unblurSelectors = unblurSelectors.join(", ");
     hbStyleSheet.innerHTML = `
     ${blurSelectors} {
@@ -54,8 +54,8 @@ const setStyle = ({ detail: settings }) => {
         hbStyleSheet.innerHTML += `
 		${unblurSelectors} {
 			filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""} !important;
-			transition: filter 0.5s ease !important;
-			transition-delay: 1s !important;
+			transition: filter 0.3s ease !important;
+			transition-delay: 0.25s !important;
 		  }
 	`;
     }
@@ -96,6 +96,7 @@ const attachStyleListener = () => {
     listenToEvent("toggleOnOffStatus", setStyle);
     listenToEvent("changeBlurAmount", setStyle);
     listenToEvent("changeGray", setStyle);
+    listenToEvent("changeUnblur", setStyle);
 };
 
 export { attachStyleListener, applyBlurryStart, removeBlurryStart };

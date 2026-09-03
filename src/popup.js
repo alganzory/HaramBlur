@@ -224,7 +224,11 @@ function updateCheckbox(key) {
 
 function changeLanguage(lang, settings) {
     document.body.lang = lang;
-    document.getElementById("container").dir = HB_TRANSLATIONS_DIR[lang];
+    const dir = HB_TRANSLATIONS_DIR[lang] || "ltr";
+    document.documentElement.dir = dir;
+    document.documentElement.lang = lang;
+    document.body.dir = dir;
+    document.getElementById("container").dir = dir;
 
     const translations = getTranslations(settings)?.[lang];
     const keys = Object.keys(translations);
