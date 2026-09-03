@@ -516,6 +516,42 @@
                 font-size: 0.7rem;
                 margin: 0em;
             }
+
+            /* RTL fixes for Arabic / Urdu - Issue #218 */
+            [dir="rtl"] .header > *:last-child {
+                text-align: left;
+            }
+            [dir="rtl"] .header > *:first-child {
+                text-align: right;
+            }
+            [dir="rtl"] input:checked + .slider:before {
+                -webkit-transform: translateX(-100%);
+                -ms-transform: translateX(-100%);
+                transform: translateX(-100%);
+            }
+            [dir="rtl"] .tooltip .tooltiptext {
+                text-align: right;
+                left: auto;
+                right: 100%;
+                margin-left: 0;
+                margin-right: -60px;
+            }
+            [dir="rtl"] #language {
+                padding: 0.7em 1.8em 0.7em 0.25em;
+                background-position: calc(100% - 0.7em) center;
+            }
+            [dir="rtl"] .ml-2,
+            [dir="rtl"] .ml-4 {
+                margin-left: 0;
+                margin-right: 0.5rem;
+            }
+            [dir="rtl"] .form-checkbox-label {
+                margin-right: 0;
+                margin-left: 0;
+            }
+            [dir="rtl"] .bmc-btn {
+                text-align: right !important;
+            }
         </style>
     </head>
     <body>
@@ -626,8 +662,7 @@
                                 class="form-range"
                                 width="50px"
                             />
-                            <!-- checkbox for "grayscale?" -->
-                            <div class="mb-2 ml-4">
+                            <div class="options-grid" style="min-width: 150px">
                                 <label
                                     class="form-checkbox-label"
                                     id="grayscale-label"
@@ -638,6 +673,18 @@
                                         class="form-checkbox"
                                         name="gray"
                                         id="grayscale-checkbox"
+                                    />
+                                </label>
+                                <label
+                                    class="form-checkbox-label"
+                                    id="solid-label"
+                                >
+                                    <span id="solidBlur">Solid (hide):</span>
+                                    <input
+                                        type="checkbox"
+                                        class="form-checkbox"
+                                        name="solidBlur"
+                                        id="solid-blur-checkbox"
                                     />
                                 </label>
                             </div>

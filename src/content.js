@@ -6,6 +6,19 @@ import {
 import Settings from "./modules/settings";
 import { attachStyleListener } from "./modules/style";
 
+const isTopLevel = window.self === window.top;
+
+const getTopLevelHostname = () => {
+    return new Promise((resolve) => {
+        chrome.runtime.sendMessage(
+            { type: "getTopHostname", hostname: window.location.hostname },
+            (response) => {
+                resolve(response?.hostname || window.location.hostname);
+            }
+        );
+    });
+};
+
 const attachAllListeners = () => {
     // Listen for more settings
     attachStyleListener();
@@ -19,28 +32,25 @@ const attachAllListeners = () => {
     });
 };
 
-if (window.self === window.top) {
-    attachAllListeners();
-    initMutationObserver();
-    Settings.init()
-        .then((settings) => {
-            if (
-                settings
-                    .getWhitelist()
-                    .includes(
-                        window.location.hostname?.split("www.")?.[1] ??
-                            window.location.hostname
-                    )
-            ) {
-                console.log("HB==WHITELISTED SITE");
-                killObserver();
-                return;
-            }
+const checkWhitelistAndStart = async (settings) => {
+    const hostname = isTopLevel
+        ? window.location.hostname
+        : await getTopLevelHostname();
+    const normalized = hostname?.split("www.")?.[1] ?? hostname;
 
-            // turn on/off the extension
-            settings.toggleOnOffStatus();
-        })
-        .catch((e) => {
-            console.log("HB==INITIALIZATION ERROR", e);
-        });
-}
+    if (settings.getWhitelist().includes(normalized)) {
+        console.log("HB==WHITELISTED SITE", normalized);
+        killObserver();
+        return;
+    }
+
+    settings.toggleOnOffStatus();
+};
+
+attachAllListeners();
+initMutationObserver();
+Settings.init()
+    .then((settings) => checkWhitelistAndStart(settings))
+    .catch((e) => {
+        console.log("HB==INITIALIZATION ERROR", e);
+    });

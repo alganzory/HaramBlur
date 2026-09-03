@@ -33,6 +33,22 @@ const loadImage = async (imgSrc, imgWidth, imgHeight) => {
     });
 };
 
+const getEffectiveSrc = (node) => {
+    // Support lazy-loaded images with data-src, data-lazy-src, data-original attributes
+    if (node.src?.length) return node.src;
+    const lazyAttrs = [
+        "data-src",
+        "data-lazy-src",
+        "data-original",
+        "data-url",
+    ];
+    for (const attr of lazyAttrs) {
+        const value = node.getAttribute?.(attr);
+        if (value?.length) return value;
+    }
+    return "";
+};
+
 const loadVideo = async (video) => {
     // TODO: check if video is too small resolve false
 
@@ -258,4 +274,5 @@ export {
     requestIdleCB,
     cancelIdleCB,
     canvToBlob,
+    getEffectiveSrc,
 };

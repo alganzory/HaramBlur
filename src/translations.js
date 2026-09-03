@@ -12,6 +12,7 @@ const getTranslations = (settings) => {
 			<span id="blur-amount-value">${settings.blurAmount}%</span>
 		`,
             "#grayscale": "Grayscale:",
+            "#solidBlur": "Solid (hide):",
             "#strictness": `Strictness:
 		<span id="strictness-value">${settings.strictness * 100}%</span>
 		`,
@@ -49,6 +50,7 @@ const getTranslations = (settings) => {
 			<span id="blur-amount-value">${settings.blurAmount}%</span>
 		`,
             "#grayscale": "رمادي:",
+            "#solidBlur": "إخفاء صلب:",
             "#strictness": `الدقة:
 		<span id="strictness-value">${settings.strictness * 100}%</span>
 		`,
@@ -86,6 +88,7 @@ const getTranslations = (settings) => {
 			<span id="blur-amount-value">${settings.blurAmount}%</span>
 		`,
             "#grayscale": "Grileştir:",
+            "#solidBlur": "Katı (gizle):",
             "#strictness": `Katılık:
 		<span id="strictness-value">${settings.strictness * 100}%</span>
 		`,
@@ -123,6 +126,7 @@ const getTranslations = (settings) => {
 			<span id="blur-amount-value">${settings.blurAmount}%</span>
 		`,
             "#grayscale": "مٹیالا پیمانہ:",
+            "#solidBlur": "سالڈ (چھپائیں):",
             "#strictness": `سختی:
 		<span id="strictness-value">${settings.strictness * 100}%</span>
 		`,

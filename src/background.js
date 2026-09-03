@@ -13,6 +13,7 @@ const defaultSettings = {
     gray: true,
     strictness: 0.5, // goes from 0 to 1,
     whitelist: [],
+    solidBlur: false, // hide media entirely instead of blurring (Issue #212)
 };
 
 chrome.runtime.onInstalled.addListener(function () {
@@ -46,6 +47,8 @@ const createOffscreenDoc = () => {
 
 createOffscreenDoc();
 
+const tabHostnames = {};
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.type === "getSettings") {
         chrome.storage.sync.get(["hb-settings"], function (result) {
@@ -63,6 +66,17 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             });
         });
         return true;
+    } else if (request.type === "getTopHostname") {
+        const tabId = sender?.tab?.id;
+        if (tabId != null) {
+            if (sender.frameId === 0) {
+                tabHostnames[tabId] = request.hostname;
+            }
+            sendResponse({ hostname: tabHostnames[tabId] || request.hostname });
+        } else {
+            sendResponse({ hostname: request.hostname });
+        }
+        return true;
     } else if (request.type === "video-status") {
         chrome.contextMenus.update("enable-detection", {
             checked: request.status,
@@ -74,6 +88,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         // recreate the offscreen document
         createOffscreenDoc();
     }
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+    delete tabHostnames[tabId];
 });
 
 // context menu: "enable detection on this video"

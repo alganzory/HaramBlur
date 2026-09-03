@@ -28,37 +28,69 @@ const setStyle = ({ detail: settings }) => {
     const shouldBlurVideos = _settings.shouldBlurVideos();
     const shouldUnblurImagesOnHover = _settings.shouldUnblurImages();
     const shouldUnblurVideosOnHover = _settings.shouldUnblurVideos();
+    const solidBlur = _settings.isSolidBlur();
 
     let blurSelectors = [];
     if (shouldBlurImages) blurSelectors.push("img" + ".hb-blur");
     if (shouldBlurVideos) blurSelectors.push("video" + ".hb-blur");
     blurSelectors = blurSelectors.join(", ");
 
-    let unblurSelectors = [];
-    if (shouldUnblurImagesOnHover)
-        unblurSelectors.push("img" + ".hb-blur:hover");
-    if (shouldUnblurVideosOnHover)
-        unblurSelectors.push("video" + ".hb-blur:hover");
-    unblurSelectors = unblurSelectors.join(", ");
-    hbStyleSheet.innerHTML = `
-    ${blurSelectors} {
+    // solid blur: hide the media element entirely instead of applying a
+    // blur filter, which prevents any overlay offset issues (Issue #212)
+    const hiddenCss = solidBlur
+        ? `${blurSelectors} {
+      opacity: 0 !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }`
+        : `${blurSelectors} {
       filter: blur(${_settings.getBlurAmount()}px) ${
           _settings.isGray() ? "grayscale(100%)" : ""
       } !important;
       transition: filter 0.1s ease !important;
       opacity: unset !important;
-    }
-	
-  `;
+    }`;
+
+    let unblurSelectors = [];
+    if (shouldUnblurImagesOnHover)
+        unblurSelectors.push("img.hb-blur:hover", "img.hb-blur:focus");
+    if (shouldUnblurVideosOnHover)
+        unblurSelectors.push("video.hb-blur:hover", "video.hb-blur:focus");
+    unblurSelectors = unblurSelectors.join(", ");
+
+    hbStyleSheet.innerHTML = hiddenCss;
     if (unblurSelectors) {
         hbStyleSheet.innerHTML += `
 		${unblurSelectors} {
 			filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""} !important;
-			transition: filter 0.5s ease !important;
-			transition-delay: 1s !important;
+			transition: filter 0.3s ease !important;
+			transition-delay: 0.25s !important;
+			${
+                solidBlur
+                    ? "opacity: 1 !important; visibility: visible !important; pointer-events: auto !important;"
+                    : ""
+            }
 		  }
 	`;
     }
+
+    const tempBlur = solidBlur
+        ? `
+    @keyframes hb-blur-temp {
+		0% { opacity: 0; visibility: hidden; }
+		95% { opacity: 0; visibility: hidden; }
+		100% { opacity: 1; visibility: visible; }
+	}`
+        : `
+    @keyframes hb-blur-temp {
+		0% { filter: blur(${_settings.getBlurAmount()}px) ${
+            _settings.isGray() ? "grayscale(100%)" : ""
+        }; }
+		95% { filter: blur(${_settings.getBlurAmount()}px) ${
+            _settings.isGray() ? "grayscale(100%)" : ""
+        }; }
+		100% { filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""}; }
+	}`;
 
     hbStyleSheet.innerHTML += `
 	.hb-blur-temp { 
@@ -70,15 +102,7 @@ const setStyle = ({ detail: settings }) => {
 		visibility: hidden !important;
 	}
 
-	@keyframes hb-blur-temp {
-		0% { filter: blur(${_settings.getBlurAmount()}px) ${
-            _settings.isGray() ? "grayscale(100%)" : ""
-        }; }
-		95% { filter: blur(${_settings.getBlurAmount()}px) ${
-            _settings.isGray() ? "grayscale(100%)" : ""
-        }; }
-		100% { filter: blur(0px) ${_settings.isGray() ? "grayscale(0%)" : ""}; }
-	}
+	${tempBlur}
   `;
 };
 const applyBlurryStart = (node) => {
@@ -96,6 +120,7 @@ const attachStyleListener = () => {
     listenToEvent("toggleOnOffStatus", setStyle);
     listenToEvent("changeBlurAmount", setStyle);
     listenToEvent("changeGray", setStyle);
+    listenToEvent("changeUnblur", setStyle);
 };
 
 export { attachStyleListener, applyBlurryStart, removeBlurryStart };
