@@ -7,6 +7,7 @@ import {
     listenToEvent,
     processNode,
     updateBGvideoStatus,
+    getEffectiveSrc,
 } from "./helpers.js";
 
 import { applyBlurryStart } from "./style.js";
@@ -117,9 +118,14 @@ function observeNode(node, srcAttribute) {
 
     let sourceChildren = //some videos have source instead of src attribute
         isVideo ? node.getElementsByTagName("source")?.length : 0;
+    const effectiveSrc = isVideo
+        ? node.src?.length
+            ? node.src
+            : ""
+        : getEffectiveSrc(node);
     const conditions =
         (srcAttribute || !node.dataset.HBstatus) && // has to have a new src attribute or no HBstatus (not processed yet)
-        (node.src?.length > 0 || sourceChildren > 0) && // has to have a src attribute or source children
+        (effectiveSrc?.length > 0 || sourceChildren > 0) && // has to have a src attribute or source children
         (isVideo
             ? true
             : !isImageTooSmall(node) || node.height === 0 || node.width === 0); // if it's an image, it has to be big enough
@@ -131,10 +137,22 @@ function observeNode(node, srcAttribute) {
     applyBlurryStart(node);
     node.dataset.HBstatus = STATUSES.OBSERVED;
 
-    if (node.src?.length || sourceChildren > 0) {
-        // if there's no src attribute yet, wait for the mutation observer to catch it
-        if (node.tagName === "IMG") processImage(node, STATUSES);
-        else if (node.tagName === "VIDEO") {
+    if (node.tagName === "IMG") {
+        if (node.complete && node.naturalWidth > 0) {
+            processImage(node, STATUSES);
+        } else {
+            // wait for the image to load before processing (lazy-loaded images)
+            node.onload = () => {
+                if (node.naturalWidth > 0) {
+                    processImage(node, STATUSES);
+                }
+            };
+            node.onerror = () => {
+                node.dataset.HBstatus = STATUSES.ERROR;
+            };
+        }
+    } else if (node.tagName === "VIDEO") {
+        if (node.src?.length || sourceChildren > 0) {
             processVideo(node, STATUSES);
             videosInProcess.push(node);
             updateBGvideoStatus(videosInProcess);

@@ -81,10 +81,8 @@ const startListening = () => {
 const runDetection = async (img, isVideo = false) => {
     if (!settings?.shouldDetect() || !img) return false;
     const tensor = detector.human.tf.browser.fromPixels(img);
-    // console.log("tensors count", human.tf.memory().numTensors);
     const nsfwResult = await detector.nsfwModelClassify(tensor);
-    // console.log("offscreen nsfw result", nsfwResult);
-    const strictness = settings.getStrictness() * (isVideo ? 0.75 : 1); // makes detection less strict for videos (to reduce false positives)
+    const strictness = settings.getStrictness() * (isVideo ? 0.75 : 1);
     activeFrame = false;
     if (containsNsfw(nsfwResult, strictness)) {
         detector.human.tf.dispose(tensor);
@@ -92,10 +90,9 @@ const runDetection = async (img, isVideo = false) => {
     }
     if (!settings.shouldDetectGender()) {
         detector.human.tf.dispose(tensor);
-        return false; // no need to run gender detection if it's not enabled
+        return false;
     }
     const predictions = await detector.humanModelClassify(tensor);
-    // console.log("offscreen human result", predictions);
     detector.human.tf.dispose(tensor);
     if (
         containsGenderFace(
