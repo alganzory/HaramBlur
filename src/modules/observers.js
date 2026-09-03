@@ -14,6 +14,9 @@ import { processImage, processVideo } from "./processing2.js";
 import { STATUSES } from "../constants.js";
 let mutationObserver, _settings;
 let videosInProcess = [];
+// tracks whether the user disabled video detection from the video player
+// toggle (context menu), so it persists for newly loaded videos (Issue #178)
+let videoDetectionDisabled = false;
 
 const startObserving = () => {
     if (!mutationObserver) initMutationObserver();
@@ -73,6 +76,7 @@ const attachObserversListener = () => {
     // listen to message from background to tab
     chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         if (request.type === "disable-detection") {
+            videoDetectionDisabled = true;
             videosInProcess
                 .filter(
                     // filter videos that are playing, not disabled and in process
@@ -84,7 +88,9 @@ const attachObserversListener = () => {
                 .forEach((video) => {
                     disableVideo(video);
                 });
+            updateBGvideoStatus(videosInProcess);
         } else if (request.type === "enable-detection") {
+            videoDetectionDisabled = false;
             videosInProcess
                 .filter(
                     (video) =>
@@ -95,6 +101,7 @@ const attachObserversListener = () => {
                 .forEach((video) => {
                     enableVideo(video);
                 });
+            updateBGvideoStatus(videosInProcess);
         }
         return true;
     });
@@ -135,6 +142,15 @@ function observeNode(node, srcAttribute) {
         // if there's no src attribute yet, wait for the mutation observer to catch it
         if (node.tagName === "IMG") processImage(node, STATUSES);
         else if (node.tagName === "VIDEO") {
+            // if the user disabled detection for this page, apply it to newly
+            // loaded videos too so it persists across playlists (Issue #178)
+            if (videoDetectionDisabled) {
+                disableVideo(node);
+                node.classList.remove("hb-blur");
+                videosInProcess.push(node);
+                updateBGvideoStatus(videosInProcess);
+                return;
+            }
             processVideo(node, STATUSES);
             videosInProcess.push(node);
             updateBGvideoStatus(videosInProcess);

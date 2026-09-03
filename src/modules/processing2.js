@@ -206,16 +206,20 @@ const processVideo = async (node) => {
                 willReadFrequently: true,
             });
         }
-        // set the width and height of the video
-        node.width = newWidth;
-        node.height = newHeight;
+        // NOTE: only the internal canvas is resized for detection. We must NOT
+        // mutate node.width/node.height, as that would shrink the actual video
+        // element displayed to the user (Issues #155, #160).
 
         if (canv.width !== newWidth || canv.height !== newHeight) {
             canv.width = newWidth;
             canv.height = newHeight;
         }
 
-        removeBlurryStart(node);
+        // note: intentionally do NOT call removeBlurryStart here. When "Blur
+        // media on load" is enabled, the temporary blur must stay applied until
+        // detection makes its first decision, otherwise videos appear instantly
+        // and blur-on-load is skipped for videos (Issue #174). The temp blur is
+        // removed in processVideoDetections() once a decision is made.
 
         // start the video detection loop but don't block the main thread
         requestIdleCB(() => {
@@ -268,6 +272,9 @@ const processVideoDetections = (result, video) => {
         shouldBlur
             ? video.classList.add("hb-blur")
             : video.classList.remove("hb-blur");
+        // remove the temporary "blur on load" class now that a real detection
+        // decision has been made (Issue #174)
+        removeBlurryStart(video);
     }
 };
 export { processImage, processVideo };
