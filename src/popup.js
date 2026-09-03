@@ -10,6 +10,7 @@ const refreshableSettings = [
     "unblurImages",
     "unblurVideos",
     "blurryStartMode",
+    "solidBlur",
     "strictness",
     "whitelist",
 ];
@@ -88,6 +89,8 @@ function displaySettings(settings) {
     document.getElementById("blur-amount-value").innerHTML =
         `${settings.blurAmount}%`;
     document.querySelector("input[name=gray]").checked = settings.gray ?? true;
+    document.querySelector("input[name=solidBlur]").checked =
+        settings.solidBlur ?? false;
     document.querySelector("input[name=strictness]").value =
         +settings.strictness;
     document.querySelector("span[id=strictness-value]").innerHTML =
@@ -134,6 +137,9 @@ function addListeners() {
     document
         .querySelector("input[name=gray]")
         .addEventListener("change", updateCheckbox("gray"));
+    document
+        .querySelector("input[name=solidBlur]")
+        .addEventListener("change", updateCheckbox("solidBlur"));
     document
         .querySelector("input[name=strictness]")
         .addEventListener("change", updateStrictness);

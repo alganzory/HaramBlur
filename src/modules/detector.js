@@ -43,6 +43,11 @@ const HUMAN_CONFIG = {
     },
 };
 
+// Fallback backends tried in order when the primary GL backend fails to
+// initialize. WebGL is often unavailable or software-rendered on Linux
+// (headless / GPU-blocked), so we gracefully fall back to WASM/CPU (Issue #216).
+const FALLBACK_BACKENDS = ["webgl", "wasm"];
+
 const NSFW_CONFIG = {
     size: 224,
     tfScalar: 255,
@@ -105,15 +110,39 @@ class Detector {
         return this._nsfwModel;
     }
 
-    initHuman = async () => {
-        this._human = new Human.Human(HUMAN_CONFIG);
-        await this._human.load();
-        this._human.tf.enableProdMode();
-        // warmup the model
-        const tensor = this._human.tf.zeros([1, 224, 224, 3]);
-        await this._human.detect(tensor);
-        this._human.tf.dispose(tensor);
-        console.log("HB==Human model warmed up");
+    initHuman = async (backend = HUMAN_CONFIG.backend) => {
+        this._human = new Human.Human({ ...HUMAN_CONFIG, backend });
+        try {
+            await this._human.load();
+            this._human.tf.enableProdMode();
+            // warmup the model
+            const tensor = this._human.tf.zeros([1, 224, 224, 3]);
+            await this._human.detect(tensor);
+            this._human.tf.dispose(tensor);
+            console.log("HB==Human model warmed up");
+        } catch (e) {
+            this._human = null;
+            // try the next fallback backend (e.g. WebGL/WASM/CPU on Linux where
+            // the default GL backend may be unavailable)
+            if (backend !== HUMAN_CONFIG.backend) {
+                throw e;
+            }
+            for (const fallback of FALLBACK_BACKENDS) {
+                try {
+                    await this.initHuman(fallback);
+                    console.log(
+                        `HB==Human initialized with fallback backend: ${fallback}`
+                    );
+                    return;
+                } catch (fallbackError) {
+                    console.warn(
+                        `HB==Fallback backend ${fallback} failed:`,
+                        fallbackError
+                    );
+                }
+            }
+            throw e;
+        }
     };
 
     humanModelClassify = async (tensor, needToResize) => {

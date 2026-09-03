@@ -79,6 +79,11 @@ class Settings {
         return this._settings.gray;
     }
 
+    isSolidBlur() {
+        if (!this.shouldDetect()) return false;
+        return this._settings.solidBlur;
+    }
+
     getWhitelist() {
         return this._settings.whitelist;
     }
@@ -149,6 +154,7 @@ class Settings {
             case "blurImages":
             case "blurVideos":
             case "blurryStartMode":
+            case "solidBlur":
                 emitEvent("changeUnblur", this);
                 break;
         }

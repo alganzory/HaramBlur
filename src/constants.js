@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = {
     unblurVideos: false,
     gray: true,
     strictness: 0.5, // goes from 0 to 1
+    solidBlur: false, // hide media entirely instead of blurring (Issue #212)
 };
 
 export const STATUSES = {
