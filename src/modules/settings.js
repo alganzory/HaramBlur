@@ -144,6 +144,13 @@ class Settings {
             case "gray":
                 emitEvent("changeGray", this);
                 break;
+            case "unblurImages":
+            case "unblurVideos":
+            case "blurImages":
+            case "blurVideos":
+            case "blurryStartMode":
+                emitEvent("changeUnblur", this);
+                break;
         }
     }
 }
