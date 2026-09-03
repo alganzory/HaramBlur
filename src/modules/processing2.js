@@ -33,6 +33,33 @@ const RESULTS = {
 let activeFrame = false;
 let canv, ctx;
 
+// checks whether a video is currently visible within the browser viewport.
+// Videos that are off-screen, display:none, or removed from the layout should
+// not have their frames sent to the detector, which wastes CPU (Issue #153).
+const videoInViewport = (video) => {
+    const rect = video.getBoundingClientRect();
+    const win = video.ownerDocument?.defaultView;
+    const vw = win?.innerWidth ?? 0;
+    const vh = win?.innerHeight ?? 0;
+    return (
+        rect.width > 0 &&
+        rect.height > 0 &&
+        rect.right >= 0 &&
+        rect.bottom >= 0 &&
+        rect.left <= vw &&
+        rect.top <= vh
+    );
+};
+
+// the expensive frame detection (canvas draw + blob + worker upload) should be
+// skipped whenever the video cannot actually be seen: the browser tab is in the
+// background, or the video is outside the viewport. The detection loop itself
+// keeps running so that results resume as soon as the video becomes visible.
+const shouldProcessFrame = (video) => {
+    if (video.ownerDocument?.hidden) return false;
+    return videoInViewport(video);
+};
+
 const processImage = (node, STATUSES) => {
     try {
         node.dataset.HBstatus = STATUSES.PROCESSING;
@@ -132,7 +159,10 @@ const videoDetectionLoop = async (video, { width, height }) => {
                 // store the current timestamp
                 video.HBprevTime = currTime;
 
-                if (!activeFrame) {
+                // skip the expensive detection for background tabs and videos
+                // that are not on screen; the loop keeps running so results
+                // resume as soon as the video becomes visible (Issues #153, #135)
+                if (!activeFrame && shouldProcessFrame(video)) {
                     activeFrame = true;
                     processFrame(video, { width, height })
                         .then(({ result, timestamp }) => {
