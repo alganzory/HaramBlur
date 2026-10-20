@@ -1,0 +1,120 @@
+From 31c12979c77a46a401553e147e4a1376fef8e84f Mon Sep 17 00:00:00 2001
+From: HaramBlur Contributor <contributor@example.com>
+Date: Sun, 18 Oct 2026 16:28:10 +0000
+Subject: [PATCH 3/6] fix(whitelist): robust hostname matching with subdomain
+ support
+
+The old pattern hostname.split("www.")?.[1] stripped everything before
+the FIRST occurrence of 'www.' anywhere in the hostname, corrupting
+hosts like sub.www.example.com, and never matched subdomains.
+
+normalizeHostname() now strips only a leading 'www.' (lowercased,
+trimmed), and isWhitelisted() matches an entry against the exact
+hostname or any of its subdomains. Entries stored by older versions
+(possibly with a leading www.) keep working since both sides are
+normalized.
+---
+ src/content.js          |  8 ++------
+ src/modules/helpers.js  | 30 ++++++++++++++++++++++++++++++
+ src/modules/settings.js |  7 ++-----
+ 3 files changed, 34 insertions(+), 11 deletions(-)
+
+diff --git a/src/content.js b/src/content.js
+index e671972..172803b 100644
+--- a/src/content.js
++++ b/src/content.js
+@@ -3,6 +3,7 @@ import {
+     initMutationObserver,
+     killObserver,
+ } from "./modules/observers";
++import { isWhitelisted } from "./modules/helpers";
+ import Settings from "./modules/settings";
+ import { attachStyleListener } from "./modules/style";
+ 
+@@ -25,12 +26,7 @@ if (window.self === window.top) {
+     Settings.init()
+         .then((settings) => {
+             if (
+-                settings
+-                    .getWhitelist()
+-                    .includes(
+-                        window.location.hostname?.split("www.")?.[1] ??
+-                            window.location.hostname
+-                    )
++                isWhitelisted(settings.getWhitelist(), window.location.hostname)
+             ) {
+                 console.log("HB==WHITELISTED SITE");
+                 killObserver();
+diff --git a/src/modules/helpers.js b/src/modules/helpers.js
+index d32ad1d..aa44737 100644
+--- a/src/modules/helpers.js
++++ b/src/modules/helpers.js
+@@ -55,6 +55,34 @@ const isImageTooSmall = (img) => {
+     return img.width < MIN_IMG_WIDTH || img.height < MIN_IMG_HEIGHT;
+ };
+ 
++/**
++ * Normalize a hostname for whitelist comparison:
++ * lowercase, trim, and strip only a LEADING "www.".
++ * (The previous split("www.")?.[1] pattern corrupted hostnames that
++ * contain "www." anywhere else, e.g. "sub.www.example.com".)
++ */
++const normalizeHostname = (hostname) =>
++    String(hostname ?? "")
++        .toLowerCase()
++        .trim()
++        .replace(/^www\./, "");
++
++/**
++ * Check whether `hostname` is covered by a whitelist entry.
++ * An entry matches the exact hostname or any subdomain of it,
++ * e.g. "example.com" matches "example.com" and "sub.example.com".
++ * Backward compatible with entries stored with a leading "www.".
++ */
++const isWhitelisted = (whitelist, hostname) => {
++    const site = normalizeHostname(hostname);
++    if (!site) return false;
++    return (Array.isArray(whitelist) ? whitelist : []).some((entry) => {
++        const allowed = normalizeHostname(entry);
++        if (!allowed) return false;
++        return site === allowed || site.endsWith("." + allowed);
++    });
++};
++
+ const calcResize = (width, height, type = "image") => {
+     let newWidth = width;
+     let newHeight = height;
+@@ -251,6 +279,8 @@ export {
+     timeTaken,
+     resetElement,
+     isImageTooSmall,
++    normalizeHostname,
++    isWhitelisted,
+     getCanvas,
+     disableVideo,
+     enableVideo,
+diff --git a/src/modules/settings.js b/src/modules/settings.js
+index 4358b52..a3221e9 100644
+--- a/src/modules/settings.js
++++ b/src/modules/settings.js
+@@ -1,4 +1,4 @@
+-import { emitEvent } from "./helpers.js";
++import { emitEvent, isWhitelisted } from "./helpers.js";
+ import { DEFAULT_SETTINGS } from "../constants.js";
+ 
+ class Settings {
+@@ -93,10 +93,7 @@ class Settings {
+ 
+     toggleOnOffStatus() {
+         if (
+-            !this._settings.whitelist?.includes(
+-                window.location.hostname?.split("www.")?.[1] ??
+-                    window.location.hostname
+-            )
++            !isWhitelisted(this._settings.whitelist, window.location.hostname)
+         ) {
+             emitEvent("toggleOnOffStatus", this);
+         }
+-- 
+2.47.3
+

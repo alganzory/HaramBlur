@@ -1,0 +1,625 @@
+From 8de894b35a5e44d06547d242f8ff8c8091aa9887 Mon Sep 17 00:00:00 2001
+From: HaramBlur Contributor <contributor@example.com>
+Date: Sun, 18 Oct 2026 16:26:55 +0000
+Subject: [PATCH 1/6] feat(i18n): add Persian (fa) localization
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a complete fa dictionary to translations.js, register fa:rtl in
+HB_TRANSLATIONS_DIR, and add the فارسی option to the popup language
+select. Persian speakers are a large part of the target audience for
+this extension but currently have no UI language.
+---
+ package-lock.json   | 280 +-------------------------------------------
+ src/popup.html      |   1 +
+ src/translations.js | 143 ++++++++++++++--------
+ 3 files changed, 93 insertions(+), 331 deletions(-)
+
+diff --git a/package-lock.json b/package-lock.json
+index 5fd29a1..4d2ffba 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -1,5 +1,5 @@
+ {
+-    "name": "haramblur",
++    "name": "haramblur-src",
+     "lockfileVersion": 2,
+     "requires": true,
+     "packages": {
+@@ -364,98 +364,6 @@
+                 "node": ">=12"
+             }
+         },
+-        "node_modules/@jridgewell/gen-mapping": {
+-            "version": "0.3.3",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.3.tgz",
+-            "integrity": "sha512-HLhSWOLRi875zjjMG/r+Nv0oCW8umGb0BgEhyX3dDX3egwZtB8PqLnjz3yedt8R5StBrzcg4aBpnh8UA9D1BoQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "dependencies": {
+-                "@jridgewell/set-array": "^1.0.1",
+-                "@jridgewell/sourcemap-codec": "^1.4.10",
+-                "@jridgewell/trace-mapping": "^0.3.9"
+-            },
+-            "engines": {
+-                "node": ">=6.0.0"
+-            }
+-        },
+-        "node_modules/@jridgewell/resolve-uri": {
+-            "version": "3.1.1",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz",
+-            "integrity": "sha512-dSYZh7HhCDtCKm4QakX0xFpsRDqjjtZf/kjI/v3T3Nwt5r8/qz/M19F9ySyOqU94SXBmeG9ttTul+YnR4LOxFA==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "engines": {
+-                "node": ">=6.0.0"
+-            }
+-        },
+-        "node_modules/@jridgewell/set-array": {
+-            "version": "1.1.2",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.1.2.tgz",
+-            "integrity": "sha512-xnkseuNADM0gt2bs+BvhO0p78Mk762YnZdsuzFV018NoG1Sj1SCQvpSqa7XUaTam5vAGasABV9qXASMKnFMwMw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "engines": {
+-                "node": ">=6.0.0"
+-            }
+-        },
+-        "node_modules/@jridgewell/source-map": {
+-            "version": "0.3.5",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/source-map/-/source-map-0.3.5.tgz",
+-            "integrity": "sha512-UTYAUj/wviwdsMfzoSJspJxbkH5o1snzwX0//0ENX1u/55kkZZkcTZP6u9bwKGkv+dkk9at4m1Cpt0uY80kcpQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "dependencies": {
+-                "@jridgewell/gen-mapping": "^0.3.0",
+-                "@jridgewell/trace-mapping": "^0.3.9"
+-            }
+-        },
+-        "node_modules/@jridgewell/sourcemap-codec": {
+-            "version": "1.4.15",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.15.tgz",
+-            "integrity": "sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+-        "node_modules/@jridgewell/trace-mapping": {
+-            "version": "0.3.19",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.19.tgz",
+-            "integrity": "sha512-kf37QtfW+Hwx/buWGMPcR60iF9ziHa6r/CZJIHbmcm4+0qrXiVdxegAH0F6yddEVQ7zdkjcGCgCzUu+BcbhQxw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "dependencies": {
+-                "@jridgewell/resolve-uri": "^3.1.0",
+-                "@jridgewell/sourcemap-codec": "^1.4.14"
+-            }
+-        },
+-        "node_modules/@types/node": {
+-            "version": "20.6.2",
+-            "resolved": "https://registry.npmjs.org/@types/node/-/node-20.6.2.tgz",
+-            "integrity": "sha512-Y+/1vGBHV/cYk6OI1Na/LHzwnlNCAfU3ZNGrc1LdRe/LAIbdDPTTv/HU3M7yXN448aTVDq3eKRm2cg7iKLb8gw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+-        "node_modules/acorn": {
+-            "version": "8.10.0",
+-            "resolved": "https://registry.npmjs.org/acorn/-/acorn-8.10.0.tgz",
+-            "integrity": "sha512-F0SAmZ8iUtS//m8DmCTA0jlh6TDKkHQyK6xc6V4KDTyZKA9dnvX9/3sRTVQrWm79glUAZbnmmNcdYwUIHWVybw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "bin": {
+-                "acorn": "bin/acorn"
+-            },
+-            "engines": {
+-                "node": ">=0.4.0"
+-            }
+-        },
+         "node_modules/ansi-escapes": {
+             "version": "6.2.1",
+             "resolved": "https://registry.npmjs.org/ansi-escapes/-/ansi-escapes-6.2.1.tgz",
+@@ -678,14 +586,6 @@
+                 "node": "*"
+             }
+         },
+-        "node_modules/buffer-from": {
+-            "version": "1.1.2",
+-            "resolved": "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.2.tgz",
+-            "integrity": "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+         "node_modules/chalk": {
+             "version": "5.3.0",
+             "resolved": "https://registry.npmjs.org/chalk/-/chalk-5.3.0.tgz",
+@@ -814,14 +714,6 @@
+             "integrity": "sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==",
+             "dev": true
+         },
+-        "node_modules/commander": {
+-            "version": "2.20.3",
+-            "resolved": "https://registry.npmjs.org/commander/-/commander-2.20.3.tgz",
+-            "integrity": "sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+         "node_modules/compress-commons": {
+             "version": "4.1.2",
+             "resolved": "https://registry.npmjs.org/compress-commons/-/compress-commons-4.1.2.tgz",
+@@ -1977,17 +1869,6 @@
+                 "url": "https://github.com/sponsors/sindresorhus"
+             }
+         },
+-        "node_modules/source-map": {
+-            "version": "0.6.1",
+-            "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz",
+-            "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "engines": {
+-                "node": ">=0.10.0"
+-            }
+-        },
+         "node_modules/source-map-js": {
+             "version": "1.0.2",
+             "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.0.2.tgz",
+@@ -1997,18 +1878,6 @@
+                 "node": ">=0.10.0"
+             }
+         },
+-        "node_modules/source-map-support": {
+-            "version": "0.5.21",
+-            "resolved": "https://registry.npmjs.org/source-map-support/-/source-map-support-0.5.21.tgz",
+-            "integrity": "sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "dependencies": {
+-                "buffer-from": "^1.0.0",
+-                "source-map": "^0.6.0"
+-            }
+-        },
+         "node_modules/string_decoder": {
+             "version": "1.3.0",
+             "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz",
+@@ -2081,26 +1950,6 @@
+                 "node": ">=6"
+             }
+         },
+-        "node_modules/terser": {
+-            "version": "5.20.0",
+-            "resolved": "https://registry.npmjs.org/terser/-/terser-5.20.0.tgz",
+-            "integrity": "sha512-e56ETryaQDyebBwJIWYB2TT6f2EZ0fL0sW/JRXNMN26zZdKi2u/E/5my5lG6jNxym6qsrVXfFRmOdV42zlAgLQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "dependencies": {
+-                "@jridgewell/source-map": "^0.3.3",
+-                "acorn": "^8.8.2",
+-                "commander": "^2.20.0",
+-                "source-map-support": "~0.5.20"
+-            },
+-            "bin": {
+-                "terser": "bin/terser"
+-            },
+-            "engines": {
+-                "node": ">=10"
+-            }
+-        },
+         "node_modules/to-regex-range": {
+             "version": "5.0.1",
+             "resolved": "https://registry.npmjs.org/to-regex-range/-/to-regex-range-5.0.1.tgz",
+@@ -2451,83 +2300,6 @@
+             "dev": true,
+             "optional": true
+         },
+-        "@jridgewell/gen-mapping": {
+-            "version": "0.3.3",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.3.tgz",
+-            "integrity": "sha512-HLhSWOLRi875zjjMG/r+Nv0oCW8umGb0BgEhyX3dDX3egwZtB8PqLnjz3yedt8R5StBrzcg4aBpnh8UA9D1BoQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "requires": {
+-                "@jridgewell/set-array": "^1.0.1",
+-                "@jridgewell/sourcemap-codec": "^1.4.10",
+-                "@jridgewell/trace-mapping": "^0.3.9"
+-            }
+-        },
+-        "@jridgewell/resolve-uri": {
+-            "version": "3.1.1",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.1.tgz",
+-            "integrity": "sha512-dSYZh7HhCDtCKm4QakX0xFpsRDqjjtZf/kjI/v3T3Nwt5r8/qz/M19F9ySyOqU94SXBmeG9ttTul+YnR4LOxFA==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+-        "@jridgewell/set-array": {
+-            "version": "1.1.2",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/set-array/-/set-array-1.1.2.tgz",
+-            "integrity": "sha512-xnkseuNADM0gt2bs+BvhO0p78Mk762YnZdsuzFV018NoG1Sj1SCQvpSqa7XUaTam5vAGasABV9qXASMKnFMwMw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+-        "@jridgewell/source-map": {
+-            "version": "0.3.5",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/source-map/-/source-map-0.3.5.tgz",
+-            "integrity": "sha512-UTYAUj/wviwdsMfzoSJspJxbkH5o1snzwX0//0ENX1u/55kkZZkcTZP6u9bwKGkv+dkk9at4m1Cpt0uY80kcpQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "requires": {
+-                "@jridgewell/gen-mapping": "^0.3.0",
+-                "@jridgewell/trace-mapping": "^0.3.9"
+-            }
+-        },
+-        "@jridgewell/sourcemap-codec": {
+-            "version": "1.4.15",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.4.15.tgz",
+-            "integrity": "sha512-eF2rxCRulEKXHTRiDrDy6erMYWqNw4LPdQ8UQA4huuxaQsVeRPFl2oM8oDGxMFhJUWZf9McpLtJasDDZb/Bpeg==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+-        "@jridgewell/trace-mapping": {
+-            "version": "0.3.19",
+-            "resolved": "https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.19.tgz",
+-            "integrity": "sha512-kf37QtfW+Hwx/buWGMPcR60iF9ziHa6r/CZJIHbmcm4+0qrXiVdxegAH0F6yddEVQ7zdkjcGCgCzUu+BcbhQxw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "requires": {
+-                "@jridgewell/resolve-uri": "^3.1.0",
+-                "@jridgewell/sourcemap-codec": "^1.4.14"
+-            }
+-        },
+-        "@types/node": {
+-            "version": "20.6.2",
+-            "resolved": "https://registry.npmjs.org/@types/node/-/node-20.6.2.tgz",
+-            "integrity": "sha512-Y+/1vGBHV/cYk6OI1Na/LHzwnlNCAfU3ZNGrc1LdRe/LAIbdDPTTv/HU3M7yXN448aTVDq3eKRm2cg7iKLb8gw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+-        "acorn": {
+-            "version": "8.10.0",
+-            "resolved": "https://registry.npmjs.org/acorn/-/acorn-8.10.0.tgz",
+-            "integrity": "sha512-F0SAmZ8iUtS//m8DmCTA0jlh6TDKkHQyK6xc6V4KDTyZKA9dnvX9/3sRTVQrWm79glUAZbnmmNcdYwUIHWVybw==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+         "ansi-escapes": {
+             "version": "6.2.1",
+             "resolved": "https://registry.npmjs.org/ansi-escapes/-/ansi-escapes-6.2.1.tgz",
+@@ -2691,14 +2463,6 @@
+             "integrity": "sha512-VO9Ht/+p3SN7SKWqcrgEzjGbRSJYTx+Q1pTQC0wrWqHx0vpJraQ6GtHx8tvcg1rlK1byhU5gccxgOgj7B0TDkQ==",
+             "dev": true
+         },
+-        "buffer-from": {
+-            "version": "1.1.2",
+-            "resolved": "https://registry.npmjs.org/buffer-from/-/buffer-from-1.1.2.tgz",
+-            "integrity": "sha512-E+XQCRwSbaaiChtv6k6Dwgc+bx+Bs6vuKJHHl5kox/BaKbhiXzqQOwK4cO22yElGp2OCmjwVhT3HmxgyPGnJfQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+         "chalk": {
+             "version": "5.3.0",
+             "resolved": "https://registry.npmjs.org/chalk/-/chalk-5.3.0.tgz",
+@@ -2790,14 +2554,6 @@
+             "integrity": "sha512-IfEDxwoWIjkeXL1eXcDiow4UbKjhLdq6/EuSVR9GMN7KVH3r9gQ83e73hsz1Nd1T3ijd5xv1wcWRYO+D6kCI2w==",
+             "dev": true
+         },
+-        "commander": {
+-            "version": "2.20.3",
+-            "resolved": "https://registry.npmjs.org/commander/-/commander-2.20.3.tgz",
+-            "integrity": "sha512-GpVkmM8vF2vQUkj2LvZmD35JxeJOLCwJ9cUkugyk2nuhbv3+mJvpLYYt+0+USMxE+oj+ey/lJEnhZw75x/OMcQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+         "compress-commons": {
+             "version": "4.1.2",
+             "resolved": "https://registry.npmjs.org/compress-commons/-/compress-commons-4.1.2.tgz",
+@@ -3595,32 +3351,12 @@
+                 }
+             }
+         },
+-        "source-map": {
+-            "version": "0.6.1",
+-            "resolved": "https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz",
+-            "integrity": "sha512-UjgapumWlbMhkBgzT7Ykc5YXUT46F0iKu8SGXq0bcwP5dz/h0Plj6enJqjz1Zbq2l5WaqYnrVbwWOWMyF3F47g==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true
+-        },
+         "source-map-js": {
+             "version": "1.0.2",
+             "resolved": "https://registry.npmjs.org/source-map-js/-/source-map-js-1.0.2.tgz",
+             "integrity": "sha512-R0XvVJ9WusLiqTCEiGCmICCMplcCkIwwR11mOSD9CR5u+IXYdiseeEuXCVAjS54zqwkLcPNnmU4OeJ6tUrWhDw==",
+             "dev": true
+         },
+-        "source-map-support": {
+-            "version": "0.5.21",
+-            "resolved": "https://registry.npmjs.org/source-map-support/-/source-map-support-0.5.21.tgz",
+-            "integrity": "sha512-uBHU3L3czsIyYXKX88fdrGovxdSCoTGDRZ6SYXtSRxLZUzHg5P/66Ht6uoUlHu9EZod+inXhKo3qQgwXUT/y1w==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "requires": {
+-                "buffer-from": "^1.0.0",
+-                "source-map": "^0.6.0"
+-            }
+-        },
+         "string_decoder": {
+             "version": "1.3.0",
+             "resolved": "https://registry.npmjs.org/string_decoder/-/string_decoder-1.3.0.tgz",
+@@ -3675,20 +3411,6 @@
+                 "readable-stream": "^3.1.1"
+             }
+         },
+-        "terser": {
+-            "version": "5.20.0",
+-            "resolved": "https://registry.npmjs.org/terser/-/terser-5.20.0.tgz",
+-            "integrity": "sha512-e56ETryaQDyebBwJIWYB2TT6f2EZ0fL0sW/JRXNMN26zZdKi2u/E/5my5lG6jNxym6qsrVXfFRmOdV42zlAgLQ==",
+-            "dev": true,
+-            "optional": true,
+-            "peer": true,
+-            "requires": {
+-                "@jridgewell/source-map": "^0.3.3",
+-                "acorn": "^8.8.2",
+-                "commander": "^2.20.0",
+-                "source-map-support": "~0.5.20"
+-            }
+-        },
+         "to-regex-range": {
+             "version": "5.0.1",
+             "resolved": "https://registry.npmjs.org/to-regex-range/-/to-regex-range-5.0.1.tgz",
+diff --git a/src/popup.html b/src/popup.html
+index d2dffd3..2995373 100644
+--- a/src/popup.html
++++ b/src/popup.html
+@@ -528,6 +528,7 @@
+                     <option value="ar">العربية</option>
+                     <option value="tr">Türkçe</option>
+                     <option value="ur">اردو</option>
++                    <option value="fa">فارسی</option>
+                 </select>
+             </div>
+             <h1>HaramBlur</h1>
+diff --git a/src/translations.js b/src/translations.js
+index 9f1bebd..26b9a64 100644
+--- a/src/translations.js
++++ b/src/translations.js
+@@ -8,13 +8,13 @@ const getTranslations = (settings) => {
+             ".tooltiptext":
+                 "When enabled, all images and videos will be blurred by default until detection starts.",
+             "#blurAmount": `
+-			Blur Amount:
+-			<span id="blur-amount-value">${settings.blurAmount}%</span>
+-		`,
++                        Blur Amount:
++                        <span id="blur-amount-value">${settings.blurAmount}%</span>
++                `,
+             "#grayscale": "Grayscale:",
+             "#strictness": `Strictness:
+-		<span id="strictness-value">${settings.strictness * 100}%</span>
+-		`,
++                <span id="strictness-value">${settings.strictness * 100}%</span>
++                `,
+             "#mediaToBlur": "Media to Blur",
+             "#blurImages": "Images",
+             "#blurVideos": "Videos",
+@@ -28,15 +28,15 @@ const getTranslations = (settings) => {
+             "#refresh-message": "Refresh the page to see the changes.",
+             ".bmc-btn-text": "Support the project",
+             ".feedback": `
+-			<span> We love to hear your feedback through our </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
+-			<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
+-			`,
++                        <span> We love to hear your feedback through our </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
++                        <a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
++                        `,
+             "#whitelist-desc": `
+-				<p id="whitelist-desc"> Detection is 
+-				<span id="whitelist-status-on" class="blue-text"> On </span> 
+-				<span id="whitelist-status-off" class="red-text hidden" > Off </span> 
+-				for this website </p>
+-			`,
++                                <p id="whitelist-desc"> Detection is 
++                                <span id="whitelist-status-on" class="blue-text"> On </span> 
++                                <span id="whitelist-status-off" class="red-text hidden" > Off </span> 
++                                for this website </p>
++                        `,
+         },
+         ar: {
+             // Arabic translations
+@@ -45,13 +45,13 @@ const getTranslations = (settings) => {
+             ".tooltiptext":
+                 "عند تفعيل هذا الخيار سيتم تشويش جميع الصور ومقاطع الفيديو مسبقا حتى يبدأ الكشف.",
+             "#blurAmount": `
+-			كمية التشويش:
+-			<span id="blur-amount-value">${settings.blurAmount}%</span>
+-		`,
++                        كمية التشويش:
++                        <span id="blur-amount-value">${settings.blurAmount}%</span>
++                `,
+             "#grayscale": "رمادي:",
+             "#strictness": `الدقة:
+-		<span id="strictness-value">${settings.strictness * 100}%</span>
+-		`,
++                <span id="strictness-value">${settings.strictness * 100}%</span>
++                `,
+             "#mediaToBlur": "الوسائط التي يجب تشويشها",
+             "#blurImages": "الصور",
+             "#blurVideos": "مقاطع الفيديو",
+@@ -65,15 +65,15 @@ const getTranslations = (settings) => {
+             "#refresh-message": "أعد تحميل الصفحة لترى التغييرات.",
+             ".bmc-btn-text": "دعم المشروع",
+             ".feedback": `
+-			<span> نحب أن نسمع رأيك عبر </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">الاستمارة</a> أو 
+-			<a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
+-			`,
++                        <span> نحب أن نسمع رأيك عبر </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">الاستمارة</a> أو 
++                        <a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
++                        `,
+             "#whitelist-desc": `
+-				<p id="whitelist-desc"> الفحص 
+-				<span id="whitelist-status-on" class="blue-text"> مفعل </span> 
+-				<span id="whitelist-status-off" class="red-text hidden" > معطل </span> 
+-				لهذا الموقع </p>
+-			`,
++                                <p id="whitelist-desc"> الفحص 
++                                <span id="whitelist-status-on" class="blue-text"> مفعل </span> 
++                                <span id="whitelist-status-off" class="red-text hidden" > معطل </span> 
++                                لهذا الموقع </p>
++                        `,
+         },
+         // turkish
+         tr: {
+@@ -82,13 +82,13 @@ const getTranslations = (settings) => {
+             ".tooltiptext":
+                 "Etkinleştirildiğinde, tüm resimler ve videolar, algılama başlayana kadar varsayılan olarak bulanıklaştırılır.",
+             "#blurAmount": `
+-			Bulanıklaştırma seviyesi:
+-			<span id="blur-amount-value">${settings.blurAmount}%</span>
+-		`,
++                        Bulanıklaştırma seviyesi:
++                        <span id="blur-amount-value">${settings.blurAmount}%</span>
++                `,
+             "#grayscale": "Grileştir:",
+             "#strictness": `Katılık:
+-		<span id="strictness-value">${settings.strictness * 100}%</span>
+-		`,
++                <span id="strictness-value">${settings.strictness * 100}%</span>
++                `,
+             "#mediaToBlur": "Bulanıklaştırılacak medya",
+             "#blurImages": "Resimler",
+             "#blurVideos": "Videolar",
+@@ -102,15 +102,15 @@ const getTranslations = (settings) => {
+             "#refresh-message": "Değişiklikleri görmek için sayfayı yenile.",
+             ".bmc-btn-text": "Projeyi destekle",
+             ".feedback": `
+-			<span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
+-			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
+-			`,
++                        <span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
++                        <a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
++                        `,
+             "#whitelist-desc": `
+-				<p id="whitelist-desc"> Bu web sitesi için algılama
+-				<span id="whitelist-status-on" class="blue-text"> Açık </span> 
+-				<span id="whitelist-status-off" class="red-text hidden" > Kapalı </span> 
+-				</p>
+-			`,
++                                <p id="whitelist-desc"> Bu web sitesi için algılama
++                                <span id="whitelist-status-on" class="blue-text"> Açık </span> 
++                                <span id="whitelist-status-off" class="red-text hidden" > Kapalı </span> 
++                                </p>
++                        `,
+         },
+         //urdu
+         ur: {
+@@ -119,13 +119,13 @@ const getTranslations = (settings) => {
+             ".tooltiptext":
+                 "فعال ہونے پر، شناخت شروع ہونے تک تمام تصاویر اور ویڈیوز بطور ڈیفالٹ دھندلی ہو جائیں گی۔",
+             "#blurAmount": `
+-			بلر کی مقدار:
+-			<span id="blur-amount-value">${settings.blurAmount}%</span>
+-		`,
++                        بلر کی مقدار:
++                        <span id="blur-amount-value">${settings.blurAmount}%</span>
++                `,
+             "#grayscale": "مٹیالا پیمانہ:",
+             "#strictness": `سختی:
+-		<span id="strictness-value">${settings.strictness * 100}%</span>
+-		`,
++                <span id="strictness-value">${settings.strictness * 100}%</span>
++                `,
+             "#mediaToBlur": "میڈیا کو دھندلا کرنا",
+             "#blurImages": "تصاویر",
+             "#blurVideos": "ویڈیوز",
+@@ -139,15 +139,53 @@ const getTranslations = (settings) => {
+             "#refresh-message": "تبدیلیاں دیکھنے کے لیے صفحہ کو ریفریش کریں۔",
+             ".bmc-btn-text": "منصوبے کی حمایت کریں",
+             ".feedback": `
+-			<span> میں اپنے فارم کے ذریعے آپ کی رائے سننا پسند ہے </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank"></a> ve
+-			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ای میل.❤️
+-			`,
++                        <span> میں اپنے فارم کے ذریعے آپ کی رائے سننا پسند ہے </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank"></a> ve
++                        <a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ای میل.❤️
++                        `,
+             "#whitelist-desc": `
+-				<p id="whitelist-desc"> کھوج ہے
+-				<span id="whitelist-status-on" class="blue-text"> جلنا </span> 
+-				<span id="whitelist-status-off" class="red-text hidden" > بند </span> 
+-				</p>
+-			`,
++                                <p id="whitelist-desc"> کھوج ہے
++                                <span id="whitelist-status-on" class="blue-text"> جلنا </span> 
++                                <span id="whitelist-status-off" class="red-text hidden" > بند </span> 
++                                </p>
++                        `,
++        },
++        // persian / farsi
++        fa: {
++            "#settings": "تنظیمات",
++            "#blurryStart": "تار کردن رسانه هنگام بارگذاری:",
++            ".tooltiptext":
++                "با فعال شدن این گزینه، همه تصاویر و ویدیوها پیش از شروع تشخیص، به‌صورت پیش‌فرض تار می‌شوند.",
++            "#blurAmount": `
++                                                میزان تاری:
++                                                <span id="blur-amount-value">${settings.blurAmount}%</span>
++                        `,
++            "#grayscale": "سیاه و سفید:",
++            "#strictness": `سخت‌گیری:
++                        <span id="strictness-value">${settings.strictness * 100}%</span>
++                        `,
++            "#mediaToBlur": "رسانه‌های قابل تار کردن",
++            "#blurImages": "تصاویر",
++            "#blurVideos": "ویدیوها",
++            "#facesToBlur": "چهره‌های قابل تار کردن",
++            "#blurMale": "مرد",
++            "#blurFemale": "زن",
++            "#unblurOnHover": "رفع تاری با نگه‌داشتن نشانگر",
++            "#unblurImages": "تصاویر",
++            "#unblurVideos": "ویدیوها",
++            ".refresh": " (نیازمند بارگذاری مجدد صفحه):",
++            "#refresh-message":
++                "برای مشاهده تغییرات، صفحه را دوباره بارگذاری کنید.",
++            ".bmc-btn-text": "حمایت از پروژه",
++            ".feedback": `
++                                                <span> نظرات خود را از طریق </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">فرم</a> یا
++                                                <a href="mailto:md.alganzory@gmail.com" target="_blank">ایمیل</a> با ما در میان بگذارید ❤️
++                                                `,
++            "#whitelist-desc": `
++                                                        <p id="whitelist-desc"> تشخیص برای این وب‌سایت
++                                                        <span id="whitelist-status-on" class="blue-text"> روشن </span>
++                                                        <span id="whitelist-status-off" class="red-text hidden" > خاموش </span>
++                                                        </p>
++                                                `,
+         },
+     };
+ };
+@@ -157,4 +195,5 @@ const HB_TRANSLATIONS_DIR = {
+     tr: "ltr",
+     ar: "rtl",
+     ur: "rtl",
++    fa: "rtl",
+ };
+-- 
+2.47.3
+
