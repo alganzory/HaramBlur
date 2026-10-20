@@ -4,6 +4,7 @@
     "description": "Protect your privacy and uphold Islamic values by auto detecting & blurring images and videos of unwanted or impermissible content.",
     "version": "0.2.6",
     "permissions": ["storage", "offscreen", "contextMenus"],
+    "message_serialization": "structured_clone",
     "author": "md.alganzory@gmail.com",
     "action": {
         "default_title": "HaramBlur",
@@ -11,7 +12,8 @@
     },
     "minimum_chrome_version": "109",
     "background": {
-        "service_worker": "src/background.js"
+        "service_worker": "src/background.js",
+        "type": "module"
     },
     "icons": {
         "48": "src/assets/hb-icon-48.png",

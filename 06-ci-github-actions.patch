@@ -1,0 +1,74 @@
+From b4021c34f62b21ea05af3ccbb976b5f34b74b955 Mon Sep 17 00:00:00 2001
+From: HaramBlur Contributor <contributor@example.com>
+Date: Sun, 18 Oct 2026 16:30:00 +0000
+Subject: [PATCH 6/6] ci: add GitHub Actions workflow (format check + build)
+
+- .github/workflows/ci.yml: on push/PR against main, run npm ci,
+  prettier --check, vite build, and verify dist/content.js exists.
+- package.json: add format / format:check scripts.
+
+This gives every PR a fast signal (~30s) that the extension still
+builds and the code style is consistent, before manual review.
+---
+ .github/workflows/ci.yml | 35 +++++++++++++++++++++++++++++++++++
+ package.json             |  2 ++
+ 2 files changed, 37 insertions(+)
+ create mode 100644 .github/workflows/ci.yml
+
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+new file mode 100644
+index 0000000..722e836
+--- /dev/null
++++ b/.github/workflows/ci.yml
+@@ -0,0 +1,35 @@
++name: CI
++
++on:
++    push:
++        branches: [main, master]
++    pull_request:
++        branches: [main, master]
++
++jobs:
++    build:
++        name: Lint & Build
++        runs-on: ubuntu-latest
++        steps:
++            - name: Checkout
++              uses: actions/checkout@v4
++
++            - name: Setup Node.js
++              uses: actions/setup-node@v4
++              with:
++                  node-version: 20
++                  cache: npm
++
++            - name: Install dependencies
++              run: npm ci
++
++            - name: Check formatting
++              run: npm run format:check
++
++            - name: Build extension
++              run: npm run build
++
++            - name: Verify build output
++              run: |
++                  test -f dist/content.js || (echo "dist/content.js missing" && exit 1)
++                  echo "Build output OK"
+diff --git a/package.json b/package.json
+index c6c2bd0..d39d092 100644
+--- a/package.json
++++ b/package.json
+@@ -2,6 +2,8 @@
+     "scripts": {
+         "build": "vite build",
+         "dev": "vite build --watch",
++        "format": "prettier --write --ignore-unknown .",
++        "format:check": "prettier --check --ignore-unknown .",
+         "release": "bestzip extension.zip dist manifest.json src/assets src/background.js src/constants.js src/translations.js src/popup.html src/popup.js src/offscreen.html src/offscreen.js src/modules/* tfjs/*",
+         "prepare": "husky"
+     },
+-- 
+2.47.3
+

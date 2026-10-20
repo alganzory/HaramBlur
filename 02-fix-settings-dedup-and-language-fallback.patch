@@ -1,0 +1,138 @@
+From bf52ada1fe94cfcf5b17718ad207c01a3145c72d Mon Sep 17 00:00:00 2001
+From: HaramBlur Contributor <contributor@example.com>
+Date: Sun, 18 Oct 2026 16:27:40 +0000
+Subject: [PATCH 2/6] fix(settings): deduplicate defaults, harden popup
+ language handling
+
+- background.js: import DEFAULT_SETTINGS from constants.js instead of
+  maintaining a second inline copy (the two copies had already drifted:
+  constants.js was missing whitelist). The service worker is now loaded
+  as an ES module (manifest: type=module).
+- constants.js: add whitelist: [] to DEFAULT_SETTINGS so any code path
+  that falls back to defaults gets a valid array.
+- popup.js: fall back to English when the stored or browser language is
+  not one of the supported locales. Previously Object.keys(undefined)
+  threw and broke the entire popup for browsers set to e.g. de/fr/es.
+  Also default the language select to 'en' when unset.
+---
+ manifest.json     |  3 ++-
+ src/background.js | 29 +++++++++--------------------
+ src/constants.js  |  1 +
+ src/popup.js      | 10 ++++++++--
+ 4 files changed, 20 insertions(+), 23 deletions(-)
+
+diff --git a/manifest.json b/manifest.json
+index 892a783..9e8c854 100644
+--- a/manifest.json
++++ b/manifest.json
+@@ -11,7 +11,8 @@
+     },
+     "minimum_chrome_version": "109",
+     "background": {
+-        "service_worker": "src/background.js"
++        "service_worker": "src/background.js",
++        "type": "module"
+     },
+     "icons": {
+         "48": "src/assets/hb-icon-48.png",
+diff --git a/src/background.js b/src/background.js
+index dd3b2e6..45ea99f 100644
+--- a/src/background.js
++++ b/src/background.js
+@@ -1,19 +1,5 @@
+ // when installed or updated load settings
+-
+-const defaultSettings = {
+-    status: true,
+-    blurryStartMode: false,
+-    blurAmount: 20,
+-    blurImages: true,
+-    blurVideos: true,
+-    blurMale: false,
+-    blurFemale: true,
+-    unblurImages: false,
+-    unblurVideos: false,
+-    gray: true,
+-    strictness: 0.5, // goes from 0 to 1,
+-    whitelist: [],
+-};
++import { DEFAULT_SETTINGS } from "./constants.js";
+ 
+ chrome.runtime.onInstalled.addListener(function () {
+     chrome.storage.sync.get(["hb-settings"], function (result) {
+@@ -21,11 +7,14 @@ chrome.runtime.onInstalled.addListener(function () {
+             result["hb-settings"] === undefined ||
+             result["hb-settings"] === null
+         ) {
+-            chrome.storage.sync.set({ "hb-settings": defaultSettings });
++            chrome.storage.sync.set({ "hb-settings": DEFAULT_SETTINGS });
+         } else {
+             // if there are any new settings, add them to the settings object
+             chrome.storage.sync.set({
+-                "hb-settings": { ...defaultSettings, ...result["hb-settings"] },
++                "hb-settings": {
++                    ...DEFAULT_SETTINGS,
++                    ...result["hb-settings"],
++                },
+             });
+         }
+     });
+@@ -114,9 +103,9 @@ chrome.runtime.onInstalled.addListener(function (details) {
+         // if (currentVersion == "0.2.4" || currentVersion == "0.2.5") return; // no need to show update page for this version
+         // const previousVersion = details.previousVersion;
+         // if (currentVersion != previousVersion) {
+-        // 	chrome.tabs.create({
+-        // 		url: "https://update.haramblur.com/",
+-        // 	});
++        //      chrome.tabs.create({
++        //              url: "https://update.haramblur.com/",
++        //      });
+         // }
+     }
+ });
+diff --git a/src/constants.js b/src/constants.js
+index e4d7869..4be7c06 100644
+--- a/src/constants.js
++++ b/src/constants.js
+@@ -10,6 +10,7 @@ export const DEFAULT_SETTINGS = {
+     unblurVideos: false,
+     gray: true,
+     strictness: 0.5, // goes from 0 to 1
++    whitelist: [],
+ };
+ 
+ export const STATUSES = {
+diff --git a/src/popup.js b/src/popup.js
+index de0edf3..50d4e32 100644
+--- a/src/popup.js
++++ b/src/popup.js
+@@ -103,7 +103,7 @@ function displaySettings(settings) {
+         settings.unblurImages;
+     document.querySelector("input[name=unblurVideos]").checked =
+         settings.unblurVideos;
+-    document.getElementById("language").value = settings.language;
++    document.getElementById("language").value = settings.language ?? "en";
+     displayWhiteList();
+     toggleAllInputs();
+ }
+@@ -223,10 +223,16 @@ function updateCheckbox(key) {
+ }
+ 
+ function changeLanguage(lang, settings) {
++    const allTranslations = getTranslations(settings);
++    // fall back to English when the requested/browser language is not
++    // available (e.g. a browser set to de/fr/es would previously throw
++    // on Object.keys(undefined) and break the whole popup)
++    if (!allTranslations?.[lang]) lang = "en";
++
+     document.body.lang = lang;
+     document.getElementById("container").dir = HB_TRANSLATIONS_DIR[lang];
+ 
+-    const translations = getTranslations(settings)?.[lang];
++    const translations = allTranslations[lang];
+     const keys = Object.keys(translations);
+     keys.forEach((key) => {
+         const elements = document.querySelectorAll(key);
+-- 
+2.47.3
+
