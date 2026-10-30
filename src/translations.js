@@ -8,13 +8,13 @@ const getTranslations = (settings) => {
             ".tooltiptext":
                 "When enabled, all images and videos will be blurred by default until detection starts.",
             "#blurAmount": `
-			Blur Amount:
-			<span id="blur-amount-value">${settings.blurAmount}%</span>
-		`,
+                        Blur Amount:
+                        <span id="blur-amount-value">${settings.blurAmount}%</span>
+                `,
             "#grayscale": "Grayscale:",
             "#strictness": `Strictness:
-		<span id="strictness-value">${settings.strictness * 100}%</span>
-		`,
+                <span id="strictness-value">${settings.strictness * 100}%</span>
+                `,
             "#mediaToBlur": "Media to Blur",
             "#blurImages": "Images",
             "#blurVideos": "Videos",
@@ -28,15 +28,15 @@ const getTranslations = (settings) => {
             "#refresh-message": "Refresh the page to see the changes.",
             ".bmc-btn-text": "Support the project",
             ".feedback": `
-			<span> We love to hear your feedback through our </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
-			<a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
-			`,
+                        <span> We love to hear your feedback through our </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> or 
+                        <a href="mailto:md.alganzory@gmail.com" target="_blank">Email</a> ❤️
+                        `,
             "#whitelist-desc": `
-				<p id="whitelist-desc"> Detection is 
-				<span id="whitelist-status-on" class="blue-text"> On </span> 
-				<span id="whitelist-status-off" class="red-text hidden" > Off </span> 
-				for this website </p>
-			`,
+                                <p id="whitelist-desc"> Detection is 
+                                <span id="whitelist-status-on" class="blue-text"> On </span> 
+                                <span id="whitelist-status-off" class="red-text hidden" > Off </span> 
+                                for this website </p>
+                        `,
         },
         ar: {
             // Arabic translations
@@ -45,13 +45,13 @@ const getTranslations = (settings) => {
             ".tooltiptext":
                 "عند تفعيل هذا الخيار سيتم تشويش جميع الصور ومقاطع الفيديو مسبقا حتى يبدأ الكشف.",
             "#blurAmount": `
-			كمية التشويش:
-			<span id="blur-amount-value">${settings.blurAmount}%</span>
-		`,
+                        كمية التشويش:
+                        <span id="blur-amount-value">${settings.blurAmount}%</span>
+                `,
             "#grayscale": "رمادي:",
             "#strictness": `الدقة:
-		<span id="strictness-value">${settings.strictness * 100}%</span>
-		`,
+                <span id="strictness-value">${settings.strictness * 100}%</span>
+                `,
             "#mediaToBlur": "الوسائط التي يجب تشويشها",
             "#blurImages": "الصور",
             "#blurVideos": "مقاطع الفيديو",
@@ -65,15 +65,15 @@ const getTranslations = (settings) => {
             "#refresh-message": "أعد تحميل الصفحة لترى التغييرات.",
             ".bmc-btn-text": "دعم المشروع",
             ".feedback": `
-			<span> نحب أن نسمع رأيك عبر </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">الاستمارة</a> أو 
-			<a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
-			`,
+                        <span> نحب أن نسمع رأيك عبر </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">الاستمارة</a> أو 
+                        <a href="mailto:md.alganzory@gmail.com" target="_blank">البريد الإلكتروني</a> ❤️
+                        `,
             "#whitelist-desc": `
-				<p id="whitelist-desc"> الفحص 
-				<span id="whitelist-status-on" class="blue-text"> مفعل </span> 
-				<span id="whitelist-status-off" class="red-text hidden" > معطل </span> 
-				لهذا الموقع </p>
-			`,
+                                <p id="whitelist-desc"> الفحص 
+                                <span id="whitelist-status-on" class="blue-text"> مفعل </span> 
+                                <span id="whitelist-status-off" class="red-text hidden" > معطل </span> 
+                                لهذا الموقع </p>
+                        `,
         },
         // turkish
         tr: {
@@ -82,13 +82,13 @@ const getTranslations = (settings) => {
             ".tooltiptext":
                 "Etkinleştirildiğinde, tüm resimler ve videolar, algılama başlayana kadar varsayılan olarak bulanıklaştırılır.",
             "#blurAmount": `
-			Bulanıklaştırma seviyesi:
-			<span id="blur-amount-value">${settings.blurAmount}%</span>
-		`,
+                        Bulanıklaştırma seviyesi:
+                        <span id="blur-amount-value">${settings.blurAmount}%</span>
+                `,
             "#grayscale": "Grileştir:",
             "#strictness": `Katılık:
-		<span id="strictness-value">${settings.strictness * 100}%</span>
-		`,
+                <span id="strictness-value">${settings.strictness * 100}%</span>
+                `,
             "#mediaToBlur": "Bulanıklaştırılacak medya",
             "#blurImages": "Resimler",
             "#blurVideos": "Videolar",
@@ -102,15 +102,15 @@ const getTranslations = (settings) => {
             "#refresh-message": "Değişiklikleri görmek için sayfayı yenile.",
             ".bmc-btn-text": "Projeyi destekle",
             ".feedback": `
-			<span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
-			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
-			`,
+                        <span> Geri dönüşlerinizi </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">Form</a> ve
+                        <a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> yoluyla bize bildirin.❤️
+                        `,
             "#whitelist-desc": `
-				<p id="whitelist-desc"> Bu web sitesi için algılama
-				<span id="whitelist-status-on" class="blue-text"> Açık </span> 
-				<span id="whitelist-status-off" class="red-text hidden" > Kapalı </span> 
-				</p>
-			`,
+                                <p id="whitelist-desc"> Bu web sitesi için algılama
+                                <span id="whitelist-status-on" class="blue-text"> Açık </span> 
+                                <span id="whitelist-status-off" class="red-text hidden" > Kapalı </span> 
+                                </p>
+                        `,
         },
         //urdu
         ur: {
@@ -119,13 +119,13 @@ const getTranslations = (settings) => {
             ".tooltiptext":
                 "فعال ہونے پر، شناخت شروع ہونے تک تمام تصاویر اور ویڈیوز بطور ڈیفالٹ دھندلی ہو جائیں گی۔",
             "#blurAmount": `
-			بلر کی مقدار:
-			<span id="blur-amount-value">${settings.blurAmount}%</span>
-		`,
+                        بلر کی مقدار:
+                        <span id="blur-amount-value">${settings.blurAmount}%</span>
+                `,
             "#grayscale": "مٹیالا پیمانہ:",
             "#strictness": `سختی:
-		<span id="strictness-value">${settings.strictness * 100}%</span>
-		`,
+                <span id="strictness-value">${settings.strictness * 100}%</span>
+                `,
             "#mediaToBlur": "میڈیا کو دھندلا کرنا",
             "#blurImages": "تصاویر",
             "#blurVideos": "ویڈیوز",
@@ -139,15 +139,53 @@ const getTranslations = (settings) => {
             "#refresh-message": "تبدیلیاں دیکھنے کے لیے صفحہ کو ریفریش کریں۔",
             ".bmc-btn-text": "منصوبے کی حمایت کریں",
             ".feedback": `
-			<span> میں اپنے فارم کے ذریعے آپ کی رائے سننا پسند ہے </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank"></a> ve
-			<a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ای میل.❤️
-			`,
+                        <span> میں اپنے فارم کے ذریعے آپ کی رائے سننا پسند ہے </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank"></a> ve
+                        <a href="mailto:md.alganzory@gmail.com" target="_blank">E-mail</a> ای میل.❤️
+                        `,
             "#whitelist-desc": `
-				<p id="whitelist-desc"> کھوج ہے
-				<span id="whitelist-status-on" class="blue-text"> جلنا </span> 
-				<span id="whitelist-status-off" class="red-text hidden" > بند </span> 
-				</p>
-			`,
+                                <p id="whitelist-desc"> کھوج ہے
+                                <span id="whitelist-status-on" class="blue-text"> جلنا </span> 
+                                <span id="whitelist-status-off" class="red-text hidden" > بند </span> 
+                                </p>
+                        `,
+        },
+        // persian / farsi
+        fa: {
+            "#settings": "تنظیمات",
+            "#blurryStart": "تار کردن رسانه هنگام بارگذاری:",
+            ".tooltiptext":
+                "با فعال شدن این گزینه، همه تصاویر و ویدیوها پیش از شروع تشخیص، به‌صورت پیش‌فرض تار می‌شوند.",
+            "#blurAmount": `
+                                                میزان تاری:
+                                                <span id="blur-amount-value">${settings.blurAmount}%</span>
+                        `,
+            "#grayscale": "سیاه و سفید:",
+            "#strictness": `سخت‌گیری:
+                        <span id="strictness-value">${settings.strictness * 100}%</span>
+                        `,
+            "#mediaToBlur": "رسانه‌های قابل تار کردن",
+            "#blurImages": "تصاویر",
+            "#blurVideos": "ویدیوها",
+            "#facesToBlur": "چهره‌های قابل تار کردن",
+            "#blurMale": "مرد",
+            "#blurFemale": "زن",
+            "#unblurOnHover": "رفع تاری با نگه‌داشتن نشانگر",
+            "#unblurImages": "تصاویر",
+            "#unblurVideos": "ویدیوها",
+            ".refresh": " (نیازمند بارگذاری مجدد صفحه):",
+            "#refresh-message":
+                "برای مشاهده تغییرات، صفحه را دوباره بارگذاری کنید.",
+            ".bmc-btn-text": "حمایت از پروژه",
+            ".feedback": `
+                                                <span> نظرات خود را از طریق </span> <a href="https://forms.gle/mDDjh44MKRVemWX86" target="_blank">فرم</a> یا
+                                                <a href="mailto:md.alganzory@gmail.com" target="_blank">ایمیل</a> با ما در میان بگذارید ❤️
+                                                `,
+            "#whitelist-desc": `
+                                                        <p id="whitelist-desc"> تشخیص برای این وب‌سایت
+                                                        <span id="whitelist-status-on" class="blue-text"> روشن </span>
+                                                        <span id="whitelist-status-off" class="red-text hidden" > خاموش </span>
+                                                        </p>
+                                                `,
         },
     };
 };
@@ -157,4 +195,5 @@ const HB_TRANSLATIONS_DIR = {
     tr: "ltr",
     ar: "rtl",
     ur: "rtl",
+    fa: "rtl",
 };
